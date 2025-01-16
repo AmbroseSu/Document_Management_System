@@ -25,6 +25,8 @@ public class User
     
     public int DivisionId { get; set; }
     public Division? Division { get; set; }
+    public int VerificationOtpId { get; set; }
+    public VerificationOtp? VerificationOtp { get; set; }
     
     public List<TaskUser>? TaskUsers { get; set; }
     public List<Comment>? Comments { get; set; }
