@@ -7,14 +7,19 @@ public class ArchivedDocument
 {
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     [Key]
-    public int ArchivedDocumentId { get; set; }
+    public Guid ArchivedDocumentId { get; set; }
     public string? ArchivedDocumentName { get; set; }
     public string? ArchivedDocumentUrl { get; set; }
     public DateTime CreatedDate { get; set; }
     
-    public int DocumentTypeId { get; set; }
+    public Guid DocumentTypeId { get; set; }
     public DocumentType? DocumentType { get; set; }
     
     public List<UserDocumentPermission>? UserDocumentPermissions { get; set; }
     public List<AttachmentArchivedDocument>? AttachmentArchivedDocuments { get; set; }
+
+    /*public ArchivedDocument()
+    {
+        ArchivedDocumentId = Guid.NewGuid();
+    }*/
 }

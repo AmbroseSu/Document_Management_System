@@ -7,12 +7,16 @@ public class DocumentType
 {
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     [Key]
-    public int DocumentTypeId { get; set; }
+    public Guid DocumentTypeId { get; set; }
     public string? DocumentTypeName { get; set; }
     public bool IsDeleted { get; set; }
     
     public List<Workflow>? Workflows { get; set; }
     public List<Document>? Documents { get; set; }
     public List<ArchivedDocument>? ArchivedDocuments { get; set; }
-    
+
+    /*public DocumentType()
+    {
+        DocumentTypeId = Guid.NewGuid();
+    }*/
 }

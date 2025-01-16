@@ -7,14 +7,18 @@ public class AttachmentDocument
 {
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     [Key]
-    public int AttachmentDocumentId { get; set; }
+    public Guid AttachmentDocumentId { get; set; }
     public string? AttachmentDocumentName { get; set; }
     public string? AttachmentDocumentUrl { get; set; }
     public bool IsDeleted { get; set; }
     
-    public int DocumentId { get; set; }
-    public int DocumentFileExtensionId { get; set; }
+    public Guid DocumentId { get; set; }
+    public Guid DocumentFileExtensionId { get; set; }
     public Document? Document { get; set; }
     public DocumentFileExtension? DocumentFileExtension { get; set; }
-    
+
+    /*public AttachmentDocument()
+    {
+        AttachmentDocumentId = Guid.NewGuid();
+    }*/
 }

@@ -8,7 +8,7 @@ public class User
 {
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     [Key]
-    public int UserId { get; set; }
+    public Guid UserId { get; set; }
     public string? FullName { get; set; }
     public string? UserName { get; set; }
     public string? Email { get; set; }
@@ -23,7 +23,7 @@ public class User
     public bool IsDeleted { get; set; }
     public bool IsEnable { get; set; }
     
-    public int DivisionId { get; set; }
+    public Guid DivisionId { get; set; }
     public Division? Division { get; set; }
     public int VerificationOtpId { get; set; }
     public VerificationOtp? VerificationOtp { get; set; }
@@ -34,4 +34,9 @@ public class User
     public List<Deadline>? Deadlines { get; set; }
     public List<UserDocumentPermission>? UserDocumentPermissions { get; set; }
     public List<UserRole>? UserRoles { get; set; }
+
+    /*public User()
+    {
+        UserId = Guid.NewGuid();
+    }*/
 }

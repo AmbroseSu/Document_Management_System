@@ -7,13 +7,18 @@ public class Comment
 {
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     [Key]
-    public int CommentId { get; set; }
+    public Guid CommentId { get; set; }
     public string? CommentContent { get; set; }
     public DateTime CreateDate { get; set; }
     public bool IsDeleted { get; set; }
     
-    public int UserId { get; set; }
-    public int TaskId { get; set; }
+    public Guid UserId { get; set; }
+    public Guid TaskId { get; set; }
     public User? User { get; set; }
     public Task? Task { get; set; }
+
+    /*public Comment()
+    {
+        CommentId = Guid.NewGuid();
+    }*/
 }

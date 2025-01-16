@@ -7,14 +7,18 @@ public class TaskUser
 {
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     [Key]
-    public int TaskUserId { get; set; }
+    public Guid TaskUserId { get; set; }
     public bool IsCreatedTaskByUser { get; set; }
     
-    public int TaskId { get; set; }
-    public int UserId { get; set; }
-    public int RoleId { get; set; }
+    public Guid TaskId { get; set; }
+    public Guid UserId { get; set; }
+    public Guid RoleId { get; set; }
     public Task? Task { get; set; }
     public User? User { get; set; }
     public Role? Role { get; set; }
-    
+
+    /*public TaskUser()
+    {
+        TaskUserId = Guid.NewGuid();
+    }*/
 }

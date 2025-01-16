@@ -7,9 +7,14 @@ public class Division
 {
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     [Key]
-    public int DivisionId { get; set; }
+    public Guid DivisionId { get; set; }
     public string? DivisionName { get; set; }
     public bool IsDeleted { get; set; }
     
     public List<User>? Users { get; set; }
+
+    /*public Division()
+    {
+        DivisionId = Guid.NewGuid();
+    }*/
 }

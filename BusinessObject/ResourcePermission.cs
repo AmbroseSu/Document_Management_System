@@ -7,10 +7,15 @@ public class ResourcePermission
 {
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     [Key]
-    public int ResourcePermissionId { get; set; }
+    public Guid ResourcePermissionId { get; set; }
     
-    public int ResourceId { get; set; }
-    public int RolePermissionId { get; set; }
+    public Guid ResourceId { get; set; }
+    public Guid RolePermissionId { get; set; }
     public Resource? Resource { get; set; }
     public RolePermission? RolePermission { get; set; }
+
+    /*public ResourcePermission()
+    {
+        ResourcePermissionId = Guid.NewGuid();
+    }*/
 }

@@ -8,7 +8,7 @@ public class Deadline
 {
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     [Key]
-    public int DeadlineId { get; set; }
+    public Guid DeadlineId { get; set; }
     public string? Title { get; set; }
     public string? Description { get; set; }
     public DateTime StartDate { get; set; }
@@ -16,8 +16,14 @@ public class Deadline
     public DateTime ReminderDate { get; set; }
     public bool IsDeleted { get; set; }
     
-    public int UserId { get; set; }
+    public Guid UserId { get; set; }
     public User? User { get; set; }
     
-    public List<Document>? Documents { get; set; }
+    public Guid DocumentId { get; set; }
+    public Document? Document { get; set; }
+
+    /*public Deadline()
+    {
+        DeadlineId = Guid.NewGuid();
+    }*/
 }
