@@ -7,11 +7,16 @@ public class Workflow
 {
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     [Key]
-    public int WorkflowId { get; set; }
+    public Guid WorkflowId { get; set; }
     public string? WorkflowName { get; set; }
     
-    public int DocumentTypeId { get; set; }
+    public Guid DocumentTypeId { get; set; }
     public DocumentType? DocumentType { get; set; }
     
     public List<Step>? Steps { get; set; }
+
+    /*public Workflow()
+    {
+        WorkflowId = Guid.NewGuid();
+    }*/
 }
