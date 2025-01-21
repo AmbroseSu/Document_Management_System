@@ -31,7 +31,7 @@ public class BaseDao<T> where T : class
 
     private BaseDao() { }
 
-    public async Task SaveAsync(T entity)
+    public async Task AddAsync(T entity)
     {
         if (entity == null) throw new ArgumentNullException(nameof(entity));
 
@@ -55,19 +55,6 @@ public class BaseDao<T> where T : class
         if (predicate == null) throw new ArgumentNullException(nameof(predicate));
 
         return await _context.Set<T>().Where(predicate).ToListAsync();
-    }
-
-    public async Task<IEnumerable<T>> GetAllOrderedAsync<TKey>(Expression<Func<T, TKey>> keySelector)
-    {
-        if (keySelector == null) throw new ArgumentNullException(nameof(keySelector));
-
-        return await _context.Set<T>().OrderBy(keySelector).ToListAsync();
-    }
-    public async Task<T?> FindOneAsync(Expression<Func<T, bool>> predicate)
-    {
-        if (predicate == null) throw new ArgumentNullException(nameof(predicate));
-
-        return await _context.Set<T>().FirstOrDefaultAsync(predicate);
     }
     public async Task<T?> FindByIdAsync(Guid id)
     {
