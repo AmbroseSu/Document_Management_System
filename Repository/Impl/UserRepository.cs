@@ -16,4 +16,6 @@ public class UserRepository
             await BaseDao<User>.Instance.UpdateAsync(updateResult);
         }
     }
+    
+    
 }
