@@ -69,10 +69,7 @@ public class DocumentManagementSystemDbContext : DbContext
         Database.ExecuteSqlRaw("CREATE EXTENSION IF NOT EXISTS \"pgcrypto\";");
     }
     
-    /*using (var context = new ApplicationDbContext(options))
-    {
-        context.EnsurePgCryptoExtension();
-    }*/
+
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -322,6 +319,9 @@ public class DocumentManagementSystemDbContext : DbContext
             entity.HasMany(e => e.Tasks)
                 .WithOne(e => e.Step)
                 .HasForeignKey(e => e.StepId);
+            entity.HasOne(e => e.Role)
+                .WithOne(e => e.Step)
+                .HasForeignKey<Role>(e => e.StepId);
         });
 
         modelBuilder.Entity<Task>(entity =>

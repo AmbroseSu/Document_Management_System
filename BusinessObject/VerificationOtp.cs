@@ -14,7 +14,7 @@ public class VerificationOtp
     
     private const int EXPIRATION_TIME_MINUTES = 2;
     
-    public int UserId { get; set; }
+    public Guid UserId { get; set; }
     public virtual User? User { get; set; } 
     
     public VerificationOtp()
@@ -22,7 +22,7 @@ public class VerificationOtp
         // Default constructor
     }
     
-    public VerificationOtp(string otp, int userId)
+    public VerificationOtp(string otp, Guid userId)
     {
         this.Otp = otp;
         this.UserId = userId;
