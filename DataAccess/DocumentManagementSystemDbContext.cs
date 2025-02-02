@@ -41,6 +41,7 @@ public class DocumentManagementSystemDbContext : DbContext
         builder.AddConsole(); 
     });
     
+    
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         if (!optionsBuilder.IsConfigured)

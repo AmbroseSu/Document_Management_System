@@ -23,7 +23,7 @@ public class User
     public bool IsDeleted { get; set; }
     public bool IsEnable { get; set; }
     
-    public Guid DivisionId { get; set; }
+    public Guid? DivisionId { get; set; }
     public Division? Division { get; set; }
     public int VerificationOtpId { get; set; }
     public VerificationOtp? VerificationOtp { get; set; }
