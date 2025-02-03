@@ -6,14 +6,18 @@ public class UnitOfWork : IUnitOfWork
 {
     
     public IUserRepository UserUOW { get; }
+    public IResourceRepository ResourceUOW { get; }
+    public IPermissionRepository PermissionUOW { get; }
     private bool _disposed;
     private readonly DocumentManagementSystemDbContext _context;
     
-    public UnitOfWork(IUserRepository userUow, DocumentManagementSystemDbContext context)
+    public UnitOfWork(IUserRepository userUow, DocumentManagementSystemDbContext context, IResourceRepository resourceUow, IPermissionRepository permissionUow)
     {
         UserUOW = userUow ?? throw new ArgumentNullException(nameof(userUow));
         _disposed = false;
         _context = context;
+        ResourceUOW = resourceUow ?? throw new ArgumentNullException(nameof(resourceUow));
+        PermissionUOW = permissionUow;
     }
 
     public async Task<int> SaveChangesAsync()

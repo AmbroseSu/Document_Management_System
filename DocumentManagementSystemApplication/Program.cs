@@ -57,6 +57,10 @@ builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<DocumentManagementSystemDbContext>();
+builder.Services.AddScoped<IResourceRepository, ResourceRepository>();
+builder.Services.AddScoped<IResourceService, ResourceService>();
+builder.Services.AddScoped<IPermissionRepository, PermissionRepository>();
+builder.Services.AddScoped<IPermissionService, PermissionService>();
 /*builder.Services.AddScoped<UserDao>();*/
 
 /*builder.Services.AddDbContext<DocumentManagementSystemDbContext>(options =>
@@ -85,6 +89,14 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
+}
+
+using (var scope = app.Services.CreateScope())
+{
+    var apiResourceService = scope.ServiceProvider.GetRequiredService<IResourceService>();
+    await apiResourceService.ScanAndSaveResourcesAsync();
+    var seeder = scope.ServiceProvider.GetRequiredService<IPermissionService>();
+    await seeder.SeedPermissionsAsync();
 }
 
 /*using (var scope = app.Services.CreateScope())
