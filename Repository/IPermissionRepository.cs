@@ -8,4 +8,7 @@ public interface IPermissionRepository
 {
     Task AddRangeAsync(List<Permission> permissions);
     Task<IEnumerable<Permission>> GetAllAsync();
+    Task AddAsync(Permission permission);
+    Task<Permission?> FindPermissionByNameAsync(string permissionName);
+    
 }

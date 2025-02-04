@@ -52,6 +52,7 @@ builder.Logging.AddConsole();
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
 /*builder.Services.AddScoped(typeof(IBaseRepository<>), typeof(BaseRepository<>));*/
+builder.Services.AddHostedService<StartupTaskService>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
@@ -91,13 +92,13 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-using (var scope = app.Services.CreateScope())
+/*using (var scope = app.Services.CreateScope())
 {
     var apiResourceService = scope.ServiceProvider.GetRequiredService<IResourceService>();
     await apiResourceService.ScanAndSaveResourcesAsync();
     var seeder = scope.ServiceProvider.GetRequiredService<IPermissionService>();
     await seeder.SeedPermissionsAsync();
-}
+}*/
 
 /*using (var scope = app.Services.CreateScope())
 {

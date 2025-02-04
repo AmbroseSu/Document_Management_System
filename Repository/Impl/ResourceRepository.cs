@@ -16,7 +16,7 @@ public class ResourceRepository : IResourceRepository
         _resourceDao = new BaseDao<Resource>(context ?? throw new ArgumentNullException(nameof(context)));
     }
     
-    public async Task AddAsync(List<ResourceDto> resources)
+    public async Task AddRangeAsync(List<ResourceDto> resources)
     {
         if (resources == null || resources.Count == 0)
             throw new ArgumentNullException(nameof(resources), "Resource list cannot be null or empty.");
@@ -50,5 +50,17 @@ public class ResourceRepository : IResourceRepository
         {
             await _resourceDao.RemoveRangeAsync(removedResources);
         }
+    }
+
+    public async Task AddAsync(Resource resource)
+    {
+        if (resource == null) throw new ArgumentNullException(nameof(resource));
+        await _resourceDao.AddAsync(resource);
+    }
+
+    public async Task<Resource?> FindResourceByApiAsync(string resourceApi)
+    {
+        if (resourceApi == null) throw new ArgumentNullException(nameof(resourceApi));
+        return await _resourceDao.FindByAsync(p => p.ResourceApi == resourceApi);
     }
 }

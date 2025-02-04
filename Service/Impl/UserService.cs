@@ -57,10 +57,17 @@ public class UserService : IUserService
             user.IsDeleted = false;
             user.IsEnable = false;
             await _unitOfWork.UserUOW.AddAsync(user);
-            await _unitOfWork.SaveChangesAsync();
-            var result = _mapper.Map<UserDto>(user);
+            var saveChange = await _unitOfWork.SaveChangesAsync();
+            if (saveChange > 0)
+            {
+                var result = _mapper.Map<UserDto>(user);
+                return ResponseUtil.GetObject(result, ResponseMessages.CreatedSuccessfully, HttpStatusCode.Created, 1);
+            }
+            else
+            {
+                return ResponseUtil.Error(ResponseMessages.FailedToSaveData, ResponseMessages.OperationFailed, HttpStatusCode.InternalServerError);
+            }
             
-            return ResponseUtil.GetObject(result, ResponseMessages.CreatedSuccessfully, HttpStatusCode.Created, 1);
         }
         catch (Exception ex)
         {

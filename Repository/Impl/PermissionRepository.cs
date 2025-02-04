@@ -26,4 +26,16 @@ public class PermissionRepository : IPermissionRepository
     {
         return await _permissionDao.GetAllAsync();
     }
+
+    public async Task AddAsync(Permission permission)
+    {
+        if (permission == null) throw new ArgumentNullException(nameof(permission));
+        await _permissionDao.AddAsync(permission);
+    }
+
+    public async Task<Permission?> FindPermissionByNameAsync(string permissionName)
+    {
+        if (permissionName == null) throw new ArgumentNullException(nameof(permissionName));
+        return await _permissionDao.FindByAsync(p => p.PermissionName == permissionName);
+    }
 }

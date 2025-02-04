@@ -97,5 +97,9 @@ public class MappingProfile : Profile
         CreateMap<UserDto, User>();
         CreateMap<User, UserRequest>();
         CreateMap<UserRequest, User>();
+        CreateMap<Permission, PermissionDto>();
+        CreateMap<PermissionDto, Permission>();
+        CreateMap<ResourceDto, Resource>();
+        CreateMap<Resource, ResourceDto>();
     }
 }
