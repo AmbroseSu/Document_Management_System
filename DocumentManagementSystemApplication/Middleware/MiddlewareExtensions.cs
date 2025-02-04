@@ -1,4 +1,4 @@
-﻿namespace DocumentManagementSystemApplication.Middleware;
+﻿/*namespace DocumentManagementSystemApplication.Middleware;
 
 public static class MiddlewareExtensions
 {
@@ -6,4 +6,4 @@ public static class MiddlewareExtensions
     {
         return builder.UseMiddleware<PermissionMiddleware>();
     }
-}
+}*/

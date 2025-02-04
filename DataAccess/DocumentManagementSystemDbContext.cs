@@ -41,6 +41,7 @@ public class DocumentManagementSystemDbContext : DbContext
         builder.AddConsole(); 
     });
     
+    
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         if (!optionsBuilder.IsConfigured)
@@ -256,6 +257,7 @@ public class DocumentManagementSystemDbContext : DbContext
                 .HasDefaultValueSql("gen_random_uuid()");
             entity.Property(e => e.ResourceApi);
             entity.Property(e => e.ResourceName);
+            entity.Property(e => e.ResourceMethod);
             
             entity.HasMany(e => e.ResourcePermissions)
                 .WithOne(e => e.Resource)

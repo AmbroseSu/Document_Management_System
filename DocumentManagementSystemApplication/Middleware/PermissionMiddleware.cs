@@ -1,4 +1,4 @@
-﻿using DataAccess;
+﻿/*using DataAccess;
 using Microsoft.EntityFrameworkCore;
 
 namespace DocumentManagementSystemApplication.Middleware;
@@ -14,6 +14,7 @@ public class PermissionMiddleware
 
     public async Task InvokeAsync(HttpContext context, DocumentManagementSystemDbContext dbContext)
     {
+        dbContext = new DocumentManagementSystemDbContext();
         var user = context.User;
         if (user?.Identity?.IsAuthenticated == true)
         {
@@ -40,4 +41,4 @@ public class PermissionMiddleware
 
         await _next(context);
     }
-}
+}*/

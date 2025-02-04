@@ -1,19 +1,22 @@
-﻿using System.Linq.Expressions;
+﻿/*using System.Linq.Expressions;
 using DataAccess;
 using DataAccess.DAO;
-using Microsoft.EntityFrameworkCore;
 
-namespace Repository;
+namespace Repository.Impl;
 
-public class BaseRepository<T> : IBaserepository<T> where T : class
+public class BaseRepository<T> : IBaseRepository<T> where T : class
 { 
     private readonly BaseDao<T> _baseDao;
 
-    public BaseRepository(DocumentManagementSystemDbContext context)
+    public BaseRepository(BaseDao<T> baseDao)
     {
-        _baseDao = new BaseDao<T>(context);
+        _baseDao = baseDao;
     }
-    
+
+    protected BaseRepository()
+    {
+    }
+
     public async Task AddAsync(T entity)
     {
         if (entity == null) throw new ArgumentNullException(nameof(entity));
@@ -36,4 +39,4 @@ public class BaseRepository<T> : IBaserepository<T> where T : class
     {
         return await _baseDao.GetAllAsync();
     }
-}
+}*/
