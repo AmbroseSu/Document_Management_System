@@ -47,7 +47,7 @@ public class PermissionService : IPermissionService
         }
     }
 
-    public async Task<ResponseDto> CreatePermission(/*string permission*/PermissionDto permissionDto)
+    public async Task<ResponseDto> CreatePermission(PermissionDto permissionDto)
     {
         try
         {

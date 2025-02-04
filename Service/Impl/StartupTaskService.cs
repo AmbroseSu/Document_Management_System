@@ -27,14 +27,18 @@ public class StartupTaskService : BackgroundService
             {
                 var resourceService = scope.ServiceProvider.GetRequiredService<IResourceService>();
                 var permissionService = scope.ServiceProvider.GetRequiredService<IPermissionService>();
+                var roleService = scope.ServiceProvider.GetRequiredService<IRoleService>();
 
                 // Kiểm tra và cập nhật Resource từ API
                 await resourceService.ScanAndSaveResourcesAsync();
 
                 // Kiểm tra và cập nhật Permission nếu có thay đổi
                 await permissionService.SeedPermissionsAsync();
-
-                _logger.LogInformation("API and Permission update completed.");
+                
+                // Kiểm tra và cập nhật Role nếu có thay đổi
+                await roleService.SeedRolesAsync();
+                
+                _logger.LogInformation("API, Permission and Role update completed.");
             }
             catch (Exception ex)
             {

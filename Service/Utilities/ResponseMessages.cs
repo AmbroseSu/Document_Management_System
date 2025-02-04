@@ -13,7 +13,12 @@ public static class ResponseMessages
     public const string EmailAlreadyExists = "Email already exists";
     //Permission
     public const string PermissionAlreadyExists = "Permission already exists";
+    public const string PermissionNotExists = "Permission not exists";
 
     //Resource
     public const string ResourceAlreadyExists = "Resource already exists";
+    
+    //Role
+    public const string RoleAlreadyExists = "Role already exists";
+    public const string RoleNotExists = "Role not exists";
 }

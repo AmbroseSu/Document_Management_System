@@ -3,6 +3,7 @@ using System;
 using DataAccess;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace DataAccess.Migrations
 {
     [DbContext(typeof(DocumentManagementSystemDbContext))]
-    partial class DocumentManagementSystemDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250204041059_IdCanNullDatabase")]
+    partial class IdCanNullDatabase
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -24,7 +27,7 @@ namespace DataAccess.Migrations
 
             modelBuilder.Entity("BusinessObject.ArchivedDocument", b =>
                 {
-                    b.Property<Guid>("ArchivedDocumentId")
+                    b.Property<Guid?>("ArchivedDocumentId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
                         .HasDefaultValueSql("gen_random_uuid()");
@@ -50,7 +53,7 @@ namespace DataAccess.Migrations
 
             modelBuilder.Entity("BusinessObject.AttachmentArchivedDocument", b =>
                 {
-                    b.Property<Guid>("AttachmentArchivedDocumentId")
+                    b.Property<Guid?>("AttachmentArchivedDocumentId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
                         .HasDefaultValueSql("gen_random_uuid()");
@@ -76,7 +79,7 @@ namespace DataAccess.Migrations
 
             modelBuilder.Entity("BusinessObject.AttachmentDocument", b =>
                 {
-                    b.Property<Guid>("AttachmentDocumentId")
+                    b.Property<Guid?>("AttachmentDocumentId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
                         .HasDefaultValueSql("gen_random_uuid()");
@@ -107,7 +110,7 @@ namespace DataAccess.Migrations
 
             modelBuilder.Entity("BusinessObject.Comment", b =>
                 {
-                    b.Property<Guid>("CommentId")
+                    b.Property<Guid?>("CommentId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
                         .HasDefaultValueSql("gen_random_uuid()");
@@ -138,7 +141,7 @@ namespace DataAccess.Migrations
 
             modelBuilder.Entity("BusinessObject.Deadline", b =>
                 {
-                    b.Property<Guid>("DeadlineId")
+                    b.Property<Guid?>("DeadlineId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
                         .HasDefaultValueSql("gen_random_uuid()");
@@ -176,7 +179,7 @@ namespace DataAccess.Migrations
 
             modelBuilder.Entity("BusinessObject.Division", b =>
                 {
-                    b.Property<Guid>("DivisionId")
+                    b.Property<Guid?>("DivisionId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
                         .HasDefaultValueSql("gen_random_uuid()");
@@ -194,7 +197,7 @@ namespace DataAccess.Migrations
 
             modelBuilder.Entity("BusinessObject.Document", b =>
                 {
-                    b.Property<Guid>("DocumentId")
+                    b.Property<Guid?>("DocumentId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
                         .HasDefaultValueSql("gen_random_uuid()");
@@ -249,7 +252,7 @@ namespace DataAccess.Migrations
 
             modelBuilder.Entity("BusinessObject.DocumentFileExtension", b =>
                 {
-                    b.Property<Guid>("DocumentFileExtensionId")
+                    b.Property<Guid?>("DocumentFileExtensionId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
                         .HasDefaultValueSql("gen_random_uuid()");
@@ -267,7 +270,7 @@ namespace DataAccess.Migrations
 
             modelBuilder.Entity("BusinessObject.DocumentType", b =>
                 {
-                    b.Property<Guid>("DocumentTypeId")
+                    b.Property<Guid?>("DocumentTypeId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
                         .HasDefaultValueSql("gen_random_uuid()");
@@ -285,7 +288,7 @@ namespace DataAccess.Migrations
 
             modelBuilder.Entity("BusinessObject.Permission", b =>
                 {
-                    b.Property<Guid>("PermissionId")
+                    b.Property<Guid?>("PermissionId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
                         .HasDefaultValueSql("gen_random_uuid()");
@@ -300,7 +303,7 @@ namespace DataAccess.Migrations
 
             modelBuilder.Entity("BusinessObject.Resource", b =>
                 {
-                    b.Property<Guid>("ResourceId")
+                    b.Property<Guid?>("ResourceId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
                         .HasDefaultValueSql("gen_random_uuid()");
@@ -321,7 +324,7 @@ namespace DataAccess.Migrations
 
             modelBuilder.Entity("BusinessObject.ResourcePermission", b =>
                 {
-                    b.Property<Guid>("ResourcePermissionId")
+                    b.Property<Guid?>("ResourcePermissionId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
                         .HasDefaultValueSql("gen_random_uuid()");
@@ -343,7 +346,7 @@ namespace DataAccess.Migrations
 
             modelBuilder.Entity("BusinessObject.Role", b =>
                 {
-                    b.Property<Guid>("RoleId")
+                    b.Property<Guid?>("RoleId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
                         .HasDefaultValueSql("gen_random_uuid()");
@@ -367,7 +370,7 @@ namespace DataAccess.Migrations
 
             modelBuilder.Entity("BusinessObject.RolePermission", b =>
                 {
-                    b.Property<Guid>("RolePermissionId")
+                    b.Property<Guid?>("RolePermissionId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
                         .HasDefaultValueSql("gen_random_uuid()");
@@ -389,7 +392,7 @@ namespace DataAccess.Migrations
 
             modelBuilder.Entity("BusinessObject.Step", b =>
                 {
-                    b.Property<Guid>("StepId")
+                    b.Property<Guid?>("StepId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
                         .HasDefaultValueSql("gen_random_uuid()");
@@ -418,7 +421,7 @@ namespace DataAccess.Migrations
 
             modelBuilder.Entity("BusinessObject.Task", b =>
                 {
-                    b.Property<Guid>("TaskId")
+                    b.Property<Guid?>("TaskId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
                         .HasDefaultValueSql("gen_random_uuid()");
@@ -467,7 +470,7 @@ namespace DataAccess.Migrations
 
             modelBuilder.Entity("BusinessObject.TaskUser", b =>
                 {
-                    b.Property<Guid>("TaskUserId")
+                    b.Property<Guid?>("TaskUserId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
                         .HasDefaultValueSql("gen_random_uuid()");
@@ -497,7 +500,7 @@ namespace DataAccess.Migrations
 
             modelBuilder.Entity("BusinessObject.User", b =>
                 {
-                    b.Property<Guid>("UserId")
+                    b.Property<Guid?>("UserId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
                         .HasDefaultValueSql("gen_random_uuid()");
@@ -556,7 +559,7 @@ namespace DataAccess.Migrations
 
             modelBuilder.Entity("BusinessObject.UserDocument", b =>
                 {
-                    b.Property<Guid>("UserDocumentId")
+                    b.Property<Guid?>("UserDocumentId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
                         .HasDefaultValueSql("gen_random_uuid()");
@@ -581,7 +584,7 @@ namespace DataAccess.Migrations
 
             modelBuilder.Entity("BusinessObject.UserDocumentPermission", b =>
                 {
-                    b.Property<Guid>("UserDocumentPermissionId")
+                    b.Property<Guid?>("UserDocumentPermissionId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
                         .HasDefaultValueSql("gen_random_uuid()");
@@ -614,7 +617,7 @@ namespace DataAccess.Migrations
 
             modelBuilder.Entity("BusinessObject.UserRole", b =>
                 {
-                    b.Property<Guid>("UserRoleId")
+                    b.Property<Guid?>("UserRoleId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
                         .HasDefaultValueSql("gen_random_uuid()");
@@ -639,11 +642,11 @@ namespace DataAccess.Migrations
 
             modelBuilder.Entity("BusinessObject.VerificationOtp", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<int?>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int?>("Id"));
 
                     b.Property<DateTime>("ExpirationTime")
                         .HasColumnType("timestamp with time zone");
@@ -667,7 +670,7 @@ namespace DataAccess.Migrations
 
             modelBuilder.Entity("BusinessObject.Workflow", b =>
                 {
-                    b.Property<Guid>("WorkflowId")
+                    b.Property<Guid?>("WorkflowId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
                         .HasDefaultValueSql("gen_random_uuid()");
