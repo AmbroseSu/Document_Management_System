@@ -20,6 +20,9 @@ public class User
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
     public string? FcmToken { get; set; }
+    public string? Position { get; set; }
+    public string? SignatureImage { get; set; }
+    public DateTime DateOfBirth { get; set; }
     public bool IsDeleted { get; set; }
     public bool IsEnable { get; set; }
     
@@ -31,7 +34,6 @@ public class User
     public List<TaskUser>? TaskUsers { get; set; }
     public List<Comment>? Comments { get; set; }
     public List<UserDocument>? UserDocuments { get; set; }
-    public List<Deadline>? Deadlines { get; set; }
     public List<UserDocumentPermission>? UserDocumentPermissions { get; set; }
     public List<UserRole>? UserRoles { get; set; }
 

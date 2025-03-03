@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc;
+/*using Microsoft.AspNetCore.Mvc;
 
 namespace DocumentManagementSystemApplication.Controllers;
 
@@ -29,4 +29,4 @@ public class WeatherForecastController : ControllerBase
             })
             .ToArray();
     }
-}
+}*/

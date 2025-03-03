@@ -24,10 +24,10 @@ public class PermissionService : IPermissionService
     {
         var defaultPermissions = new List<Permission>
         {
-            new Permission { PermissionName = "Full_Access" },
+            new Permission { PermissionName = "Update" },
             new Permission { PermissionName = "View" },
             new Permission { PermissionName = "Create" },
-            new Permission { PermissionName = "Modify" },
+            //new Permission { PermissionName = "Modify" },
             new Permission { PermissionName = "Delete" }
         };
 

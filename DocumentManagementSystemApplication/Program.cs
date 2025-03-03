@@ -64,8 +64,9 @@ builder.Services.AddScoped<IPermissionRepository, PermissionRepository>();
 builder.Services.AddScoped<IPermissionService, PermissionService>();
 builder.Services.AddScoped<IRoleRepository, RoleRepository>();
 builder.Services.AddScoped<IRoleService, RoleService>();
-builder.Services.AddScoped<IRolePermissionRepository, RolePermissionRepository>();
-builder.Services.AddScoped<IRolePermissionService, RolePermissionService>();
+builder.Services.AddScoped<IRoleResourceRepository, RoleResourceRepository>();
+builder.Services.AddScoped<IRoleResourceService, RoleResourceService>();
+
 /*builder.Services.AddScoped<UserDao>();*/
 
 /*builder.Services.AddDbContext<DocumentManagementSystemDbContext>(options =>

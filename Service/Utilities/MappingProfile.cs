@@ -103,8 +103,8 @@ public class MappingProfile : Profile
         CreateMap<Resource, ResourceDto>();
         CreateMap<Role, RoleDto>();
         CreateMap<RoleDto, Role>();
-        CreateMap<RolePermission, RolePermissionDto>();
-        CreateMap<RolePermissionDto, RolePermission>();
+        CreateMap<RoleResource, RoleResourceDto>();
+        CreateMap<RoleResourceDto, RoleResource>();
         
     }
 }

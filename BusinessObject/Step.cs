@@ -12,9 +12,9 @@ public class Step
     public string? Action { get; set; }
     public bool IsDeleted { get; set; }
     
-    public Guid WorkflowId { get; set; }
+    public Guid FlowId { get; set; }
     public Guid RoleId { get; set; }
-    public Workflow? Workflow { get; set; }
+    public Flow? Flow { get; set; }
     public Role? Role { get; set; }
     
     public List<Task>? Tasks { get; set; }

@@ -6,7 +6,7 @@ public interface IUnitOfWork : IDisposable
     IResourceRepository ResourceUOW { get; }
     IPermissionRepository PermissionUOW { get; }
     IRoleRepository RoleUOW { get; }
-    IRolePermissionRepository RolePermissionUOW { get; }
-    
+    IRoleResourceRepository RoleResourceUOW { get; }
+   
     Task<int> SaveChangesAsync();
 }

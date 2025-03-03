@@ -10,7 +10,6 @@ public class DocumentDto
     public string? DocumentNumber { get; set; }
     public string? DocumentCode { get; set; }
     public DateTime CreatedDate { get; set; }
-    public DocumentStatus DocumentStatus { get; set; }
     public DocumentPriority DocumentPriority { get; set; }
     public bool IsTemplate { get; set; }
     public bool IsDeleted { get; set; }

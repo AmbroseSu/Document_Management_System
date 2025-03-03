@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using BusinessObject.Enums;
 
 namespace BusinessObject;
 
@@ -8,6 +9,9 @@ public class TaskUser
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     [Key]
     public Guid TaskUserId { get; set; }
+    public int? Order { get; set; }
+    public string? RejectReason { get; set; }
+    public TaskUserStatus TaskUserStatus { get; set; }
     public bool IsCreatedTaskByUser { get; set; }
     
     public Guid TaskId { get; set; }

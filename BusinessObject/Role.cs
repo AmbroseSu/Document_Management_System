@@ -16,7 +16,7 @@ public class Role
     
     public List<TaskUser>? TaskUsers { get; set; }
     public List<UserRole>? UserRoles { get; set; }
-    public List<RolePermission>? RolePermissions { get; set; }
+    public List<RoleResource>? RoleResources { get; set; }
 
     /*public Role()
     {
