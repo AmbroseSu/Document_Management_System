@@ -9,14 +9,14 @@ public class Role
     [Key]
     public Guid RoleId { get; set; }
     public string? RoleName { get; set; }
-    public DateTime CreatedDate { get; set; }
+    public DateTime? CreatedDate { get; set; }
     
-    public Guid StepId { get; set; }
+    public Guid? StepId { get; set; }
     public Step? Step { get; set; }
     
     public List<TaskUser>? TaskUsers { get; set; }
     public List<UserRole>? UserRoles { get; set; }
-    public List<RolePermission>? RolePermissions { get; set; }
+    public List<RoleResource>? RoleResources { get; set; }
 
     /*public Role()
     {

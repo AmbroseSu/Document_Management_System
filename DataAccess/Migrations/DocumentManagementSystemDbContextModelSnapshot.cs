@@ -29,17 +29,59 @@ namespace DataAccess.Migrations
                         .HasColumnType("uuid")
                         .HasDefaultValueSql("gen_random_uuid()");
 
+                    b.Property<string>("ArchivedDocumentContent")
+                        .HasColumnType("text");
+
                     b.Property<string>("ArchivedDocumentName")
                         .HasColumnType("text");
 
+                    b.Property<int>("ArchivedDocumentStatus")
+                        .HasColumnType("integer");
+
                     b.Property<string>("ArchivedDocumentUrl")
+                        .HasColumnType("text");
+
+                    b.Property<string>("CreatedBy")
                         .HasColumnType("text");
 
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<DateTime?>("DateIssued")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("DateReceived")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("DateSented")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("DocumentReplaceId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("DocumentRevokeId")
+                        .HasColumnType("uuid");
+
                     b.Property<Guid>("DocumentTypeId")
                         .HasColumnType("uuid");
+
+                    b.Property<string>("ExternalPartner")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsTemplate")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("NumberOfDocument")
+                        .HasColumnType("text");
+
+                    b.Property<int>("Scope")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Sender")
+                        .HasColumnType("text");
+
+                    b.Property<string>("SignedBy")
+                        .HasColumnType("text");
 
                     b.HasKey("ArchivedDocumentId");
 
@@ -87,9 +129,6 @@ namespace DataAccess.Migrations
                     b.Property<string>("AttachmentDocumentUrl")
                         .HasColumnType("text");
 
-                    b.Property<Guid>("DocumentFileExtensionId")
-                        .HasColumnType("uuid");
-
                     b.Property<Guid>("DocumentId")
                         .HasColumnType("uuid");
 
@@ -97,8 +136,6 @@ namespace DataAccess.Migrations
                         .HasColumnType("boolean");
 
                     b.HasKey("AttachmentDocumentId");
-
-                    b.HasIndex("DocumentFileExtensionId");
 
                     b.HasIndex("DocumentId");
 
@@ -143,9 +180,6 @@ namespace DataAccess.Migrations
                         .HasColumnType("uuid")
                         .HasDefaultValueSql("gen_random_uuid()");
 
-                    b.Property<string>("Description")
-                        .HasColumnType("text");
-
                     b.Property<Guid>("DocumentId")
                         .HasColumnType("uuid");
 
@@ -161,15 +195,7 @@ namespace DataAccess.Migrations
                     b.Property<DateTime>("StartDate")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("Title")
-                        .HasColumnType("text");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
-
                     b.HasKey("DeadlineId");
-
-                    b.HasIndex("UserId");
 
                     b.ToTable("Deadline", (string)null);
                 });
@@ -202,25 +228,22 @@ namespace DataAccess.Migrations
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("DateIssued")
+                        .HasColumnType("text");
+
+                    b.Property<string>("DateReceived")
+                        .HasColumnType("text");
+
                     b.Property<Guid>("DeadlineId")
                         .HasColumnType("uuid");
 
-                    b.Property<string>("DocumentCode")
+                    b.Property<string>("DocumentContent")
                         .HasColumnType("text");
-
-                    b.Property<Guid>("DocumentFileExtensionId")
-                        .HasColumnType("uuid");
 
                     b.Property<string>("DocumentName")
                         .HasColumnType("text");
 
-                    b.Property<string>("DocumentNumber")
-                        .HasColumnType("text");
-
                     b.Property<int>("DocumentPriority")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("DocumentStatus")
                         .HasColumnType("integer");
 
                     b.Property<Guid>("DocumentTypeId")
@@ -229,40 +252,26 @@ namespace DataAccess.Migrations
                     b.Property<string>("DocumentUrl")
                         .HasColumnType("text");
 
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("boolean");
-
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
 
-                    b.Property<bool>("IsTemplate")
-                        .HasColumnType("boolean");
+                    b.Property<string>("NumberOfDocument")
+                        .HasColumnType("text");
+
+                    b.Property<int>("ProcessingStatus")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Sender")
+                        .HasColumnType("text");
+
+                    b.Property<string>("SignedBy")
+                        .HasColumnType("text");
 
                     b.HasKey("DocumentId");
-
-                    b.HasIndex("DocumentFileExtensionId");
 
                     b.HasIndex("DocumentTypeId");
 
                     b.ToTable("Document", (string)null);
-                });
-
-            modelBuilder.Entity("BusinessObject.DocumentFileExtension", b =>
-                {
-                    b.Property<Guid>("DocumentFileExtensionId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasDefaultValueSql("gen_random_uuid()");
-
-                    b.Property<string>("DocumentFileExtensionName")
-                        .HasColumnType("text");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("boolean");
-
-                    b.HasKey("DocumentFileExtensionId");
-
-                    b.ToTable("DocumentFileExtension", (string)null);
                 });
 
             modelBuilder.Entity("BusinessObject.DocumentType", b =>
@@ -281,6 +290,48 @@ namespace DataAccess.Migrations
                     b.HasKey("DocumentTypeId");
 
                     b.ToTable("DocumentType", (string)null);
+                });
+
+            modelBuilder.Entity("BusinessObject.DocumentTypeWorkflow", b =>
+                {
+                    b.Property<Guid>("DocumentTypeWorkflowId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<Guid>("DocumentTypeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("WorkflowId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("DocumentTypeWorkflowId");
+
+                    b.HasIndex("DocumentTypeId");
+
+                    b.HasIndex("WorkflowId");
+
+                    b.ToTable("DocumentTypeWorkflow", (string)null);
+                });
+
+            modelBuilder.Entity("BusinessObject.Flow", b =>
+                {
+                    b.Property<Guid>("FlowId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<int>("FlowNumber")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("WorkflowId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("FlowId");
+
+                    b.HasIndex("WorkflowId");
+
+                    b.ToTable("Flow", (string)null);
                 });
 
             modelBuilder.Entity("BusinessObject.Permission", b =>
@@ -305,10 +356,10 @@ namespace DataAccess.Migrations
                         .HasColumnType("uuid")
                         .HasDefaultValueSql("gen_random_uuid()");
 
-                    b.Property<string>("ResourceApi")
-                        .HasColumnType("text");
+                    b.Property<Guid>("PermissionId")
+                        .HasColumnType("uuid");
 
-                    b.Property<string>("ResourceMethod")
+                    b.Property<string>("ResourceApi")
                         .HasColumnType("text");
 
                     b.Property<string>("ResourceName")
@@ -316,29 +367,9 @@ namespace DataAccess.Migrations
 
                     b.HasKey("ResourceId");
 
+                    b.HasIndex("PermissionId");
+
                     b.ToTable("Resource", (string)null);
-                });
-
-            modelBuilder.Entity("BusinessObject.ResourcePermission", b =>
-                {
-                    b.Property<Guid>("ResourcePermissionId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasDefaultValueSql("gen_random_uuid()");
-
-                    b.Property<Guid>("ResourceId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("RolePermissionId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("ResourcePermissionId");
-
-                    b.HasIndex("ResourceId");
-
-                    b.HasIndex("RolePermissionId");
-
-                    b.ToTable("ResourcePermission", (string)null);
                 });
 
             modelBuilder.Entity("BusinessObject.Role", b =>
@@ -348,13 +379,13 @@ namespace DataAccess.Migrations
                         .HasColumnType("uuid")
                         .HasDefaultValueSql("gen_random_uuid()");
 
-                    b.Property<DateTime>("CreatedDate")
+                    b.Property<DateTime?>("CreatedDate")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("RoleName")
                         .HasColumnType("text");
 
-                    b.Property<Guid>("StepId")
+                    b.Property<Guid?>("StepId")
                         .HasColumnType("uuid");
 
                     b.HasKey("RoleId");
@@ -365,26 +396,28 @@ namespace DataAccess.Migrations
                     b.ToTable("Role", (string)null);
                 });
 
-            modelBuilder.Entity("BusinessObject.RolePermission", b =>
+            modelBuilder.Entity("BusinessObject.RoleResource", b =>
                 {
-                    b.Property<Guid>("RolePermissionId")
+                    b.Property<Guid>("RoleResourceId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasDefaultValueSql("gen_random_uuid()");
+                        .HasColumnType("uuid");
 
-                    b.Property<Guid>("PermissionId")
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid>("ResourceId")
                         .HasColumnType("uuid");
 
                     b.Property<Guid>("RoleId")
                         .HasColumnType("uuid");
 
-                    b.HasKey("RolePermissionId");
+                    b.HasKey("RoleResourceId");
 
-                    b.HasIndex("PermissionId");
+                    b.HasIndex("ResourceId");
 
                     b.HasIndex("RoleId");
 
-                    b.ToTable("RolePermission", (string)null);
+                    b.ToTable("RoleResource", (string)null);
                 });
 
             modelBuilder.Entity("BusinessObject.Step", b =>
@@ -397,6 +430,9 @@ namespace DataAccess.Migrations
                     b.Property<string>("Action")
                         .HasColumnType("text");
 
+                    b.Property<Guid>("FlowId")
+                        .HasColumnType("uuid");
+
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
 
@@ -406,12 +442,9 @@ namespace DataAccess.Migrations
                     b.Property<int>("StepNumber")
                         .HasColumnType("integer");
 
-                    b.Property<Guid>("WorkflowId")
-                        .HasColumnType("uuid");
-
                     b.HasKey("StepId");
 
-                    b.HasIndex("WorkflowId");
+                    b.HasIndex("FlowId");
 
                     b.ToTable("Step", (string)null);
                 });
@@ -475,11 +508,20 @@ namespace DataAccess.Migrations
                     b.Property<bool>("IsCreatedTaskByUser")
                         .HasColumnType("boolean");
 
+                    b.Property<int?>("Order")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("RejectReason")
+                        .HasColumnType("text");
+
                     b.Property<Guid>("RoleId")
                         .HasColumnType("uuid");
 
                     b.Property<Guid>("TaskId")
                         .HasColumnType("uuid");
+
+                    b.Property<int>("TaskUserStatus")
+                        .HasColumnType("integer");
 
                     b.Property<Guid>("UserId")
                         .HasColumnType("uuid");
@@ -511,6 +553,9 @@ namespace DataAccess.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<DateTime>("DateOfBirth")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<Guid?>("DivisionId")
                         .HasColumnType("uuid");
 
@@ -536,6 +581,12 @@ namespace DataAccess.Migrations
                         .HasColumnType("text");
 
                     b.Property<string>("PhoneNumber")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Position")
+                        .HasColumnType("text");
+
+                    b.Property<string>("SignatureImage")
                         .HasColumnType("text");
 
                     b.Property<DateTime>("UpdatedAt")
@@ -672,15 +723,16 @@ namespace DataAccess.Migrations
                         .HasColumnType("uuid")
                         .HasDefaultValueSql("gen_random_uuid()");
 
-                    b.Property<Guid>("DocumentTypeId")
-                        .HasColumnType("uuid");
+                    b.Property<bool>("IsAllocate")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("Scope")
+                        .HasColumnType("integer");
 
                     b.Property<string>("WorkflowName")
                         .HasColumnType("text");
 
                     b.HasKey("WorkflowId");
-
-                    b.HasIndex("DocumentTypeId");
 
                     b.ToTable("Workflow", (string)null);
                 });
@@ -709,12 +761,6 @@ namespace DataAccess.Migrations
 
             modelBuilder.Entity("BusinessObject.AttachmentDocument", b =>
                 {
-                    b.HasOne("BusinessObject.DocumentFileExtension", "DocumentFileExtension")
-                        .WithMany("AttachmentDocuments")
-                        .HasForeignKey("DocumentFileExtensionId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("BusinessObject.Document", "Document")
                         .WithMany("AttachmentDocuments")
                         .HasForeignKey("DocumentId")
@@ -722,8 +768,6 @@ namespace DataAccess.Migrations
                         .IsRequired();
 
                     b.Navigation("Document");
-
-                    b.Navigation("DocumentFileExtension");
                 });
 
             modelBuilder.Entity("BusinessObject.Comment", b =>
@@ -753,94 +797,98 @@ namespace DataAccess.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("BusinessObject.User", "User")
-                        .WithMany("Deadlines")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.Navigation("Document");
-
-                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("BusinessObject.Document", b =>
                 {
-                    b.HasOne("BusinessObject.DocumentFileExtension", "DocumentFileExtension")
-                        .WithMany("Documents")
-                        .HasForeignKey("DocumentFileExtensionId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("BusinessObject.DocumentType", "DocumentType")
                         .WithMany("Documents")
                         .HasForeignKey("DocumentTypeId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("DocumentFileExtension");
-
                     b.Navigation("DocumentType");
                 });
 
-            modelBuilder.Entity("BusinessObject.ResourcePermission", b =>
+            modelBuilder.Entity("BusinessObject.DocumentTypeWorkflow", b =>
                 {
-                    b.HasOne("BusinessObject.Resource", "Resource")
-                        .WithMany("ResourcePermissions")
-                        .HasForeignKey("ResourceId")
+                    b.HasOne("BusinessObject.DocumentType", "DocumentType")
+                        .WithMany("DocumentTypeWorkflows")
+                        .HasForeignKey("DocumentTypeId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("BusinessObject.RolePermission", "RolePermission")
-                        .WithMany("ResourcePermissions")
-                        .HasForeignKey("RolePermissionId")
+                    b.HasOne("BusinessObject.Workflow", "Workflow")
+                        .WithMany("DocumentTypeWorkflows")
+                        .HasForeignKey("WorkflowId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Resource");
+                    b.Navigation("DocumentType");
 
-                    b.Navigation("RolePermission");
+                    b.Navigation("Workflow");
+                });
+
+            modelBuilder.Entity("BusinessObject.Flow", b =>
+                {
+                    b.HasOne("BusinessObject.Workflow", "Workflow")
+                        .WithMany("Flows")
+                        .HasForeignKey("WorkflowId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Workflow");
+                });
+
+            modelBuilder.Entity("BusinessObject.Resource", b =>
+                {
+                    b.HasOne("BusinessObject.Permission", "Permission")
+                        .WithMany("Resources")
+                        .HasForeignKey("PermissionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Permission");
                 });
 
             modelBuilder.Entity("BusinessObject.Role", b =>
                 {
                     b.HasOne("BusinessObject.Step", "Step")
                         .WithOne("Role")
-                        .HasForeignKey("BusinessObject.Role", "StepId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("BusinessObject.Role", "StepId");
 
                     b.Navigation("Step");
                 });
 
-            modelBuilder.Entity("BusinessObject.RolePermission", b =>
+            modelBuilder.Entity("BusinessObject.RoleResource", b =>
                 {
-                    b.HasOne("BusinessObject.Permission", "Permission")
-                        .WithMany("RolePermissions")
-                        .HasForeignKey("PermissionId")
+                    b.HasOne("BusinessObject.Resource", "Resource")
+                        .WithMany("RoleResources")
+                        .HasForeignKey("ResourceId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("BusinessObject.Role", "Role")
-                        .WithMany("RolePermissions")
+                        .WithMany("RoleResources")
                         .HasForeignKey("RoleId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Permission");
+                    b.Navigation("Resource");
 
                     b.Navigation("Role");
                 });
 
             modelBuilder.Entity("BusinessObject.Step", b =>
                 {
-                    b.HasOne("BusinessObject.Workflow", "Workflow")
+                    b.HasOne("BusinessObject.Flow", "Flow")
                         .WithMany("Steps")
-                        .HasForeignKey("WorkflowId")
+                        .HasForeignKey("FlowId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Workflow");
+                    b.Navigation("Flow");
                 });
 
             modelBuilder.Entity("BusinessObject.Task", b =>
@@ -974,17 +1022,6 @@ namespace DataAccess.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("BusinessObject.Workflow", b =>
-                {
-                    b.HasOne("BusinessObject.DocumentType", "DocumentType")
-                        .WithMany("Workflows")
-                        .HasForeignKey("DocumentTypeId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("DocumentType");
-                });
-
             modelBuilder.Entity("BusinessObject.ArchivedDocument", b =>
                 {
                     b.Navigation("AttachmentArchivedDocuments");
@@ -1008,46 +1045,39 @@ namespace DataAccess.Migrations
                     b.Navigation("UserDocuments");
                 });
 
-            modelBuilder.Entity("BusinessObject.DocumentFileExtension", b =>
-                {
-                    b.Navigation("AttachmentDocuments");
-
-                    b.Navigation("Documents");
-                });
-
             modelBuilder.Entity("BusinessObject.DocumentType", b =>
                 {
                     b.Navigation("ArchivedDocuments");
 
-                    b.Navigation("Documents");
+                    b.Navigation("DocumentTypeWorkflows");
 
-                    b.Navigation("Workflows");
+                    b.Navigation("Documents");
+                });
+
+            modelBuilder.Entity("BusinessObject.Flow", b =>
+                {
+                    b.Navigation("Steps");
                 });
 
             modelBuilder.Entity("BusinessObject.Permission", b =>
                 {
-                    b.Navigation("RolePermissions");
+                    b.Navigation("Resources");
 
                     b.Navigation("UserDocumentPermissions");
                 });
 
             modelBuilder.Entity("BusinessObject.Resource", b =>
                 {
-                    b.Navigation("ResourcePermissions");
+                    b.Navigation("RoleResources");
                 });
 
             modelBuilder.Entity("BusinessObject.Role", b =>
                 {
-                    b.Navigation("RolePermissions");
+                    b.Navigation("RoleResources");
 
                     b.Navigation("TaskUsers");
 
                     b.Navigation("UserRoles");
-                });
-
-            modelBuilder.Entity("BusinessObject.RolePermission", b =>
-                {
-                    b.Navigation("ResourcePermissions");
                 });
 
             modelBuilder.Entity("BusinessObject.Step", b =>
@@ -1068,8 +1098,6 @@ namespace DataAccess.Migrations
                 {
                     b.Navigation("Comments");
 
-                    b.Navigation("Deadlines");
-
                     b.Navigation("TaskUsers");
 
                     b.Navigation("UserDocumentPermissions");
@@ -1083,7 +1111,9 @@ namespace DataAccess.Migrations
 
             modelBuilder.Entity("BusinessObject.Workflow", b =>
                 {
-                    b.Navigation("Steps");
+                    b.Navigation("DocumentTypeWorkflows");
+
+                    b.Navigation("Flows");
                 });
 #pragma warning restore 612, 618
         }

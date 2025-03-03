@@ -10,7 +10,7 @@ public class Permission
     public Guid PermissionId { get; set; }
     public string? PermissionName { get; set; }
     
-    public List<RolePermission>? RolePermissions { get; set; }
+    public List<Resource>? Resources { get; set; }
     public List<UserDocumentPermission>? UserDocumentPermissions { get; set; }
 
     /*public Permission()

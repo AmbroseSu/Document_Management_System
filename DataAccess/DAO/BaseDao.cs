@@ -62,7 +62,7 @@ public class BaseDao<T> where T : class
         if (entity == null) throw new ArgumentNullException(nameof(entity));
         //using var context = new DocumentManagementSystemDbContext();
         _context.Set<T>().Update(entity);
-        await _context.SaveChangesAsync();
+        //await _context.SaveChangesAsync();
     }
     public async Task<IEnumerable<T>> GetAllAsync()
     {

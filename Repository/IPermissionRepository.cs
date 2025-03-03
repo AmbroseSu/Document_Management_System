@@ -10,5 +10,6 @@ public interface IPermissionRepository
     Task<IEnumerable<Permission>> GetAllAsync();
     Task AddAsync(Permission permission);
     Task<Permission?> FindPermissionByNameAsync(string permissionName);
-    
+    Task<Permission?> FindPermissionByIdAsync(Guid? permissionId);
+
 }
