@@ -10,6 +10,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Service", "Service\Service.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DocumentManagementSystemApplication", "DocumentManagementSystemApplication\DocumentManagementSystemApplication.csproj", "{F53DBBE9-7133-422B-963C-268172BAF01A}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestProject", "TestProject\TestProject.csproj", "{30E88AE2-A741-4A7E-B6FB-AC94223F68EC}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -36,5 +38,9 @@ Global
 		{F53DBBE9-7133-422B-963C-268172BAF01A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F53DBBE9-7133-422B-963C-268172BAF01A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F53DBBE9-7133-422B-963C-268172BAF01A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{30E88AE2-A741-4A7E-B6FB-AC94223F68EC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{30E88AE2-A741-4A7E-B6FB-AC94223F68EC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{30E88AE2-A741-4A7E-B6FB-AC94223F68EC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{30E88AE2-A741-4A7E-B6FB-AC94223F68EC}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

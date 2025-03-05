@@ -51,4 +51,10 @@ public class UserRepository : IUserRepository
         return await _userDao.FindAsync(u => true,
             u => u.Include(d => d.Division).Include(ur => ur.UserRoles).ThenInclude(r => r.Role));
     }
+
+    public Task AddRangeAsync(List<User> users)
+    {
+        if (users == null) throw new ArgumentNullException(nameof(users));
+        return _userDao.AddRangeAsync(users);
+    }
 }
