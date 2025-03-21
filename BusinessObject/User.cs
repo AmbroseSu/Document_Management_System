@@ -21,21 +21,20 @@ public class User
     public DateTime UpdatedAt { get; set; }
     public string? FcmToken { get; set; }
     public string? Position { get; set; }
-    public string? SignatureImage { get; set; }
     public DateTime DateOfBirth { get; set; }
     public bool IsDeleted { get; set; }
     public bool IsEnable { get; set; }
     
     public Guid? DivisionId { get; set; }
     public Division? Division { get; set; }
-    public int VerificationOtpId { get; set; }
-    public VerificationOtp? VerificationOtp { get; set; }
     
-    public List<TaskUser>? TaskUsers { get; set; }
+    public List<VerificationOtp>? VerificationOtps { get; set; }
     public List<Comment>? Comments { get; set; }
-    public List<UserDocument>? UserDocuments { get; set; }
     public List<UserDocumentPermission>? UserDocumentPermissions { get; set; }
     public List<UserRole>? UserRoles { get; set; }
+    public List<Task>? Tasks { get; set; }
+    public List<Document>? Documents { get; set; }
+    public List<DigitalCertificate>? DigitalCertificates { get; set; }
 
     /*public User()
     {

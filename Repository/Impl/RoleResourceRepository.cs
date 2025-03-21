@@ -38,4 +38,10 @@ public class RoleResourceRepository : IRoleResourceRepository
         if (roleResourceId == null) throw new ArgumentNullException(nameof(roleResourceId));
         return await _roleResourceDao.FindByAsync(rr => rr.RoleResourceId == roleResourceId);
     }
+
+    public async Task<IEnumerable<RoleResource>> FindRoleResourcesByRoleIdAsync(Guid? roleId)
+    {
+        if (roleId == null) throw new ArgumentNullException(nameof(roleId));
+        return await _roleResourceDao.FindAsync(p => p.RoleId == roleId && p.IsDeleted == false);
+    }
 }

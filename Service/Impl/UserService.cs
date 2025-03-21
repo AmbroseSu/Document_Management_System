@@ -9,6 +9,7 @@ using DataAccess.DTO.Request;
 using Npgsql.Replication;
 using Repository;
 using Service.Response;
+using Service.Utilities;
 
 namespace Service.Impl;
 
@@ -41,10 +42,10 @@ public class UserService : IUserService
                 return ResponseUtil.Error(ResponseMessages.EmailAlreadyExists, ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
             }
             //var emailAttribute = new EmailAddressAttribute();
-            if (IsValidEmail(userRequest.Email))
+            /*if (IsValidEmail(userRequest.Email))
             {
                 return ResponseUtil.Error(ResponseMessages.InvalidEmailFormat, ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
-            }
+            }*/
             User? userExistUserName = await _unitOfWork.UserUOW.FindUserByUserName(userRequest.UserName);
             if (userExistUserName != null)
             {
@@ -52,7 +53,7 @@ public class UserService : IUserService
             }
             
             User user = _mapper.Map<User>(userRequest);
-            user.Password = BCrypt.Net.BCrypt.HashPassword(GenerateRandomString(8));
+            user.Password = BCrypt.Net.BCrypt.HashPassword("Hieu1234");
             user.PhoneNumber = "0123456789";
             user.IsDeleted = false;
             user.IsEnable = false;
@@ -60,8 +61,20 @@ public class UserService : IUserService
             var saveChange = await _unitOfWork.SaveChangesAsync();
             if (saveChange > 0)
             {
-                var result = _mapper.Map<UserDto>(user);
-                return ResponseUtil.GetObject(result, ResponseMessages.CreatedSuccessfully, HttpStatusCode.Created, 1);
+                UserRole userRole = new UserRole();
+                userRole.UserId = user.UserId;
+                userRole.RoleId = userRequest.RoleId;
+                await _unitOfWork.UserRoleUOW.AddAsync(userRole);
+                var saveChange1 = await _unitOfWork.SaveChangesAsync();
+                if (saveChange1 > 0)
+                {
+                    var result = _mapper.Map<UserDto>(user);
+                    return ResponseUtil.GetObject(result, ResponseMessages.CreatedSuccessfully, HttpStatusCode.Created, 1);
+                }
+                else
+                {
+                    return ResponseUtil.Error(ResponseMessages.FailedToSaveData, ResponseMessages.OperationFailed, HttpStatusCode.InternalServerError);
+                }
             }
             else
             {

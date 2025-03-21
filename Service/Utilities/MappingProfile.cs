@@ -95,7 +95,8 @@ public class MappingProfile : Profile
         
         CreateMap<User, UserDto>();
         CreateMap<UserDto, User>();
-        CreateMap<User, UserRequest>();
+        CreateMap<User, UserRequest>()
+            .ForMember(dest => dest.RoleId, opt => opt.Ignore());
         CreateMap<UserRequest, User>();
         CreateMap<Permission, PermissionDto>();
         CreateMap<PermissionDto, Permission>();

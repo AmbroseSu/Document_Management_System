@@ -12,7 +12,6 @@ public class DocumentType
     public bool IsDeleted { get; set; }
     
     public List<DocumentTypeWorkflow>? DocumentTypeWorkflows { get; set; }
-    public List<Document>? Documents { get; set; }
     public List<ArchivedDocument>? ArchivedDocuments { get; set; }
 
     /*public DocumentType()

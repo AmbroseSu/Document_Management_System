@@ -11,6 +11,7 @@ public class VerificationOtp
     public string? Otp { get; set; }
     public DateTime ExpirationTime { get; set; }
     public bool IsTrue { get; set; }
+    public bool IsDeleted { get; set; }
     
     private const int EXPIRATION_TIME_MINUTES = 2;
     

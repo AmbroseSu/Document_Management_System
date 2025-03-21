@@ -3,7 +3,7 @@ using System.Text;
 using DataAccess.DTO;
 using Newtonsoft.Json;
 
-namespace Service.Response;
+namespace Service.Utilities;
 
 public class ResponseUtil
 {

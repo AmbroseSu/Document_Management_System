@@ -68,4 +68,11 @@ public class ResourceRepository : IResourceRepository
         if (resourceApi == null) throw new ArgumentNullException(nameof(resourceApi));
         return await _resourceDao.FindByAsync(p => p.ResourceApi == resourceApi);
     }
+    
+    public async Task<Resource?> FindResourceByIdAsync(Guid? resourceId)
+    {
+        if (resourceId == null) throw new ArgumentNullException(nameof(resourceId));
+        return await _resourceDao.FindByAsync(p => p.ResourceId == resourceId);
+    }
+    
 }

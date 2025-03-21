@@ -22,6 +22,41 @@ namespace DataAccess.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("BusinessObject.ArchiveDocumentSignature", b =>
+                {
+                    b.Property<Guid>("ArchiveDocumentSignatureId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<Guid>("ArchivedDocumentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("DigitalCertificateId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("OrderIndex")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("SignatureValue")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("SignedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("ValidFrom")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("ArchiveDocumentSignatureId");
+
+                    b.HasIndex("ArchivedDocumentId");
+
+                    b.HasIndex("DigitalCertificateId");
+
+                    b.ToTable("ArchiveDocumentSignature", (string)null);
+                });
+
             modelBuilder.Entity("BusinessObject.ArchivedDocument", b =>
                 {
                     b.Property<Guid>("ArchivedDocumentId")
@@ -68,6 +103,9 @@ namespace DataAccess.Migrations
                     b.Property<string>("ExternalPartner")
                         .HasColumnType("text");
 
+                    b.Property<Guid>("FinalDocumentId")
+                        .HasColumnType("uuid");
+
                     b.Property<bool>("IsTemplate")
                         .HasColumnType("boolean");
 
@@ -84,6 +122,10 @@ namespace DataAccess.Migrations
                         .HasColumnType("text");
 
                     b.HasKey("ArchivedDocumentId");
+
+                    b.HasIndex("DocumentReplaceId");
+
+                    b.HasIndex("DocumentRevokeId");
 
                     b.HasIndex("DocumentTypeId");
 
@@ -173,31 +215,48 @@ namespace DataAccess.Migrations
                     b.ToTable("Comment", (string)null);
                 });
 
-            modelBuilder.Entity("BusinessObject.Deadline", b =>
+            modelBuilder.Entity("BusinessObject.DigitalCertificate", b =>
                 {
-                    b.Property<Guid>("DeadlineId")
+                    b.Property<Guid>("DigitalCertificateId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
                         .HasDefaultValueSql("gen_random_uuid()");
 
-                    b.Property<Guid>("DocumentId")
-                        .HasColumnType("uuid");
+                    b.Property<string>("HashAlgorithm")
+                        .HasColumnType("text");
 
-                    b.Property<DateTime>("EndDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<bool>("IsDeleted")
+                    b.Property<bool>("IsRevoked")
                         .HasColumnType("boolean");
 
-                    b.Property<DateTime>("ReminderDate")
+                    b.Property<string>("Issuer")
+                        .HasColumnType("text");
+
+                    b.Property<string>("OwnerName")
+                        .HasColumnType("text");
+
+                    b.Property<string>("PublicKey")
+                        .HasColumnType("text");
+
+                    b.Property<string>("SerialNumber")
+                        .HasColumnType("text");
+
+                    b.Property<string>("SignatureImageUrl")
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("ValidFrom")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<DateTime>("StartDate")
+                    b.Property<DateTime>("ValidTo")
                         .HasColumnType("timestamp with time zone");
 
-                    b.HasKey("DeadlineId");
+                    b.HasKey("DigitalCertificateId");
 
-                    b.ToTable("Deadline", (string)null);
+                    b.HasIndex("UserId");
+
+                    b.ToTable("DigitalCertificate", (string)null);
                 });
 
             modelBuilder.Entity("BusinessObject.Division", b =>
@@ -234,8 +293,8 @@ namespace DataAccess.Migrations
                     b.Property<string>("DateReceived")
                         .HasColumnType("text");
 
-                    b.Property<Guid>("DeadlineId")
-                        .HasColumnType("uuid");
+                    b.Property<DateTime>("Deadline")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("DocumentContent")
                         .HasColumnType("text");
@@ -246,11 +305,14 @@ namespace DataAccess.Migrations
                     b.Property<int>("DocumentPriority")
                         .HasColumnType("integer");
 
-                    b.Property<Guid>("DocumentTypeId")
+                    b.Property<Guid?>("DocumentTypeWorkflowId")
                         .HasColumnType("uuid");
 
                     b.Property<string>("DocumentUrl")
                         .HasColumnType("text");
+
+                    b.Property<Guid?>("FinalArchiveDocumentId")
+                        .HasColumnType("uuid");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
@@ -267,11 +329,59 @@ namespace DataAccess.Migrations
                     b.Property<string>("SignedBy")
                         .HasColumnType("text");
 
+                    b.Property<Guid?>("TemplateArchiveDocumentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
                     b.HasKey("DocumentId");
 
-                    b.HasIndex("DocumentTypeId");
+                    b.HasIndex("DocumentTypeWorkflowId");
+
+                    b.HasIndex("FinalArchiveDocumentId")
+                        .IsUnique();
+
+                    b.HasIndex("TemplateArchiveDocumentId");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("Document", (string)null);
+                });
+
+            modelBuilder.Entity("BusinessObject.DocumentSignature", b =>
+                {
+                    b.Property<Guid>("DocumentSignatureId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<Guid>("DigitalCertificateId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("DocumentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("OrderIndex")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("SignatureValue")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("SignedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("ValidFrom")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("DocumentSignatureId");
+
+                    b.HasIndex("DigitalCertificateId");
+
+                    b.HasIndex("DocumentId");
+
+                    b.ToTable("DocumentSignature", (string)null);
                 });
 
             modelBuilder.Entity("BusinessObject.DocumentType", b =>
@@ -312,6 +422,35 @@ namespace DataAccess.Migrations
                     b.HasIndex("WorkflowId");
 
                     b.ToTable("DocumentTypeWorkflow", (string)null);
+                });
+
+            modelBuilder.Entity("BusinessObject.DocumentVersion", b =>
+                {
+                    b.Property<Guid>("DocumentVersionId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<DateTime>("CreateDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("DocumentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("DocumentVersionUrl")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsFinalVersion")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("VersionNumber")
+                        .HasColumnType("text");
+
+                    b.HasKey("DocumentVersionId");
+
+                    b.HasIndex("DocumentId");
+
+                    b.ToTable("DocumentVersion", (string)null);
                 });
 
             modelBuilder.Entity("BusinessObject.Flow", b =>
@@ -385,13 +524,7 @@ namespace DataAccess.Migrations
                     b.Property<string>("RoleName")
                         .HasColumnType("text");
 
-                    b.Property<Guid?>("StepId")
-                        .HasColumnType("uuid");
-
                     b.HasKey("RoleId");
-
-                    b.HasIndex("StepId")
-                        .IsUnique();
 
                     b.ToTable("Role", (string)null);
                 });
@@ -446,6 +579,8 @@ namespace DataAccess.Migrations
 
                     b.HasIndex("FlowId");
 
+                    b.HasIndex("RoleId");
+
                     b.ToTable("Step", (string)null);
                 });
 
@@ -489,52 +624,18 @@ namespace DataAccess.Migrations
                     b.Property<string>("Title")
                         .HasColumnType("text");
 
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
                     b.HasKey("TaskId");
 
                     b.HasIndex("DocumentId");
 
                     b.HasIndex("StepId");
 
-                    b.ToTable("Task", (string)null);
-                });
-
-            modelBuilder.Entity("BusinessObject.TaskUser", b =>
-                {
-                    b.Property<Guid>("TaskUserId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasDefaultValueSql("gen_random_uuid()");
-
-                    b.Property<bool>("IsCreatedTaskByUser")
-                        .HasColumnType("boolean");
-
-                    b.Property<int?>("Order")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("RejectReason")
-                        .HasColumnType("text");
-
-                    b.Property<Guid>("RoleId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("TaskId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("TaskUserStatus")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("TaskUserId");
-
-                    b.HasIndex("RoleId");
-
-                    b.HasIndex("TaskId");
-
                     b.HasIndex("UserId");
 
-                    b.ToTable("TaskUser", (string)null);
+                    b.ToTable("Task", (string)null);
                 });
 
             modelBuilder.Entity("BusinessObject.User", b =>
@@ -586,48 +687,17 @@ namespace DataAccess.Migrations
                     b.Property<string>("Position")
                         .HasColumnType("text");
 
-                    b.Property<string>("SignatureImage")
-                        .HasColumnType("text");
-
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("UserName")
                         .HasColumnType("text");
 
-                    b.Property<int>("VerificationOtpId")
-                        .HasColumnType("integer");
-
                     b.HasKey("UserId");
 
                     b.HasIndex("DivisionId");
 
                     b.ToTable("User", (string)null);
-                });
-
-            modelBuilder.Entity("BusinessObject.UserDocument", b =>
-                {
-                    b.Property<Guid>("UserDocumentId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasDefaultValueSql("gen_random_uuid()");
-
-                    b.Property<Guid>("DocumentId")
-                        .HasColumnType("uuid");
-
-                    b.Property<bool>("IsCreatedDocumentByUser")
-                        .HasColumnType("boolean");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("UserDocumentId");
-
-                    b.HasIndex("DocumentId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("UserDocument", (string)null);
                 });
 
             modelBuilder.Entity("BusinessObject.UserDocumentPermission", b =>
@@ -646,17 +716,12 @@ namespace DataAccess.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
 
-                    b.Property<Guid>("PermissionId")
-                        .HasColumnType("uuid");
-
                     b.Property<Guid>("UserId")
                         .HasColumnType("uuid");
 
                     b.HasKey("UserDocumentPermissionId");
 
                     b.HasIndex("ArchivedDocumentId");
-
-                    b.HasIndex("PermissionId");
 
                     b.HasIndex("UserId");
 
@@ -699,6 +764,9 @@ namespace DataAccess.Migrations
                     b.Property<DateTime>("ExpirationTime")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
                     b.Property<bool>("IsTrue")
                         .HasColumnType("boolean");
 
@@ -710,8 +778,7 @@ namespace DataAccess.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("UserId")
-                        .IsUnique();
+                    b.HasIndex("UserId");
 
                     b.ToTable("VerificationOtp", (string)null);
                 });
@@ -737,8 +804,35 @@ namespace DataAccess.Migrations
                     b.ToTable("Workflow", (string)null);
                 });
 
+            modelBuilder.Entity("BusinessObject.ArchiveDocumentSignature", b =>
+                {
+                    b.HasOne("BusinessObject.ArchivedDocument", "ArchivedDocument")
+                        .WithMany("ArchiveDocumentSignatures")
+                        .HasForeignKey("ArchivedDocumentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("BusinessObject.DigitalCertificate", "DigitalCertificate")
+                        .WithMany("ArchiveDocumentSignatures")
+                        .HasForeignKey("DigitalCertificateId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ArchivedDocument");
+
+                    b.Navigation("DigitalCertificate");
+                });
+
             modelBuilder.Entity("BusinessObject.ArchivedDocument", b =>
                 {
+                    b.HasOne("BusinessObject.ArchivedDocument", null)
+                        .WithMany("DocumentRevokes")
+                        .HasForeignKey("DocumentReplaceId");
+
+                    b.HasOne("BusinessObject.ArchivedDocument", null)
+                        .WithMany("DocumentReplaces")
+                        .HasForeignKey("DocumentRevokeId");
+
                     b.HasOne("BusinessObject.DocumentType", "DocumentType")
                         .WithMany("ArchivedDocuments")
                         .HasForeignKey("DocumentTypeId")
@@ -789,26 +883,63 @@ namespace DataAccess.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("BusinessObject.Deadline", b =>
+            modelBuilder.Entity("BusinessObject.DigitalCertificate", b =>
                 {
-                    b.HasOne("BusinessObject.Document", "Document")
-                        .WithOne("Deadline")
-                        .HasForeignKey("BusinessObject.Deadline", "DeadlineId")
+                    b.HasOne("BusinessObject.User", "User")
+                        .WithMany("DigitalCertificates")
+                        .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Document");
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("BusinessObject.Document", b =>
                 {
-                    b.HasOne("BusinessObject.DocumentType", "DocumentType")
+                    b.HasOne("BusinessObject.DocumentTypeWorkflow", "DocumentTypeWorkflow")
                         .WithMany("Documents")
-                        .HasForeignKey("DocumentTypeId")
+                        .HasForeignKey("DocumentTypeWorkflowId");
+
+                    b.HasOne("BusinessObject.ArchivedDocument", "FinalArchiveDocument")
+                        .WithOne("FinalDocument")
+                        .HasForeignKey("BusinessObject.Document", "FinalArchiveDocumentId");
+
+                    b.HasOne("BusinessObject.ArchivedDocument", "TemplateArchiveDocument")
+                        .WithMany("CreateDocuments")
+                        .HasForeignKey("TemplateArchiveDocumentId");
+
+                    b.HasOne("BusinessObject.User", "User")
+                        .WithMany("Documents")
+                        .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("DocumentType");
+                    b.Navigation("DocumentTypeWorkflow");
+
+                    b.Navigation("FinalArchiveDocument");
+
+                    b.Navigation("TemplateArchiveDocument");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("BusinessObject.DocumentSignature", b =>
+                {
+                    b.HasOne("BusinessObject.DigitalCertificate", "DigitalCertificate")
+                        .WithMany("DocumentSignatures")
+                        .HasForeignKey("DigitalCertificateId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("BusinessObject.Document", "Document")
+                        .WithMany("DocumentSignatures")
+                        .HasForeignKey("DocumentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("DigitalCertificate");
+
+                    b.Navigation("Document");
                 });
 
             modelBuilder.Entity("BusinessObject.DocumentTypeWorkflow", b =>
@@ -828,6 +959,17 @@ namespace DataAccess.Migrations
                     b.Navigation("DocumentType");
 
                     b.Navigation("Workflow");
+                });
+
+            modelBuilder.Entity("BusinessObject.DocumentVersion", b =>
+                {
+                    b.HasOne("BusinessObject.Document", "Document")
+                        .WithMany("DocumentVersions")
+                        .HasForeignKey("DocumentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Document");
                 });
 
             modelBuilder.Entity("BusinessObject.Flow", b =>
@@ -850,15 +992,6 @@ namespace DataAccess.Migrations
                         .IsRequired();
 
                     b.Navigation("Permission");
-                });
-
-            modelBuilder.Entity("BusinessObject.Role", b =>
-                {
-                    b.HasOne("BusinessObject.Step", "Step")
-                        .WithOne("Role")
-                        .HasForeignKey("BusinessObject.Role", "StepId");
-
-                    b.Navigation("Step");
                 });
 
             modelBuilder.Entity("BusinessObject.RoleResource", b =>
@@ -888,7 +1021,15 @@ namespace DataAccess.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("BusinessObject.Role", "Role")
+                        .WithMany("Steps")
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.Navigation("Flow");
+
+                    b.Navigation("Role");
                 });
 
             modelBuilder.Entity("BusinessObject.Task", b =>
@@ -905,34 +1046,15 @@ namespace DataAccess.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Document");
-
-                    b.Navigation("Step");
-                });
-
-            modelBuilder.Entity("BusinessObject.TaskUser", b =>
-                {
-                    b.HasOne("BusinessObject.Role", "Role")
-                        .WithMany("TaskUsers")
-                        .HasForeignKey("RoleId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("BusinessObject.Task", "Task")
-                        .WithMany("TaskUsers")
-                        .HasForeignKey("TaskId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("BusinessObject.User", "User")
-                        .WithMany("TaskUsers")
+                        .WithMany("Tasks")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Role");
+                    b.Navigation("Document");
 
-                    b.Navigation("Task");
+                    b.Navigation("Step");
 
                     b.Navigation("User");
                 });
@@ -946,36 +1068,11 @@ namespace DataAccess.Migrations
                     b.Navigation("Division");
                 });
 
-            modelBuilder.Entity("BusinessObject.UserDocument", b =>
-                {
-                    b.HasOne("BusinessObject.Document", "Document")
-                        .WithMany("UserDocuments")
-                        .HasForeignKey("DocumentId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("BusinessObject.User", "User")
-                        .WithMany("UserDocuments")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Document");
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("BusinessObject.UserDocumentPermission", b =>
                 {
                     b.HasOne("BusinessObject.ArchivedDocument", "ArchivedDocument")
                         .WithMany("UserDocumentPermissions")
                         .HasForeignKey("ArchivedDocumentId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("BusinessObject.Permission", "Permission")
-                        .WithMany("UserDocumentPermissions")
-                        .HasForeignKey("PermissionId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -986,8 +1083,6 @@ namespace DataAccess.Migrations
                         .IsRequired();
 
                     b.Navigation("ArchivedDocument");
-
-                    b.Navigation("Permission");
 
                     b.Navigation("User");
                 });
@@ -1014,8 +1109,8 @@ namespace DataAccess.Migrations
             modelBuilder.Entity("BusinessObject.VerificationOtp", b =>
                 {
                     b.HasOne("BusinessObject.User", "User")
-                        .WithOne("VerificationOtp")
-                        .HasForeignKey("BusinessObject.VerificationOtp", "UserId")
+                        .WithMany("VerificationOtps")
+                        .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -1024,9 +1119,26 @@ namespace DataAccess.Migrations
 
             modelBuilder.Entity("BusinessObject.ArchivedDocument", b =>
                 {
+                    b.Navigation("ArchiveDocumentSignatures");
+
                     b.Navigation("AttachmentArchivedDocuments");
 
+                    b.Navigation("CreateDocuments");
+
+                    b.Navigation("DocumentReplaces");
+
+                    b.Navigation("DocumentRevokes");
+
+                    b.Navigation("FinalDocument");
+
                     b.Navigation("UserDocumentPermissions");
+                });
+
+            modelBuilder.Entity("BusinessObject.DigitalCertificate", b =>
+                {
+                    b.Navigation("ArchiveDocumentSignatures");
+
+                    b.Navigation("DocumentSignatures");
                 });
 
             modelBuilder.Entity("BusinessObject.Division", b =>
@@ -1038,11 +1150,11 @@ namespace DataAccess.Migrations
                 {
                     b.Navigation("AttachmentDocuments");
 
-                    b.Navigation("Deadline");
+                    b.Navigation("DocumentSignatures");
+
+                    b.Navigation("DocumentVersions");
 
                     b.Navigation("Tasks");
-
-                    b.Navigation("UserDocuments");
                 });
 
             modelBuilder.Entity("BusinessObject.DocumentType", b =>
@@ -1050,7 +1162,10 @@ namespace DataAccess.Migrations
                     b.Navigation("ArchivedDocuments");
 
                     b.Navigation("DocumentTypeWorkflows");
+                });
 
+            modelBuilder.Entity("BusinessObject.DocumentTypeWorkflow", b =>
+                {
                     b.Navigation("Documents");
                 });
 
@@ -1062,8 +1177,6 @@ namespace DataAccess.Migrations
             modelBuilder.Entity("BusinessObject.Permission", b =>
                 {
                     b.Navigation("Resources");
-
-                    b.Navigation("UserDocumentPermissions");
                 });
 
             modelBuilder.Entity("BusinessObject.Resource", b =>
@@ -1075,38 +1188,36 @@ namespace DataAccess.Migrations
                 {
                     b.Navigation("RoleResources");
 
-                    b.Navigation("TaskUsers");
+                    b.Navigation("Steps");
 
                     b.Navigation("UserRoles");
                 });
 
             modelBuilder.Entity("BusinessObject.Step", b =>
                 {
-                    b.Navigation("Role");
-
                     b.Navigation("Tasks");
                 });
 
             modelBuilder.Entity("BusinessObject.Task", b =>
                 {
                     b.Navigation("Comments");
-
-                    b.Navigation("TaskUsers");
                 });
 
             modelBuilder.Entity("BusinessObject.User", b =>
                 {
                     b.Navigation("Comments");
 
-                    b.Navigation("TaskUsers");
+                    b.Navigation("DigitalCertificates");
+
+                    b.Navigation("Documents");
+
+                    b.Navigation("Tasks");
 
                     b.Navigation("UserDocumentPermissions");
 
-                    b.Navigation("UserDocuments");
-
                     b.Navigation("UserRoles");
 
-                    b.Navigation("VerificationOtp");
+                    b.Navigation("VerificationOtps");
                 });
 
             modelBuilder.Entity("BusinessObject.Workflow", b =>

@@ -10,4 +10,5 @@ public interface IResourceRepository
     Task AddAsync(Resource resource);
     Task<IEnumerable<Resource>> GetAllAsync();
     Task<Resource?> FindResourceByApiAsync(string resourceApi);
+    Task<Resource?> FindResourceByIdAsync(Guid? resourceId);
 }

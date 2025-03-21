@@ -15,6 +15,7 @@ public class Document
     public string? SignedBy { get; set; }
     public string? DocumentUrl { get; set; }
     public DateTime CreatedDate { get; set; }
+    public DateTime Deadline { get; set; }
     public ProcessingStatus ProcessingStatus { get; set; }
     public DocumentPriority DocumentPriority { get; set; }
     public string? Sender { get; set; }
@@ -22,13 +23,21 @@ public class Document
     public string? DateIssued { get; set; }
     public bool IsDeleted { get; set; }
     
-    public Guid DocumentTypeId { get; set; }
-    public Guid DeadlineId { get; set; }
-    public DocumentType? DocumentType { get; set; }
-    public Deadline? Deadline { get; set; }
+    public Guid UserId { get; set; }
+    public User? User { get; set; }
+    public Guid? TemplateArchiveDocumentId { get; set; }
+    public ArchivedDocument? TemplateArchiveDocument { get; set; }
+    public Guid? FinalArchiveDocumentId { get; set; }
+    public ArchivedDocument? FinalArchiveDocument { get; set; }
+    public Guid? DocumentTypeWorkflowId { get; set; }
+    public DocumentTypeWorkflow? DocumentTypeWorkflow { get; set; }
+    
     public List<Task>? Tasks { get; set; }
-    public List<UserDocument>? UserDocuments { get; set; }
+    public List<DocumentSignature>? DocumentSignatures { get; set; }
     public List<AttachmentDocument>? AttachmentDocuments { get; set; }
+    public List<DocumentVersion>? DocumentVersions { get; set; }
+    
+    
 
     /*public Document()
     {
