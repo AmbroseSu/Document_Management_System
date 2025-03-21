@@ -11,7 +11,7 @@ public class Permission
     public string? PermissionName { get; set; }
     
     public List<Resource>? Resources { get; set; }
-    public List<UserDocumentPermission>? UserDocumentPermissions { get; set; }
+
 
     /*public Permission()
     {

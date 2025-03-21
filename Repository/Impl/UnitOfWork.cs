@@ -10,10 +10,12 @@ public class UnitOfWork : IUnitOfWork
     public IPermissionRepository PermissionUOW { get; }
     public IRoleRepository RoleUOW { get; }
     public IRoleResourceRepository RoleResourceUOW { get; }
+    public IUserRoleRepository UserRoleUOW { get; }
+    public IVerificationOtpRepository VerificationOtpUOW { get; }
     private bool _disposed;
     private readonly DocumentManagementSystemDbContext _context;
     
-    public UnitOfWork(IUserRepository userUow, DocumentManagementSystemDbContext context, IResourceRepository resourceUow, IPermissionRepository permissionUow, IRoleRepository roleUow, IRoleResourceRepository roleResourceUow)
+    public UnitOfWork(IUserRepository userUow, DocumentManagementSystemDbContext context, IResourceRepository resourceUow, IPermissionRepository permissionUow, IRoleRepository roleUow, IRoleResourceRepository roleResourceUow, IUserRoleRepository userRoleUow, IVerificationOtpRepository verificationOtpUow)
     {
         UserUOW = userUow ?? throw new ArgumentNullException(nameof(userUow));
         _disposed = false;
@@ -22,6 +24,8 @@ public class UnitOfWork : IUnitOfWork
         PermissionUOW = permissionUow ?? throw new ArgumentNullException(nameof(permissionUow));; 
         RoleUOW = roleUow ?? throw new ArgumentNullException(nameof(roleUow));
         RoleResourceUOW = roleResourceUow;
+        UserRoleUOW = userRoleUow;
+        VerificationOtpUOW = verificationOtpUow;
     }
 
     public async Task<int> SaveChangesAsync()

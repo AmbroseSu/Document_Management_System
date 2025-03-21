@@ -9,4 +9,5 @@ public interface IRoleResourceRepository
     Task AddAsync(RoleResource roleResource);
     Task UpdateAsync(RoleResource roleResource);
     Task<RoleResource?> FindRoleResourceByIdAsync(Guid? roleResourceId);
+    Task<IEnumerable<RoleResource>> FindRoleResourcesByRoleIdAsync(Guid? roleId);
 }

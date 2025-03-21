@@ -26,12 +26,18 @@ public class ArchivedDocument
     public Guid? DocumentReplaceId { get; set; }
     public Scope Scope { get; set; }
     public bool IsTemplate { get; set; }
+    
     public Guid DocumentTypeId { get; set; }
     public DocumentType? DocumentType { get; set; }
+    public Guid FinalDocumentId { get; set; }
+    public Document? FinalDocument { get; set; }
     
     public List<UserDocumentPermission>? UserDocumentPermissions { get; set; }
     public List<AttachmentArchivedDocument>? AttachmentArchivedDocuments { get; set; }
-
+    public List<ArchiveDocumentSignature>? ArchiveDocumentSignatures { get; set; }
+    public List<ArchivedDocument>? DocumentReplaces { get; set; }
+    public List<ArchivedDocument>? DocumentRevokes { get; set; }
+    public List<Document>? CreateDocuments { get; set; }
     /*public ArchivedDocument()
     {
         ArchivedDocumentId = Guid.NewGuid();

@@ -22,10 +22,10 @@ public class Task
     
     public Guid StepId { get; set; }
     public Guid DocumentId { get; set; }
+    public Guid UserId { get; set; }
     public Step? Step { get; set; }
     public Document? Document { get; set; }
-    
-    public List<TaskUser>? TaskUsers { get; set; }
+    public User? User { get; set; }
     public List<Comment>? Comments { get; set; }
 
     /*public Task()

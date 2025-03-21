@@ -13,14 +13,17 @@ public class DocumentManagementSystemDbContext : DbContext
     public DocumentManagementSystemDbContext(DbContextOptions<DocumentManagementSystemDbContext> options) : base(options) { }
     
     public virtual DbSet<ArchivedDocument> ArchivedDocuments { get; set; }
+    public virtual DbSet<ArchiveDocumentSignature> ArchiveDocumentSignatures { get; set; }
     public virtual DbSet<AttachmentArchivedDocument> AttachmentArchivedDocuments { get; set; }
     public virtual DbSet<AttachmentDocument> AttachmentDocuments { get; set; }
     public virtual DbSet<Comment> Comments { get; set; }
-    public virtual DbSet<Deadline> Deadlines { get; set; }
+    public virtual DbSet<DigitalCertificate> DigitalCertificates { get; set; }
     public virtual DbSet<Division> Divisions { get; set; }
     public virtual DbSet<Document> Documents { get; set; }
+    public virtual DbSet<DocumentSignature> DocumentSignatures { get; set; }
     public virtual DbSet<DocumentType> DocumentTypes { get; set; }
     public virtual DbSet<DocumentTypeWorkflow> DocumentTypeWorkflows { get; set; }
+    public virtual DbSet<DocumentVersion> DocumentVersions { get; set; }
     public virtual DbSet<Flow> Flows { get; set; }
     public virtual DbSet<Permission> Permissions { get; set; }
     public virtual DbSet<Resource> Resources { get; set; }
@@ -28,9 +31,7 @@ public class DocumentManagementSystemDbContext : DbContext
     public virtual DbSet<RoleResource> RoleResources { get; set; }
     public virtual DbSet<Step> Steps { get; set; }
     public virtual DbSet<Task> Tasks { get; set; }
-    public virtual DbSet<TaskUser> TaskUsers { get; set; }
     public virtual DbSet<User> Users { get; set; }
-    public virtual DbSet<UserDocument> UserDocuments { get; set; }
     public virtual DbSet<UserDocumentPermission> UserDocumentPermissions { get; set; }
     public virtual DbSet<UserRole> UserRoles { get; set; }
     public virtual DbSet<VerificationOtp> VerificationOtps { get; set; }
@@ -105,7 +106,35 @@ public class DocumentManagementSystemDbContext : DbContext
             entity.HasMany(e => e.AttachmentArchivedDocuments)
                 .WithOne(e => e.ArchivedDocument)
                 .HasForeignKey(a => a.ArchivedDocumentId);
+            entity.HasMany(e => e.ArchiveDocumentSignatures)
+                .WithOne(e => e.ArchivedDocument)
+                .HasForeignKey(e => e.ArchivedDocumentId);
+            entity.HasMany(e => e.DocumentReplaces)
+                .WithOne()
+                .HasForeignKey(e => e.DocumentRevokeId);
+            entity.HasMany(e => e.DocumentRevokes)
+                .WithOne()
+                .HasForeignKey(e => e.DocumentReplaceId);
+            entity.HasMany(e => e.CreateDocuments)
+                .WithOne(e => e.TemplateArchiveDocument)
+                .HasForeignKey(e => e.TemplateArchiveDocumentId);
+            entity.HasOne(e => e.FinalDocument)
+                .WithOne(e => e.FinalArchiveDocument)
+                .HasForeignKey<Document>(e => e.FinalArchiveDocumentId);
+        });
 
+        modelBuilder.Entity<ArchiveDocumentSignature>(entity =>
+        {
+            entity.ToTable("ArchiveDocumentSignature");
+            entity.HasKey(e => e.ArchiveDocumentSignatureId);
+            entity.Property(e => e.ArchiveDocumentSignatureId)
+                .HasColumnType("uuid")
+                .HasDefaultValueSql("gen_random_uuid()");
+            entity.Property(e => e.SignedAt);
+            entity.Property(e => e.ValidFrom);
+            entity.Property(e => e.OrderIndex);
+            entity.Property(e => e.SignatureValue);
+            
         });
 
         modelBuilder.Entity<AttachmentArchivedDocument>(entity =>
@@ -144,17 +173,29 @@ public class DocumentManagementSystemDbContext : DbContext
             entity.Property(e => e.IsDeleted);
         });
 
-        modelBuilder.Entity<Deadline>(entity =>
+        modelBuilder.Entity<DigitalCertificate>(entity =>
         {
-            entity.ToTable("Deadline");
-            entity.HasKey(e => e.DeadlineId);
-            entity.Property(e => e.DeadlineId)
+            entity.ToTable("DigitalCertificate");
+            entity.HasKey(e => e.DigitalCertificateId);
+            entity.Property(e => e.DigitalCertificateId)
                 .HasColumnType("uuid")
                 .HasDefaultValueSql("gen_random_uuid()");
-            entity.Property(e => e.StartDate);
-            entity.Property(e => e.EndDate);
-            entity.Property(e => e.ReminderDate);
-            entity.Property(e => e.IsDeleted);
+            entity.Property(e => e.SerialNumber);
+            entity.Property(e => e.Issuer);
+            entity.Property(e => e.ValidFrom);
+            entity.Property(e => e.ValidTo);
+            entity.Property(e => e.PublicKey);
+            entity.Property(e => e.HashAlgorithm);
+            entity.Property(e => e.OwnerName);
+            entity.Property(e => e.IsRevoked);
+            entity.Property(e => e.SignatureImageUrl);
+            
+            entity.HasMany(e => e.ArchiveDocumentSignatures)
+                .WithOne(e => e.DigitalCertificate)
+                .HasForeignKey(e => e.DigitalCertificateId);
+            entity.HasMany(e => e.DocumentSignatures)
+                .WithOne(e => e.DigitalCertificate)
+                .HasForeignKey(e => e.DigitalCertificateId);
         });
 
         modelBuilder.Entity<Division>(entity =>
@@ -185,6 +226,7 @@ public class DocumentManagementSystemDbContext : DbContext
             entity.Property(e => e.SignedBy);
             entity.Property(e => e.DocumentUrl);
             entity.Property(e => e.CreatedDate);
+            entity.Property(e => e.Deadline);
             entity.Property(e => e.ProcessingStatus);
             entity.Property(e => e.DocumentPriority);
             entity.Property(e => e.Sender);
@@ -192,18 +234,32 @@ public class DocumentManagementSystemDbContext : DbContext
             entity.Property(e => e.DateIssued);
             entity.Property(e => e.IsDeleted);
             
-            entity.HasOne(e => e.Deadline)
-                .WithOne(e => e.Document)
-                .HasForeignKey<Deadline>(e => e.DeadlineId);
             entity.HasMany(e => e.Tasks)
                 .WithOne(e => e.Document)
                 .HasForeignKey(e => e.DocumentId);
-            entity.HasMany(e => e.UserDocuments)
+            entity.HasMany(e => e.DocumentSignatures)
                 .WithOne(e => e.Document)
                 .HasForeignKey(e => e.DocumentId);
             entity.HasMany(e => e.AttachmentDocuments)
                 .WithOne(e => e.Document)
                 .HasForeignKey(e => e.DocumentId);
+            entity.HasMany(e => e.DocumentVersions)
+                .WithOne(e => e.Document)
+                .HasForeignKey(e => e.DocumentId);
+        });
+        
+        modelBuilder.Entity<DocumentSignature>(entity =>
+        {
+            entity.ToTable("DocumentSignature");
+            entity.HasKey(e => e.DocumentSignatureId);
+            entity.Property(e => e.DocumentSignatureId)
+                .HasColumnType("uuid")
+                .HasDefaultValueSql("gen_random_uuid()");
+            entity.Property(e => e.SignedAt);
+            entity.Property(e => e.ValidFrom);
+            entity.Property(e => e.OrderIndex);
+            entity.Property(e => e.SignatureValue);
+            
         });
         
 
@@ -220,9 +276,6 @@ public class DocumentManagementSystemDbContext : DbContext
             entity.HasMany(e => e.DocumentTypeWorkflows)
                 .WithOne(e => e.DocumentType)
                 .HasForeignKey(e => e.DocumentTypeId);
-            entity.HasMany(e => e.Documents)
-                .WithOne(e => e.DocumentType)
-                .HasForeignKey(e => e.DocumentTypeId);
             entity.HasMany(e => e.ArchivedDocuments)
                 .WithOne(e => e.DocumentType)
                 .HasForeignKey(e => e.DocumentTypeId);
@@ -235,6 +288,23 @@ public class DocumentManagementSystemDbContext : DbContext
             entity.Property(e => e.DocumentTypeWorkflowId)
                 .HasColumnType("uuid")
                 .HasDefaultValueSql("gen_random_uuid()");
+            
+            entity.HasMany(e => e.Documents)
+                .WithOne(e => e.DocumentTypeWorkflow)
+                .HasForeignKey(e => e.DocumentTypeWorkflowId);
+        });
+        
+        modelBuilder.Entity<DocumentVersion>(entity =>
+        {
+            entity.ToTable("DocumentVersion");
+            entity.HasKey(e => e.DocumentVersionId);
+            entity.Property(e => e.DocumentVersionId)
+                .HasColumnType("uuid")
+                .HasDefaultValueSql("gen_random_uuid()");
+            entity.Property(e => e.VersionNumber);
+            entity.Property(e => e.DocumentVersionUrl);
+            entity.Property(e => e.CreateDate);
+            entity.Property(e => e.IsFinalVersion);
         });
 
         modelBuilder.Entity<Flow>(entity =>
@@ -261,9 +331,6 @@ public class DocumentManagementSystemDbContext : DbContext
             entity.Property(e => e.PermissionName);
             
             entity.HasMany(e => e.Resources)
-                .WithOne(e => e.Permission)
-                .HasForeignKey(e => e.PermissionId);
-            entity.HasMany(e => e.UserDocumentPermissions)
                 .WithOne(e => e.Permission)
                 .HasForeignKey(e => e.PermissionId);
         });
@@ -294,13 +361,13 @@ public class DocumentManagementSystemDbContext : DbContext
             entity.Property(e => e.RoleName);
             entity.Property(e => e.CreatedDate);
             
-            entity.HasMany(e => e.TaskUsers)
-                .WithOne(e => e.Role)
-                .HasForeignKey(e => e.RoleId);
             entity.HasMany(e => e.UserRoles)
                 .WithOne(e => e.Role)
                 .HasForeignKey(e => e.RoleId);
             entity.HasMany(e => e.RoleResources)
+                .WithOne(e => e.Role)
+                .HasForeignKey(e => e.RoleId);
+            entity.HasMany(e => e.Steps)
                 .WithOne(e => e.Role)
                 .HasForeignKey(e => e.RoleId);
         });
@@ -326,9 +393,6 @@ public class DocumentManagementSystemDbContext : DbContext
             entity.HasMany(e => e.Tasks)
                 .WithOne(e => e.Step)
                 .HasForeignKey(e => e.StepId);
-            entity.HasOne(e => e.Role)
-                .WithOne(e => e.Step)
-                .HasForeignKey<Role>(e => e.StepId);
         });
 
         modelBuilder.Entity<Task>(entity =>
@@ -348,26 +412,11 @@ public class DocumentManagementSystemDbContext : DbContext
             entity.Property(e => e.IsDeleted);
             entity.Property(e => e.IsActive);
             
-            entity.HasMany(e => e.TaskUsers)
-                .WithOne(e => e.Task)
-                .HasForeignKey(e => e.TaskId);
             entity.HasMany(e => e.Comments)
                 .WithOne(e => e.Task)
                 .HasForeignKey(e => e.TaskId);
         });
-
-        modelBuilder.Entity<TaskUser>(entity =>
-        {
-            entity.ToTable("TaskUser");
-            entity.HasKey(e => e.TaskUserId);
-            entity.Property(e => e.TaskUserId)
-                .HasColumnType("uuid")
-                .HasDefaultValueSql("gen_random_uuid()");
-            entity.Property(e => e.Order);
-            entity.Property(e => e.RejectReason);
-            entity.Property(e => e.TaskUserStatus);
-            entity.Property(e => e.IsCreatedTaskByUser);
-        });
+        
 
         modelBuilder.Entity<User>(entity =>
         {
@@ -388,21 +437,15 @@ public class DocumentManagementSystemDbContext : DbContext
             entity.Property(e => e.UpdatedAt);
             entity.Property(e => e.FcmToken);
             entity.Property(e => e.Position);
-            entity.Property(e => e.SignatureImage);
             entity.Property(e => e.DateOfBirth);
             entity.Property(e => e.IsDeleted);
             entity.Property(e => e.IsEnable);
             
-            entity.HasOne(e => e.VerificationOtp)
-                .WithOne(e => e.User)
-                .HasForeignKey<VerificationOtp>(e => e.UserId);
-            entity.HasMany(e => e.TaskUsers)
+
+            entity.HasMany(e => e.VerificationOtps)
                 .WithOne(e => e.User)
                 .HasForeignKey(e => e.UserId);
             entity.HasMany(e => e.Comments)
-                .WithOne(e => e.User)
-                .HasForeignKey(e => e.UserId);
-            entity.HasMany(e => e.UserDocuments)
                 .WithOne(e => e.User)
                 .HasForeignKey(e => e.UserId);
             entity.HasMany(e => e.UserDocumentPermissions)
@@ -411,17 +454,17 @@ public class DocumentManagementSystemDbContext : DbContext
             entity.HasMany(e => e.UserRoles)
                 .WithOne(e => e.User)
                 .HasForeignKey(e => e.UserId);
+            entity.HasMany(e => e.Tasks)
+                .WithOne(e => e.User)
+                .HasForeignKey(e => e.UserId);
+            entity.HasMany(e => e.Documents)
+                .WithOne(e => e.User)
+                .HasForeignKey(e => e.UserId);
+            entity.HasMany(e => e.DigitalCertificates)
+                .WithOne(e => e.User)
+                .HasForeignKey(e => e.UserId);
         });
-
-        modelBuilder.Entity<UserDocument>(entity =>
-        {
-            entity.ToTable("UserDocument");
-            entity.HasKey(e => e.UserDocumentId);
-            entity.Property(e => e.UserDocumentId)
-                .HasColumnType("uuid")
-                .HasDefaultValueSql("gen_random_uuid()");
-            entity.Property(e => e.IsCreatedDocumentByUser);
-        });
+        
 
         modelBuilder.Entity<UserDocumentPermission>(entity =>
         {
@@ -451,6 +494,7 @@ public class DocumentManagementSystemDbContext : DbContext
             entity.Property(e => e.Otp);
             entity.Property(e => e.ExpirationTime);
             entity.Property(e => e.IsTrue);
+            entity.Property(e => e.IsDeleted);
         });
 
         modelBuilder.Entity<Workflow>(entity =>

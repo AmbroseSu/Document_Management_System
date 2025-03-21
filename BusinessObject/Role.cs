@@ -11,10 +11,8 @@ public class Role
     public string? RoleName { get; set; }
     public DateTime? CreatedDate { get; set; }
     
-    public Guid? StepId { get; set; }
-    public Step? Step { get; set; }
     
-    public List<TaskUser>? TaskUsers { get; set; }
+    public List<Step>? Steps { get; set; }
     public List<UserRole>? UserRoles { get; set; }
     public List<RoleResource>? RoleResources { get; set; }
 
