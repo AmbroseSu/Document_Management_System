@@ -5,5 +5,5 @@ namespace Service;
 
 public interface IUserService
 {  
-    Task<ResponseDto> CreateUserByForm (UserRequest userRequest);
+    
 }

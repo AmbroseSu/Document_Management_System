@@ -12,8 +12,9 @@ public class VerificationOtp
     public DateTime ExpirationTime { get; set; }
     public bool IsTrue { get; set; }
     public bool IsDeleted { get; set; }
+    public int AttemptCount { get; set; }
     
-    private const int EXPIRATION_TIME_MINUTES = 2;
+    private const int EXPIRATION_TIME_MINUTES = 3;
     
     public Guid UserId { get; set; }
     public virtual User? User { get; set; } 
@@ -27,6 +28,9 @@ public class VerificationOtp
     {
         this.Otp = otp;
         this.UserId = userId;
+        this.IsTrue = false;
+        this.IsDeleted = false;
+        this.AttemptCount = 0;
         this.ExpirationTime = GetTokenExpirationTime();
     }
     

@@ -24,22 +24,27 @@ public class EmailService : IEmailService
         _config = config;
         _unitOfWork = unitOfWork;
     }
-    public async Task<ResponseDto> SendEmail(String emailResponse)
+    public async Task<ResponseDto> SendEmail(String emailResponse, string subject, string content)
     {
         try
         {
-            if (IsValidEmail(emailResponse) == false)
+            if (!IsValidEmail(emailResponse))
             {
-                return ResponseUtil.Error(ResponseMessages.EmailFormatInvalid, "Failed", HttpStatusCode.BadRequest);
+                return ResponseUtil.Error(ResponseMessages.EmailFormatInvalid, ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
             }
-            int otp = GenerateOTP();
+            var user = await _unitOfWork.UserUOW.FindUserByEmail(emailResponse);
+            if (user == null)
+            {
+                return ResponseUtil.Error(ResponseMessages.EmailNotExists, ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
+            }
+            //int otp = GenerateOTP();
             var email = new MimeMessage();
             email.From.Add(MailboxAddress.Parse("lisa92@ethereal.email"));
             email.To.Add(MailboxAddress.Parse(emailResponse));
-            email.Subject = "OTP ECommerce";
+            email.Subject = subject;
             email.Body = new TextPart(TextFormat.Html)
             {
-                Text = otp.ToString()
+                Text = content
             };
 
             using var smtp = new SmtpClient();
@@ -47,12 +52,12 @@ public class EmailService : IEmailService
             smtp.Authenticate( _config.GetSection("EmailUserName").Value, _config.GetSection("EmailPassword").Value );
             smtp.Send(email);
             smtp.Disconnect(true);
-            //var verificationToken = new VerificationOtp(otp.ToString(), user.UserId);
-            //verificationToken.User = user;
+            /*var verificationToken = new VerificationOtp(otp.ToString(), user.UserId);
+            verificationToken.User = user;*/
 
             // Save the verification token to the repository
             //await _unitOfWork.VerificationOtpUOW.AddAsync(verificationToken);
-            await _unitOfWork.SaveChangesAsync();
+            //await _unitOfWork.SaveChangesAsync();
             return ResponseUtil.GetObject("Send email Success", "ok", HttpStatusCode.Created, 0);
         }
         catch (Exception ex)

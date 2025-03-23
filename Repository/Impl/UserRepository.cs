@@ -19,6 +19,12 @@ public class UserRepository : IUserRepository
         if (entity == null) throw new ArgumentNullException(nameof(entity));
         await _userDao.AddAsync(entity);
     }
+    
+    public async Task UpdateAsync(User entity)
+    {
+        if (entity == null) throw new ArgumentNullException(nameof(entity));
+        await _userDao.UpdateAsync(entity);
+    }
 
     public async Task<User?> FindUserByEmail(string email)
     {

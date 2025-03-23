@@ -121,6 +121,7 @@ builder.Services.AddScoped<IRoleResourceService, RoleResourceService>();
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IUserRoleRepository, UserRoleRepository>();
 builder.Services.AddScoped<IVerificationOtpRepository, VerificationOtpRepository>();
+builder.Services.AddScoped<IEmailService, EmailService>();
 
 
 

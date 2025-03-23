@@ -19,10 +19,6 @@ namespace DocumentManagementSystemApplication.Controllers
             _userService = userService;
         }
         
-        [HttpPost("create-user-by-form")]
-        public async Task<ResponseDto> CreateUserByForm([FromBody] UserRequest userRequest)
-        {
-            return await _userService.CreateUserByForm(userRequest);
-        }
+
     }
 }

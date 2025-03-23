@@ -495,6 +495,7 @@ public class DocumentManagementSystemDbContext : DbContext
             entity.Property(e => e.ExpirationTime);
             entity.Property(e => e.IsTrue);
             entity.Property(e => e.IsDeleted);
+            entity.Property(e => e.AttemptCount);
         });
 
         modelBuilder.Entity<Workflow>(entity =>

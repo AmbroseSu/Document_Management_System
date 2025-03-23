@@ -58,6 +58,8 @@ public class JwtService : IJwtService
             var claims = new List<Claim>
             {
                 new Claim("Email", email),
+                new Claim(JwtRegisteredClaimNames.Sub, user.UserId.ToString()),
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
                 //new Claim("Password", password),
                 //new Claim(ClaimTypes.Role, role.ToString())
             };
