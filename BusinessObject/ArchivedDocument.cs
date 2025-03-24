@@ -14,14 +14,30 @@ public class ArchivedDocument
     public string? NumberOfDocument { get; set; }
     public string? SignedBy { get; set; }
     public string? ArchivedDocumentUrl { get; set; }
-    public DateTime CreatedDate { get; set; }
+    private DateTime _createdDate;
+    public DateTime CreatedDate {  
+        get => _createdDate.ToLocalTime();  
+        set => _createdDate = value.ToUniversalTime();  
+    }
     public string? Sender { get; set; }
     public string? CreatedBy { get; set; }
     public string? ExternalPartner { get; set; }
     public ArchivedDocumentStatus ArchivedDocumentStatus { get; set; }
-    public DateTime? DateIssued { get; set; }
-    public DateTime? DateReceived { get; set; }
-    public DateTime? DateSented { get; set; }
+    private DateTime? _dateIssued;
+    public DateTime? DateIssued {  
+        get => _dateIssued?.ToLocalTime();  
+        set => _dateIssued = value?.ToUniversalTime();  
+    }
+    private DateTime? _dateReceived;
+    public DateTime? DateReceived {  
+        get => _dateReceived?.ToLocalTime();  
+        set => _dateReceived = value?.ToUniversalTime();  
+    }
+    private DateTime? _dateSented;
+    public DateTime? DateSented {  
+        get => _dateSented?.ToLocalTime();  
+        set => _dateSented = value?.ToUniversalTime();  
+    }
     public Guid? DocumentRevokeId { get; set; }
     public Guid? DocumentReplaceId { get; set; }
     public Scope Scope { get; set; }

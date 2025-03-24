@@ -2,6 +2,7 @@ using System.Linq.Expressions;
 using BusinessObject;
 using DataAccess;
 using DataAccess.DAO;
+using Microsoft.EntityFrameworkCore;
 using Task = System.Threading.Tasks.Task;
 
 namespace Repository.Impl;
@@ -46,6 +47,6 @@ public class UserRepository : IUserRepository
     
     public async Task<IEnumerable<User>> FindAllUserAsync()
     {
-        return await _userDao.FindAsync(u => true);
+        return await _userDao.FindAsync(u => true, u => u.Include(d => d.Division).Include(ur => ur.UserRoles).ThenInclude(r => r.Role));
     }
 }

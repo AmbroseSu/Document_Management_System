@@ -7,6 +7,7 @@ using BusinessObject;
 using DataAccess.DAO;
 using DataAccess.DTO;
 using DataAccess.DTO.Request;
+using Microsoft.EntityFrameworkCore;
 using Npgsql.Replication;
 using Repository;
 using Service.Response;
@@ -86,8 +87,8 @@ public class UserService : IUserService
             user.PhoneNumber = userRequest.PhoneNumber;
             user.IsDeleted = false;
             user.IsEnable = false;
-            user.CreatedAt = DateTime.Now.ToUniversalTime();
-            user.UpdatedAt = DateTime.Now.ToUniversalTime();
+            user.CreatedAt = DateTime.Now;
+            user.UpdatedAt = DateTime.Now;
             await _unitOfWork.UserUOW.AddAsync(user);
             var saveChange = await _unitOfWork.SaveChangesAsync();
             if (saveChange > 0)
@@ -217,7 +218,7 @@ public class UserService : IUserService
         }
     }
     
-    public async Task<ResponseDto> GetAllUserAsync(int page, int limit)
+    /*public async Task<ResponseDto> GetAllUserAsync(int page, int limit)
     {
         try
         {
@@ -234,6 +235,73 @@ public class UserService : IUserService
         {
             return ResponseUtil.Error(ex.Message, ResponseMessages.OperationFailed, HttpStatusCode.InternalServerError);
         }
+    }*/
+    
+    public async Task<ResponseDto> GetAllUserAsync(UserFilterRequest userFilterRequest)
+    {
+        try
+        {
+            IEnumerable<User> users = await _unitOfWork.UserUOW.FindAllUserAsync();
+            IQueryable<User> query = users.AsQueryable();
+            if (!string.IsNullOrEmpty(userFilterRequest.Filters.FullName))
+            {
+                query = query.Where(u => u.FullName!.ToLower().Contains(userFilterRequest.Filters.FullName.ToLower()));
+            }
+
+            if (!string.IsNullOrEmpty(userFilterRequest.Filters.Email))
+            {
+                query = query.Where(u => u.Email!.ToLower().Contains(userFilterRequest.Filters.Email.ToLower()));
+            }
+            if (!string.IsNullOrEmpty(userFilterRequest.Filters.Division))
+            {
+                query = query.Include(u => u.Division).Where(u => u.Division != null && u.Division.DivisionName.ToLower().Contains(userFilterRequest.Filters.Division.ToLower()));
+            }
+
+            if (!string.IsNullOrEmpty(userFilterRequest.Filters.Position))
+            {
+                query = query.Where(u => u.Position!.ToLower().Contains(userFilterRequest.Filters.Position.ToLower()));
+            }
+            if (!string.IsNullOrEmpty(userFilterRequest.Filters.Role))
+            {
+                query = query.Where(u => u.UserRoles!.Any(ur => ur.Role!.RoleName.Contains(userFilterRequest.Filters.Role)));
+            }
+            if (userFilterRequest.Sort != null)
+            {
+                bool isDescending = userFilterRequest.Sort.Order.ToLower() == "desc";
+
+                // Dùng Reflection để sort theo tên field
+                query = isDescending
+                    ? query.OrderByDescending(u => GetPropertyValue(u, userFilterRequest.Sort.Field))
+                    : query.OrderBy(u => GetPropertyValue(u, userFilterRequest.Sort.Field));
+            }
+            else
+            {
+                query = query.OrderByDescending(u => u.CreatedAt);
+            }
+            
+            int totalRecords = query.Count();
+            int totalPages = (int)Math.Ceiling((double)totalRecords / userFilterRequest.Limit);
+            
+            IEnumerable<User> userResults = query
+                .Skip((userFilterRequest.Page - 1) * userFilterRequest.Limit)
+                .Take(userFilterRequest.Limit)
+                .ToList();
+            IEnumerable<UserDto> result = _mapper.Map<IEnumerable<UserDto>>(userResults);
+            
+            return ResponseUtil.GetCollection(result, ResponseMessages.GetSuccessfully, HttpStatusCode.OK, totalRecords, userFilterRequest.Page, userFilterRequest.Limit, totalPages);
+
+            
+        }
+        catch (Exception ex)
+        {
+            return ResponseUtil.Error(ex.Message, ResponseMessages.OperationFailed, HttpStatusCode.InternalServerError);
+        }
+    }
+    
+    private object GetPropertyValue(User user, string propertyName)
+    {
+        var property = typeof(User).GetProperty(propertyName);
+        return property?.GetValue(user);
     }
 
     public async Task<ResponseDto> UpdateUserActiveOrDeleteAsync(Guid userId)

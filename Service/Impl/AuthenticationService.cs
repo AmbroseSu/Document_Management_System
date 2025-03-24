@@ -108,10 +108,10 @@ public class AuthenticationService : IAuthenticationService
             var verificationOtp = await _unitOfWork.VerificationOtpUOW.FindByUserIdAsync(user.UserId); 
             if (verificationOtp != null) 
             { 
-                if (verificationOtp.ExpirationTime > DateTime.Now && verificationOtp.IsDeleted == false) 
+                /*if (verificationOtp.ExpirationTime > DateTime.Now && verificationOtp.IsDeleted == false) 
                 { 
                     return ResponseUtil.Error(ResponseMessages.OtpHasNotExpired, ResponseMessages.OperationFailed, HttpStatusCode.BadRequest); 
-                } 
+                } */
                 verificationOtp.IsDeleted = true; 
                 await _unitOfWork.VerificationOtpUOW.UpdateAsync(verificationOtp); 
                 var saveChange = await _unitOfWork.SaveChangesAsync(); 
@@ -225,7 +225,7 @@ public class AuthenticationService : IAuthenticationService
                     HttpStatusCode.BadRequest);
             }
 
-            if (verificationOtp.ExpirationTime < DateTime.Now.ToUniversalTime())
+            if (verificationOtp.ExpirationTime < DateTime.Now)
             {
                 verificationOtp.AttemptCount++;
                 await _unitOfWork.VerificationOtpUOW.UpdateAsync(verificationOtp);

@@ -8,8 +8,16 @@ public class ArchiveDocumentSignature
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     [Key]
     public Guid ArchiveDocumentSignatureId { get; set; }
-    public DateTime SignedAt { get; set; }
-    public DateTime ValidFrom { get; set; }
+    private DateTime _signedAt;
+    public DateTime SignedAt {  
+        get => _signedAt.ToLocalTime();  
+        set => _signedAt = value.ToUniversalTime();  
+    }
+    private DateTime _validFrom;
+    public DateTime ValidFrom {  
+        get => _validFrom.ToLocalTime();  
+        set => _validFrom = value.ToUniversalTime();  
+    }
     public int OrderIndex { get; set; }
     public string SignatureValue { get; set; }
     

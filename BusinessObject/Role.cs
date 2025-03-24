@@ -9,7 +9,11 @@ public class Role
     [Key]
     public Guid RoleId { get; set; }
     public string? RoleName { get; set; }
-    public DateTime? CreatedDate { get; set; }
+    private DateTime? _createdDate;
+    public DateTime? CreatedDate {  
+        get => _createdDate?.ToLocalTime();  
+        set => _createdDate = value?.ToUniversalTime();  
+    }
     
     
     public List<Step>? Steps { get; set; }

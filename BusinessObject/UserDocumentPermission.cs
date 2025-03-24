@@ -8,7 +8,11 @@ public class UserDocumentPermission
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     [Key]
     public Guid UserDocumentPermissionId { get; set; }
-    public DateTime CreatedDate { get; set; }
+    private DateTime _createdDate;
+    public DateTime CreatedDate {  
+        get => _createdDate.ToLocalTime();  
+        set => _createdDate = value.ToUniversalTime();  
+    }
     public bool IsDeleted { get; set; }
     
 

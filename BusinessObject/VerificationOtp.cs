@@ -9,7 +9,11 @@ public class VerificationOtp
     [Key]
     public int Id { get; set; }
     public string? Otp { get; set; }
-    public DateTime ExpirationTime { get; set; }
+    private DateTime _expirationTime;
+    public DateTime ExpirationTime {  
+        get => _expirationTime.ToLocalTime();  
+        set => _expirationTime = value.ToUniversalTime();  
+    }
     public bool IsTrue { get; set; }
     public bool IsDeleted { get; set; }
     public int AttemptCount { get; set; }
@@ -37,7 +41,7 @@ public class VerificationOtp
     private DateTime GetTokenExpirationTime()
     {
         DateTime now = DateTime.Now; 
-        DateTime expirationTime = now.AddMinutes(EXPIRATION_TIME_MINUTES).ToUniversalTime();
+        DateTime expirationTime = now.AddMinutes(EXPIRATION_TIME_MINUTES);
         return expirationTime;
     }
 }

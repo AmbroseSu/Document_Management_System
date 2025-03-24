@@ -14,8 +14,16 @@ public class Document
     public string? NumberOfDocument { get; set; }
     public string? SignedBy { get; set; }
     public string? DocumentUrl { get; set; }
-    public DateTime CreatedDate { get; set; }
-    public DateTime Deadline { get; set; }
+    private DateTime _createdDate;
+    public DateTime CreatedDate {  
+        get => _createdDate.ToLocalTime();  
+        set => _createdDate = value.ToUniversalTime();  
+    }
+    private DateTime _deadline;
+    public DateTime Deadline {  
+        get => _deadline.ToLocalTime();  
+        set => _deadline = value.ToUniversalTime();  
+    }
     public ProcessingStatus ProcessingStatus { get; set; }
     public DocumentPriority DocumentPriority { get; set; }
     public string? Sender { get; set; }

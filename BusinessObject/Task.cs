@@ -12,11 +12,23 @@ public class Task
     public Guid TaskId { get; set; }
     public string? Title { get; set; }
     public string? Description { get; set; }
-    public DateTime StartDate { get; set; }
-    public DateTime EndDate { get; set; }
+    private DateTime _startDate;
+    public DateTime StartDate {  
+        get => _startDate.ToLocalTime();  
+        set => _startDate = value.ToUniversalTime();  
+    }
+    private DateTime _endDate;
+    public DateTime EndDate {  
+        get => _endDate.ToLocalTime();  
+        set => _endDate = value.ToUniversalTime();  
+    }
     public TaskStatus TaskStatus { get; set; }
     public TaskType TaskType { get; set; }
-    public DateTime CreatedDate { get; set; }
+    private DateTime _createdDate;
+    public DateTime CreatedDate {  
+        get => _createdDate.ToLocalTime();  
+        set => _createdDate = value.ToUniversalTime();  
+    }
     public bool IsDeleted { get; set; }
     public bool IsActive { get; set; }
     

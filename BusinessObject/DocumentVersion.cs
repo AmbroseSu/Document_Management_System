@@ -10,7 +10,11 @@ public class DocumentVersion
     public Guid DocumentVersionId { get; set; }
     public string? VersionNumber { get; set; }
     public string? DocumentVersionUrl { get; set; }
-    public DateTime CreateDate { get; set; }
+    private DateTime _createDate;
+    public DateTime CreateDate {  
+        get => _createDate.ToLocalTime();  
+        set => _createDate = value.ToUniversalTime();  
+    }
     public bool IsFinalVersion { get; set; }
     
     public Guid DocumentId { get; set; }

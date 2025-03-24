@@ -9,7 +9,11 @@ public class Comment
     [Key]
     public Guid CommentId { get; set; }
     public string? CommentContent { get; set; }
-    public DateTime CreateDate { get; set; }
+    private DateTime _createDate;
+    public DateTime CreateDate {  
+        get => _createDate.ToLocalTime();  
+        set => _createDate = value.ToUniversalTime();  
+    }
     public bool IsDeleted { get; set; }
     
     public Guid UserId { get; set; }

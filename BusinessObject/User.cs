@@ -17,11 +17,23 @@ public class User
     public string? Address { get; set; }
     public string? Avatar { get; set; }
     public Gender Gender { get; set; }
-    public DateTime CreatedAt { get; set; }
-    public DateTime UpdatedAt { get; set; }
+    private DateTime _createdAt;
+    public DateTime CreatedAt {
+        get => _createdAt.ToLocalTime();
+        set => _createdAt = value;
+    }
+    private DateTime _updatedAt;
+    public DateTime UpdatedAt {
+        get => _updatedAt.ToLocalTime();
+        set => _updatedAt = value;
+    }
     public string? FcmToken { get; set; }
     public string? Position { get; set; }
-    public DateTime DateOfBirth { get; set; }
+    private DateTime _dateOfBirth;
+    public DateTime DateOfBirth {
+        get => _dateOfBirth.ToLocalTime();
+        set => _dateOfBirth = value;
+    }
     public bool IsDeleted { get; set; }
     public bool IsEnable { get; set; }
     

@@ -31,10 +31,10 @@ namespace DocumentManagementSystemApplication.Controllers
             return await _userService.GetProfileAsync(userId);
         }
         
-        [HttpGet("view-all-user")]
-        public async Task<ResponseDto> ViewAllUser([FromQuery] int page = 1, [FromQuery] int limit = 10)
+        [HttpPost("view-all-user")]
+        public async Task<ResponseDto> ViewAllUser([FromBody] UserFilterRequest userFilterRequest)
         {
-            return await _userService.GetAllUserAsync(page, limit);
+            return await _userService.GetAllUserAsync(userFilterRequest);
         }
         
         [HttpPost("delete-user")]
