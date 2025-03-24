@@ -26,152 +26,6 @@ public class AuthenticationService : IAuthenticationService
         _emailService = emailService;
     }
     
-    public async Task<ResponseDto> CreateUserByForm(UserRequest userRequest)
-    {
-        try
-        {
-            if (userRequest == null)
-            {
-                throw new ArgumentNullException(nameof(userRequest));
-            }
-            
-            User? userExistEmail = await _unitOfWork.UserUOW.FindUserByEmail(userRequest.Email);
-            if (userExistEmail != null)
-            {
-                return ResponseUtil.Error(ResponseMessages.EmailAlreadyExists, ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
-            }
-            //var emailAttribute = new EmailAddressAttribute();
-            /*if (IsValidEmail(userRequest.Email))
-            {
-                return ResponseUtil.Error(ResponseMessages.InvalidEmailFormat, ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
-            }*/
-            User? userExistUserName = await _unitOfWork.UserUOW.FindUserByUserName(userRequest.UserName);
-            if (userExistUserName != null)
-            {
-                return ResponseUtil.Error(ResponseMessages.UserNameAlreadyExists, ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
-            }
-            if (!IsValidEmail(userRequest.Email))
-            {
-                return ResponseUtil.Error(ResponseMessages.EmailFormatInvalid, ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
-            }
-            if (!IsValidPhoneNumber(userRequest.PhoneNumber))
-            {
-                return ResponseUtil.Error(ResponseMessages.PhoneNumberFormatInvalid, ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
-            }
-            
-            string plainPassword = GenerateRandomString(10);
-            string hashedPassword = BCrypt.Net.BCrypt.HashPassword(plainPassword);
-            
-            
-            
-            User user = _mapper.Map<User>(userRequest);
-            //user.Password = BCrypt.Net.BCrypt.HashPassword("Hieu1234");
-            user.Password = hashedPassword;
-            user.PhoneNumber = userRequest.PhoneNumber;
-            user.IsDeleted = false;
-            user.IsEnable = false;
-            await _unitOfWork.UserUOW.AddAsync(user);
-            var saveChange = await _unitOfWork.SaveChangesAsync();
-            if (saveChange > 0)
-            {
-                UserRole userRole = new UserRole();
-                userRole.UserId = user.UserId;
-                userRole.RoleId = userRequest.RoleId;
-                await _unitOfWork.UserRoleUOW.AddAsync(userRole);
-                var saveChange1 = await _unitOfWork.SaveChangesAsync();
-                if (saveChange1 > 0)
-                {
-                    string emailContent = $"Xin chào {userRequest.UserName},<br><br>"
-                                          + $"Tài khoản của bạn đã được tạo thành công.<br>"
-                                          + $"Tên đăng nhập: <b>{userRequest.Email}</b><br>"
-                                          + $"Mật khẩu: <b>{plainPassword}</b><br><br>"
-                                          + $"Vui lòng đổi mật khẩu sau khi đăng nhập.";
-                    bool emailSent = false;
-                    int retryCount = 0;
-                    int maxRetries = 3;
-                    
-                    //var emailResponse = await _emailService.SendEmail(userRequest.Email, "Tạo tài khoản thành công", emailContent);
-                    
-                    while (!emailSent && retryCount < maxRetries)
-                    {
-                        var emailResponse = await _emailService.SendEmail(userRequest.Email, "Tạo tài khoản thành công", emailContent);
-                        if (emailResponse.StatusCode == (int)HttpStatusCode.Created)
-                        {
-                            emailSent = true;
-                        }
-                        else
-                        {
-                            retryCount++;
-                            await Task.Delay(2000); // Chờ 2s trước khi thử lại
-                        }
-                    }
-
-                    if (!emailSent)
-                    {
-                        return ResponseUtil.Error(ResponseMessages.FailedToSendEmail, ResponseMessages.OperationFailed, HttpStatusCode.InternalServerError);
-                    }
-                    
-                    var result = _mapper.Map<UserDto>(user);
-                    return ResponseUtil.GetObject(result, ResponseMessages.CreatedSuccessfully, HttpStatusCode.Created, 1);
-
-                    
-                    
-                }
-                else
-                {
-                    return ResponseUtil.Error(ResponseMessages.FailedToSaveData, ResponseMessages.OperationFailed, HttpStatusCode.InternalServerError);
-                }
-            }
-            else
-            {
-                return ResponseUtil.Error(ResponseMessages.FailedToSaveData, ResponseMessages.OperationFailed, HttpStatusCode.InternalServerError);
-            }
-            
-        }
-        catch (Exception ex)
-        {
-            return ResponseUtil.Error(ex.Message, ResponseMessages.OperationFailed, HttpStatusCode.InternalServerError);
-        }
-    }
-    
-    public static string GenerateRandomString(int length)
-    {
-        const string lowerCase = "abcdefghijklmnopqrstuvwxyz";
-        const string upperCase = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-        const string numbers = "0123456789";
-        const string specialCharacters = "!@#$%^&*";
-
-        string allCharacters = lowerCase + upperCase + numbers + specialCharacters;
-
-        Random random = new Random();
-        char[] randomString = new char[length];
-
-        for (int i = 0; i < length; i++)
-        {
-            randomString[i] = allCharacters[random.Next(allCharacters.Length)];
-        }
-
-        return new string(randomString);
-    }
-    
-    public static bool IsValidEmail(string email)
-    {
-        if (string.IsNullOrWhiteSpace(email))
-            return false;
-
-        string pattern = @"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$";
-        return Regex.IsMatch(email, pattern);
-    }
-    
-    public bool IsValidPhoneNumber(string phoneNumber)
-    {
-        if (string.IsNullOrEmpty(phoneNumber))
-            return false;
-
-        return Regex.IsMatch(phoneNumber, @"^0\d{9}$");
-    }
-
-
     public async Task<ResponseDto> SignIn(SignInRequest signInRequest)
     {
         try
@@ -180,15 +34,15 @@ public class AuthenticationService : IAuthenticationService
             {
                 return ResponseUtil.Error("Invalid email format", "Failed", HttpStatusCode.BadRequest);
             }*/
-            User? user = await _unitOfWork.UserUOW.FindUserByEmail(signInRequest.Email.ToLower());
+            User? user = await _unitOfWork.UserUOW.FindUserByEmailAsync(signInRequest.Email.ToLower());
             if (user == null || !BCrypt.Net.BCrypt.Verify(signInRequest.Password, user.Password))
             {
                 return ResponseUtil.Error(ResponseMessages.EmailNotExists + " or " + ResponseMessages.PasswordNotExists, ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
             }
 
-            if (user.IsDeleted == true)
+            if (user.IsDeleted)
             {
-                return ResponseUtil.Error(ResponseMessages.UserDelete, ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
+                return ResponseUtil.Error(ResponseMessages.UserHasDeleted, ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
             }
 
             if (!signInRequest.FcmToken.Equals(user.FcmToken) && !signInRequest.FcmToken.Equals("string"))
@@ -239,62 +93,68 @@ public class AuthenticationService : IAuthenticationService
     public async Task<ResponseDto> SendOtpAsync(string email)
     {
         try
-        {
-                    var user = await _unitOfWork.UserUOW.FindUserByEmail(email);
-        if (user == null)
-        {
-            return ResponseUtil.Error(ResponseMessages.EmailNotExists, ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
-        }
-        var verificationOtp = await _unitOfWork.VerificationOtpUOW.FindByUserIdAsync(user.UserId);
-        if (verificationOtp != null)
-        {
-            if (verificationOtp.ExpirationTime > DateTime.Now && verificationOtp.IsDeleted == false)
-            {
-                return ResponseUtil.Error(ResponseMessages.OtpHasNotExpired, ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
-            }
-            verificationOtp.IsDeleted = true;
-            await _unitOfWork.VerificationOtpUOW.UpdateAsync(verificationOtp);
-            var saveChange = await _unitOfWork.SaveChangesAsync();
-            if (saveChange != 0)
-            { 
-                return ResponseUtil.Error(ResponseMessages.FailedToSaveData, ResponseMessages.OperationFailed, HttpStatusCode.InternalServerError);
-            }
-        }
-        int otpCode = GenerateOtp();
-        var otp = new VerificationOtp(otpCode.ToString(), user.UserId);
-        otp.User = user;
-        await _unitOfWork.VerificationOtpUOW.AddAsync(otp);
-        await _unitOfWork.SaveChangesAsync();
-        
-        string emailContent = $"Xin chào {user.UserName},<br><br>"
-                              + $"Mã OTP của bạn là: <b>{otpCode}</b><br>"
-                              + $"Vui lòng nhập OTP trong vòng 3 phút trước khi hết hạn.";
-        bool emailSent = false;
-        int retryCount = 0;
-        int maxRetries = 3;
-                    
-        //var emailResponse = await _emailService.SendEmail(userRequest.Email, "Tạo tài khoản thành công", emailContent);
-                    
-        while (!emailSent && retryCount < maxRetries)
         { 
-            var emailResponse = await _emailService.SendEmail(user.Email!, "Mã OTP của bạn", emailContent);
-            if (emailResponse.StatusCode == (int)HttpStatusCode.Created)
-            {
-                emailSent = true;
-            }
-            else
+            var user = await _unitOfWork.UserUOW.FindUserByEmailAsync(email);
+            if (user == null) 
             { 
-                retryCount++;
-                await Task.Delay(1000); // Chờ 2s trước khi thử lại
+                return ResponseUtil.Error(ResponseMessages.EmailNotExists, ResponseMessages.OperationFailed, HttpStatusCode.BadRequest); 
             }
-        }
 
-        if (!emailSent)
-        {
-            return ResponseUtil.Error(ResponseMessages.FailedToSendEmail, ResponseMessages.OperationFailed, HttpStatusCode.InternalServerError);
-        }
+            if (user.IsDeleted) 
+            { 
+                return ResponseUtil.Error(ResponseMessages.UserHasDeleted, ResponseMessages.OperationFailed, HttpStatusCode.BadRequest); 
+            }
             
-        return ResponseUtil.GetObject(ResponseMessages.SendOtpSuccess, ResponseMessages.CreatedSuccessfully, HttpStatusCode.Created, 1);
+            var verificationOtp = await _unitOfWork.VerificationOtpUOW.FindByUserIdAsync(user.UserId); 
+            if (verificationOtp != null) 
+            { 
+                if (verificationOtp.ExpirationTime > DateTime.Now && verificationOtp.IsDeleted == false) 
+                { 
+                    return ResponseUtil.Error(ResponseMessages.OtpHasNotExpired, ResponseMessages.OperationFailed, HttpStatusCode.BadRequest); 
+                } 
+                verificationOtp.IsDeleted = true; 
+                await _unitOfWork.VerificationOtpUOW.UpdateAsync(verificationOtp); 
+                var saveChange = await _unitOfWork.SaveChangesAsync(); 
+                if (saveChange != 0) 
+                { 
+                    return ResponseUtil.Error(ResponseMessages.FailedToSaveData, ResponseMessages.OperationFailed, HttpStatusCode.InternalServerError); 
+                } 
+            } 
+            int otpCode = GenerateOtp(); 
+            var otp = new VerificationOtp(otpCode.ToString(), user.UserId); 
+            otp.User = user; 
+            await _unitOfWork.VerificationOtpUOW.AddAsync(otp); 
+            await _unitOfWork.SaveChangesAsync();
+            
+            string emailContent = $"Xin chào {user.UserName},<br><br>"
+                                  + $"Mã OTP của bạn là: <b>{otpCode}</b><br>"
+                                  + $"Vui lòng nhập OTP trong vòng 3 phút trước khi hết hạn."; 
+            bool emailSent = false; 
+            int retryCount = 0; 
+            int maxRetries = 3;
+            
+            //var emailResponse = await _emailService.SendEmail(userRequest.Email, "Tạo tài khoản thành công", emailContent);
+            
+            while (!emailSent && retryCount < maxRetries) 
+            { 
+                var emailResponse = await _emailService.SendEmail(user.Email!, "Mã OTP của bạn", emailContent); 
+                if (emailResponse.StatusCode == (int)HttpStatusCode.Created) 
+                { 
+                    emailSent = true; 
+                }
+                else 
+                { 
+                    retryCount++; 
+                    await Task.Delay(1000); 
+                } 
+            }
+            
+            if (!emailSent) 
+            { 
+                return ResponseUtil.Error(ResponseMessages.FailedToSendEmail, ResponseMessages.OperationFailed, HttpStatusCode.InternalServerError); 
+            }
+            
+            return ResponseUtil.GetObject(ResponseMessages.SendOtpSuccess, ResponseMessages.CreatedSuccessfully, HttpStatusCode.Created, 1); 
         }
         catch (Exception e)
         {
@@ -321,6 +181,12 @@ public class AuthenticationService : IAuthenticationService
                     HttpStatusCode.BadRequest);
             }
 
+            if (verificationOtp.IsDeleted)
+            {
+                return ResponseUtil.Error(ResponseMessages.OtpNotFound, ResponseMessages.OperationFailed,
+                    HttpStatusCode.BadRequest);
+            }
+
             if (verificationOtp.AttemptCount >= 5)
             {
                 verificationOtp.IsDeleted = true;
@@ -339,11 +205,15 @@ public class AuthenticationService : IAuthenticationService
                     HttpStatusCode.BadRequest);
             }
 
-            var user = await _unitOfWork.UserUOW.FindUserByEmail(verifyOtpRequest.Email);
+            var user = await _unitOfWork.UserUOW.FindUserByEmailAsync(verifyOtpRequest.Email);
             if (user == null)
             {
-                return ResponseUtil.Error(ResponseMessages.EmailNotExists, ResponseMessages.OperationFailed,
-                    HttpStatusCode.BadRequest);
+                return ResponseUtil.Error(ResponseMessages.EmailNotExists, ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
+            }
+
+            if (user.IsDeleted)
+            {
+                return ResponseUtil.Error(ResponseMessages.UserHasDeleted, ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
             }
             
             if (verificationOtp.UserId != user.UserId)
@@ -355,7 +225,7 @@ public class AuthenticationService : IAuthenticationService
                     HttpStatusCode.BadRequest);
             }
 
-            if (verificationOtp.ExpirationTime < DateTime.Now)
+            if (verificationOtp.ExpirationTime < DateTime.Now.ToUniversalTime())
             {
                 verificationOtp.AttemptCount++;
                 await _unitOfWork.VerificationOtpUOW.UpdateAsync(verificationOtp);
@@ -364,7 +234,7 @@ public class AuthenticationService : IAuthenticationService
                     HttpStatusCode.BadRequest);
             }
 
-            if (verificationOtp.IsTrue == true)
+            if (verificationOtp.IsTrue)
             {
                 verificationOtp.AttemptCount++;
                 await _unitOfWork.VerificationOtpUOW.UpdateAsync(verificationOtp);
@@ -389,10 +259,15 @@ public class AuthenticationService : IAuthenticationService
     {
         try
         {
-            var user = await _unitOfWork.UserUOW.FindUserByEmail(changePasswordRequest.Email);
+            var user = await _unitOfWork.UserUOW.FindUserByEmailAsync(changePasswordRequest.Email);
             if (user == null)
             {
                 return ResponseUtil.Error(ResponseMessages.EmailNotExists, ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
+            }
+
+            if (user.IsDeleted)
+            {
+                return ResponseUtil.Error(ResponseMessages.UserHasDeleted, ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
             }
             
             var otp = await _unitOfWork.VerificationOtpUOW.FindByUserIdAsync(user.UserId);

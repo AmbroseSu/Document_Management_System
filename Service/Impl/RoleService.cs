@@ -53,35 +53,27 @@ public class RoleService : IRoleService
     {
         try
         {
-            if (roleDto.RoleName == null)
+            if (string.IsNullOrWhiteSpace(roleDto.RoleName))
             {
                 return ResponseUtil.Error(ResponseMessages.ValueNull, ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
             }
             
-            Role? roleCheck = _unitOfWork.RoleUOW.FindRoleByNameAsync(roleDto.RoleName).Result;
+            Role? roleCheck = await _unitOfWork.RoleUOW.FindRoleByNameAsync(roleDto.RoleName);
             if (roleCheck != null)
             {
                 return ResponseUtil.Error(ResponseMessages.RoleAlreadyExists, ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
             }
 
             Role roleNew = _mapper.Map<Role>(roleDto);
-            await _unitOfWork.RoleUOW.AddAsync(roleNew);
-            var saveChange =  await _unitOfWork.SaveChangesAsync();
-            if (saveChange > 0)
-            {
-                var result = _mapper.Map<RoleDto>(roleNew);
-                return ResponseUtil.GetObject(result, ResponseMessages.CreatedSuccessfully, HttpStatusCode.Created, 1);
-            }
-            else
-            {
-                return ResponseUtil.Error(ResponseMessages.FailedToSaveData, ResponseMessages.OperationFailed, HttpStatusCode.InternalServerError);
-            }
-
-
+            roleNew.CreatedDate = DateTime.Now;
+            await _unitOfWork.RoleUOW.AddAsync(roleNew); 
+            await _unitOfWork.SaveChangesAsync();
+            var result = _mapper.Map<RoleDto>(roleNew);
+            return ResponseUtil.GetObject(result, ResponseMessages.CreatedSuccessfully, HttpStatusCode.Created, 1);
         }
         catch (Exception e)
         {
-            return ResponseUtil.Error(e.Message, ResponseMessages.OperationFailed, HttpStatusCode.InternalServerError);
+            return ResponseUtil.Error(ResponseMessages.FailedToSaveData, e.Message, HttpStatusCode.InternalServerError);
         }
     }
 }

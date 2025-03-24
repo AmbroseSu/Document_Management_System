@@ -32,7 +32,7 @@ public class EmailService : IEmailService
             {
                 return ResponseUtil.Error(ResponseMessages.EmailFormatInvalid, ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
             }
-            var user = await _unitOfWork.UserUOW.FindUserByEmail(emailResponse);
+            var user = await _unitOfWork.UserUOW.FindUserByEmailAsync(emailResponse);
             if (user == null)
             {
                 return ResponseUtil.Error(ResponseMessages.EmailNotExists, ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);

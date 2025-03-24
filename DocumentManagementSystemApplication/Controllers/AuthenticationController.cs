@@ -17,12 +17,6 @@ namespace DocumentManagementSystemApplication.Controllers
             _authenticationService = authenticationService;
         }
         
-        [HttpPost("create-user-by-form")]
-        public async Task<ResponseDto> CreateUserByForm([FromBody] UserRequest userRequest)
-        {
-            return await _authenticationService.CreateUserByForm(userRequest);
-        }
-        
         [HttpPost("view-sign-in")]
         public async Task<ResponseDto> SiginAsync([FromBody] SignInRequest signInRequest )
         {

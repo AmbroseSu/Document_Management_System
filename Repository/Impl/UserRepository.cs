@@ -26,16 +26,26 @@ public class UserRepository : IUserRepository
         await _userDao.UpdateAsync(entity);
     }
 
-    public async Task<User?> FindUserByEmail(string email)
+    public async Task<User?> FindUserByEmailAsync(string email)
     {
         if (email == null) throw new ArgumentNullException(nameof(email));
         return await _userDao.FindByAsync(u => u.Email == email);
     }
+    
+    public async Task<User?> FindUserByIdAsync(Guid? id)
+    {
+        if (id == null) throw new ArgumentNullException(nameof(id));
+        return await _userDao.FindByAsync(u => u.UserId == id);
+    }
 
-    public async Task<User?> FindUserByUserName(string userName)
+    public async Task<User?> FindUserByUserNameAsync(string userName)
     {
         if (userName == null) throw new ArgumentNullException(nameof(userName));
         return await _userDao.FindByAsync(u => u.UserName == userName);
-        
+    }
+    
+    public async Task<IEnumerable<User>> FindAllUserAsync()
+    {
+        return await _userDao.FindAsync(u => true);
     }
 }

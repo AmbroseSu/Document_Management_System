@@ -4,6 +4,8 @@ public static class ResponseMessages
 {
     public const string CreatedSuccessfully = "Successfully created";
     public const string UpdateSuccessfully = "Successfully updated";
+    public const string GetSuccessfully = "Successfully get";
+    public const string DeleteSuccessfully = "Successfully deleted";
     public const string OperationFailed = "Operation failed";
     public const string ValueNull = "Please insert a valid value";
     public const string FailedToSaveData = "Unable to save data to database";
@@ -14,13 +16,17 @@ public static class ResponseMessages
     public const string EmailAlreadyExists = "Email already exists";
     public const string EmailNotExists = "Email not exists";
     public const string EmailFormatInvalid = "Invalid email format";
+    public const string UserIdInvalid = "Invalid user id";
     public const string PhoneNumberFormatInvalid = "Invalid phone number format";
     public const string FailedToSendEmail = "Tạo tài khoản thành công nhưng gửi email thất bại";
     public const string PasswordNotExists = "Password not exists";
     public const string PasswordChangeSuccess = "Password changed successfully";
     public const string OldPasswordIncorrect = "Old password is incorrect";
     public const string PasswordNotMatchConfirm = "New password and confirm password do not match";
-    public const string UserDelete = "User is deleted";
+    //public const string UserDelete = "User is deleted";
+    public const string UserNotFound = "User not found";
+    public const string UserActive = "User is active";
+    public const string UserHasDeleted = "User has been deleted";
     public const string SendOtpSuccess = "Send OTP Success";
     public const string OtpHasNotExpired = "OTP has not expired, please wait 3 minutes to resend OTP.";
     public const string OtpNotFound = "OTP not found";

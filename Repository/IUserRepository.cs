@@ -7,6 +7,8 @@ public interface IUserRepository
 {
     Task AddAsync(User entity);
     Task UpdateAsync(User entity);
-    Task<User?> FindUserByEmail(string email);
-    Task<User?> FindUserByUserName(string userName);
+    Task<User?> FindUserByEmailAsync(string email);
+    Task<User?> FindUserByIdAsync(Guid? id);
+    Task<User?> FindUserByUserNameAsync(string userName);
+    Task<IEnumerable<User>> FindAllUserAsync();
 }
