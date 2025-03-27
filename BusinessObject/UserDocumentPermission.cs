@@ -5,12 +5,20 @@ namespace BusinessObject;
 
 public class UserDocumentPermission
 {
+    private DateTime _createdDate;
+
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     [Key]
     public Guid UserDocumentPermissionId { get; set; }
-    public DateTime CreatedDate { get; set; }
+
+    public DateTime CreatedDate
+    {
+        get => _createdDate.ToLocalTime();
+        set => _createdDate = value.ToUniversalTime();
+    }
+
     public bool IsDeleted { get; set; }
-    
+
 
     public Guid UserId { get; set; }
     public Guid ArchivedDocumentId { get; set; }

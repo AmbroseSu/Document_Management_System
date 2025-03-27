@@ -24,7 +24,7 @@ public class BaseDao<T> where T : class
         }
     }
     */
-    
+
 
     /*public BaseDao(DocumentManagementSystemDbContext context)
     {
@@ -44,19 +44,20 @@ public class BaseDao<T> where T : class
         _context.Set<T>().Add(entity);
         //await context.SaveChangesAsync();
     }
-    
+
     public async Task AddRangeAsync(List<T> entities)
     {
         if (entities == null || entities.Count == 0) return;
         await _context.Set<T>().AddRangeAsync(entities);
     }
-    
+
     public async Task RemoveRangeAsync(List<T> entities)
     {
         if (entities == null || entities.Count == 0) return;
         _context.Set<T>().RemoveRange(entities);
         //await _context.SaveChangesAsync();
     }
+
     public async Task UpdateAsync(T entity)
     {
         if (entity == null) throw new ArgumentNullException(nameof(entity));
@@ -64,24 +65,42 @@ public class BaseDao<T> where T : class
         _context.Set<T>().Update(entity);
         //await _context.SaveChangesAsync();
     }
+
     public async Task<IEnumerable<T>> GetAllAsync()
     {
         //using var context = new DocumentManagementSystemDbContext();
         return await _context.Set<T>().ToListAsync();
     }
 
-    public async Task<IEnumerable<T>> FindAsync(Expression<Func<T, bool>> predicate)
+    public async Task<IEnumerable<T>> FindAsync(Expression<Func<T, bool>> predicate,
+        Func<IQueryable<T>, IQueryable<T>> include = null)
     {
         if (predicate == null) throw new ArgumentNullException(nameof(predicate));
+        var query = _context.Set<T>().Where(predicate);
+        if (include != null) query = include(query);
+
+        return await query.ToListAsync();
         //using var context = new DocumentManagementSystemDbContext();
-        return await _context.Set<T>().Where(predicate).ToListAsync();
+        //return await _context.Set<T>().Where(predicate).ToListAsync();
     }
-    public async Task<T?> FindByAsync(Expression<Func<T, bool>> predicate)
+
+    public async Task<T?> FindByAsync(Expression<Func<T, bool>> predicate,
+        Func<IQueryable<T>, IQueryable<T>> include = null)
     {
+        if (predicate == null) throw new ArgumentNullException(nameof(predicate));
+        var query = _context.Set<T>().Where(predicate);
+        if (include != null) query = include(query);
+
+        return await query.FirstOrDefaultAsync();
+        //using var context = new DocumentManagementSystemDbContext();
+        //return await _context.Set<T>().Where(predicate).FirstOrDefaultAsync();
+    }
+
+    /*{
         if (predicate == null) throw new ArgumentNullException(nameof(predicate));
         //using var context = new DocumentManagementSystemDbContext();
         return await _context.Set<T>().Where(predicate).FirstOrDefaultAsync();
-    }
+    }*/
     public async Task<T?> FindByIdAsync(Guid id)
     {
         //using var context = new DocumentManagementSystemDbContext();

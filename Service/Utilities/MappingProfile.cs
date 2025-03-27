@@ -1,5 +1,4 @@
-﻿using System.Globalization;
-using AutoMapper;
+﻿using AutoMapper;
 using BusinessObject;
 using DataAccess.DTO;
 using DataAccess.DTO.Request;
@@ -92,7 +91,7 @@ public class MappingProfile : Profile
             .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
         CreateMap<PlatformFee, PlatformFeeDTO>();
         CreateMap<Transaction, TransactionDTO>();*/
-        
+
         CreateMap<User, UserDto>();
         CreateMap<UserDto, User>();
         CreateMap<User, UserRequest>()
@@ -106,6 +105,7 @@ public class MappingProfile : Profile
         CreateMap<RoleDto, Role>();
         CreateMap<RoleResource, RoleResourceDto>();
         CreateMap<RoleResourceDto, RoleResource>();
-        
+        CreateMap<Resource, ResourceResponse>();
+        CreateMap<ResourceResponse, Resource>();
     }
 }

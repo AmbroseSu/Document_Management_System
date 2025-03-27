@@ -11,9 +11,9 @@ namespace Service.Impl;
 
 public class PermissionService : IPermissionService
 {
-    
-    private readonly IUnitOfWork _unitOfWork;
     private readonly IMapper _mapper;
+
+    private readonly IUnitOfWork _unitOfWork;
 
     public PermissionService(IUnitOfWork unitOfWork, IMapper mapper)
     {
@@ -25,11 +25,11 @@ public class PermissionService : IPermissionService
     {
         var defaultPermissions = new List<Permission>
         {
-            new Permission { PermissionName = "Update" },
-            new Permission { PermissionName = "View" },
-            new Permission { PermissionName = "Create" },
+            new() { PermissionName = "Update" },
+            new() { PermissionName = "View" },
+            new() { PermissionName = "Create" },
             //new Permission { PermissionName = "Modify" },
-            new Permission { PermissionName = "Delete" }
+            new() { PermissionName = "Delete" }
         };
 
         // Lấy danh sách Permissions hiện có từ DB qua unitOfWork
@@ -53,27 +53,25 @@ public class PermissionService : IPermissionService
         try
         {
             if (permissionDto.PermissionName == null)
-            {
-                return ResponseUtil.Error(ResponseMessages.ValueNull, ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
-            }
-            Permission? permissionCheck = _unitOfWork.PermissionUOW.FindPermissionByNameAsync(permissionDto.PermissionName).Result;
+                return ResponseUtil.Error(ResponseMessages.ValueNull, ResponseMessages.OperationFailed,
+                    HttpStatusCode.BadRequest);
+            var permissionCheck = _unitOfWork.PermissionUOW.FindPermissionByNameAsync(permissionDto.PermissionName)
+                .Result;
             if (permissionCheck != null)
-            {
-                return ResponseUtil.Error(ResponseMessages.PermissionAlreadyExists, ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
-            }
+                return ResponseUtil.Error(ResponseMessages.PermissionAlreadyExists, ResponseMessages.OperationFailed,
+                    HttpStatusCode.BadRequest);
             //Permission permissionNew = new Permission { PermissionName = permissionDto.PermissionName };
-            Permission permissionNew = _mapper.Map<Permission>(permissionDto);
+            var permissionNew = _mapper.Map<Permission>(permissionDto);
             await _unitOfWork.PermissionUOW.AddAsync(permissionNew);
-            var saveChange =  await _unitOfWork.SaveChangesAsync();
+            var saveChange = await _unitOfWork.SaveChangesAsync();
             if (saveChange > 0)
             {
                 var result = _mapper.Map<PermissionDto>(permissionNew);
                 return ResponseUtil.GetObject(result, ResponseMessages.CreatedSuccessfully, HttpStatusCode.Created, 1);
             }
-            else
-            {
-                return ResponseUtil.Error(ResponseMessages.FailedToSaveData, ResponseMessages.OperationFailed, HttpStatusCode.InternalServerError);
-            }
+
+            return ResponseUtil.Error(ResponseMessages.FailedToSaveData, ResponseMessages.OperationFailed,
+                HttpStatusCode.InternalServerError);
         }
         catch (Exception e)
         {

@@ -5,35 +5,47 @@ namespace BusinessObject;
 
 public class VerificationOtp
 {
-    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-    [Key]
-    public int Id { get; set; }
-    public string? Otp { get; set; }
-    public DateTime ExpirationTime { get; set; }
-    public bool IsTrue { get; set; }
-    public bool IsDeleted { get; set; }
-    
-    private const int EXPIRATION_TIME_MINUTES = 2;
-    
-    public Guid UserId { get; set; }
-    public virtual User? User { get; set; } 
-    
+    private const int EXPIRATION_TIME_MINUTES = 3;
+    private DateTime _expirationTime;
+
     public VerificationOtp()
     {
         // Default constructor
     }
-    
+
     public VerificationOtp(string otp, Guid userId)
     {
-        this.Otp = otp;
-        this.UserId = userId;
-        this.ExpirationTime = GetTokenExpirationTime();
+        Otp = otp;
+        UserId = userId;
+        IsTrue = false;
+        IsDeleted = false;
+        AttemptCount = 0;
+        ExpirationTime = GetTokenExpirationTime();
     }
-    
+
+    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+    [Key]
+    public int Id { get; set; }
+
+    public string? Otp { get; set; }
+
+    public DateTime ExpirationTime
+    {
+        get => _expirationTime.ToLocalTime();
+        set => _expirationTime = value.ToUniversalTime();
+    }
+
+    public bool IsTrue { get; set; }
+    public bool IsDeleted { get; set; }
+    public int AttemptCount { get; set; }
+
+    public Guid UserId { get; set; }
+    public virtual User? User { get; set; }
+
     private DateTime GetTokenExpirationTime()
     {
-        DateTime now = DateTime.Now; 
-        DateTime expirationTime = now.AddMinutes(EXPIRATION_TIME_MINUTES).ToUniversalTime();
+        var now = DateTime.Now;
+        var expirationTime = now.AddMinutes(EXPIRATION_TIME_MINUTES);
         return expirationTime;
     }
 }

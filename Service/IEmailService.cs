@@ -4,5 +4,5 @@ namespace Service;
 
 public interface IEmailService
 {
-    Task<ResponseDto> SendEmail(String email);
+    Task<ResponseDto> SendEmail(string email, string subject, string content);
 }

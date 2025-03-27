@@ -1,7 +1,5 @@
 ﻿using System.Net;
-using System.Text;
 using DataAccess.DTO;
-using Newtonsoft.Json;
 
 namespace Service.Utilities;
 
@@ -21,7 +19,8 @@ public class ResponseUtil
     }
 
     // Phương thức trả về một tập hợp đối tượng (collection)
-    public static ResponseDto GetCollection(object result, string message, HttpStatusCode status, int size, int page, int limit, long count)
+    public static ResponseDto GetCollection(object result, string message, HttpStatusCode status, int size, int page,
+        int limit, long count)
     {
         return new ResponseDto
         {
@@ -57,10 +56,9 @@ public class ResponseUtil
             MeatadataDto = null
         };
     }
-    
+
     private static MeatadataDto GetMeatadata(int page, int limit, long count)
     {
-        
         var totalPages = (int)Math.Ceiling((double)count / limit);
 
         return new MeatadataDto

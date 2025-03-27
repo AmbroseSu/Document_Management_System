@@ -15,7 +15,7 @@ public class TaskDto
     public DateTime CreatedDate { get; set; }
     public bool IsDeleted { get; set; }
     public bool IsActive { get; set; }
-    
+
     public Guid? StepId { get; set; }
     public Guid? DocumentId { get; set; }
     public List<Guid>? TaskUserIds { get; set; }

@@ -8,9 +8,10 @@ public class DocumentType
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     [Key]
     public Guid DocumentTypeId { get; set; }
+
     public string? DocumentTypeName { get; set; }
     public bool IsDeleted { get; set; }
-    
+
     public List<DocumentTypeWorkflow>? DocumentTypeWorkflows { get; set; }
     public List<ArchivedDocument>? ArchivedDocuments { get; set; }
 

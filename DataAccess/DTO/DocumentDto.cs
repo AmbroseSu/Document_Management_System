@@ -14,7 +14,7 @@ public class DocumentDto
     public bool IsTemplate { get; set; }
     public bool IsDeleted { get; set; }
     public bool IsActive { get; set; }
-    
+
     public Guid? DocumentTypeId { get; set; }
     public Guid? DeadlineId { get; set; }
     public Guid? DocumentFileExtensionId { get; set; }

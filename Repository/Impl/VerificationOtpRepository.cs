@@ -5,15 +5,15 @@ using Task = System.Threading.Tasks.Task;
 
 namespace Repository.Impl;
 
-public class VerificationOtpRepository: IVerificationOtpRepository
+public class VerificationOtpRepository : IVerificationOtpRepository
 {
     private readonly BaseDao<VerificationOtp> _verificationOtpDao;
-    
+
     public VerificationOtpRepository(DocumentManagementSystemDbContext context)
     {
         _verificationOtpDao = new BaseDao<VerificationOtp>(context ?? throw new ArgumentNullException(nameof(context)));
     }
-    
+
     public async Task AddAsync(VerificationOtp entity)
     {
         if (entity == null) throw new ArgumentNullException(nameof(entity));

@@ -26,6 +26,21 @@ public class RoleRepository : IRoleRepository
         return await _roleDao.GetAllAsync();
     }
 
+    public async Task<IEnumerable<Role>> GetAllActiveAsync()
+    {
+        return await _roleDao.FindAsync(r => r.IsDeleted == false);
+    }
+
+    public async Task<IEnumerable<Role>> GetAllByMainRoleAsync()
+    {
+        return await _roleDao.FindAsync(r => r.CreatedDate == null);
+    }
+
+    public async Task<IEnumerable<Role>> GetAllBySubRoleAsync()
+    {
+        return await _roleDao.FindAsync(r => r.CreatedDate != null);
+    }
+
     public async Task AddAsync(Role role)
     {
         if (role == null) throw new ArgumentNullException(nameof(role));
@@ -35,14 +50,12 @@ public class RoleRepository : IRoleRepository
     public async Task<Role?> FindRoleByNameAsync(string roleName)
     {
         if (roleName == null) throw new ArgumentNullException(nameof(roleName));
-        return await _roleDao.FindByAsync(p => p.RoleName == roleName);
+        return await _roleDao.FindByAsync(p => p.RoleName == roleName && !p.IsDeleted);
     }
-    
+
     public async Task<Role?> FindRoleByIdAsync(Guid? roleId)
     {
         if (roleId == null) throw new ArgumentNullException(nameof(roleId));
-        return await _roleDao.FindByAsync(p => p.RoleId == roleId);
+        return await _roleDao.FindByAsync(p => p.RoleId == roleId && !p.IsDeleted);
     }
-    
-    
 }

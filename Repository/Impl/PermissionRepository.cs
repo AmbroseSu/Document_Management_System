@@ -1,21 +1,19 @@
 using BusinessObject;
 using DataAccess;
 using DataAccess.DAO;
-using DataAccess.DTO;
 using Task = System.Threading.Tasks.Task;
 
 namespace Repository.Impl;
 
 public class PermissionRepository : IPermissionRepository
 {
-    
     private readonly BaseDao<Permission> _permissionDao;
-    
+
     public PermissionRepository(DocumentManagementSystemDbContext context)
     {
         _permissionDao = new BaseDao<Permission>(context ?? throw new ArgumentNullException(nameof(context)));
     }
-    
+
     public async Task AddRangeAsync(List<Permission> permissions)
     {
         if (permissions == null) throw new ArgumentNullException(nameof(permissions));
@@ -36,9 +34,10 @@ public class PermissionRepository : IPermissionRepository
     public async Task<Permission?> FindPermissionByNameAsync(string permissionName)
     {
         if (permissionName == null) throw new ArgumentNullException(nameof(permissionName));
-        return await _permissionDao.FindByAsync(p => p.PermissionName != null && p.PermissionName.ToLower() == permissionName.ToLower());
+        return await _permissionDao.FindByAsync(p =>
+            p.PermissionName != null && p.PermissionName.ToLower() == permissionName.ToLower());
     }
-    
+
     public async Task<Permission?> FindPermissionByIdAsync(Guid? permissionId)
     {
         if (permissionId == null) throw new ArgumentNullException(nameof(permissionId));
