@@ -1,3 +1,4 @@
+using BusinessObject.Enums;
 using DataAccess.DTO;
 using DataAccess.DTO.Request;
 using Microsoft.AspNetCore.Authorization;
@@ -8,7 +9,7 @@ namespace DocumentManagementSystemApplication.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-[Authorize]
+// [Authorize]
 public class RoleResourceController : ControllerBase
 {
     private readonly IRoleResourceService _roleResourceService;
@@ -23,4 +24,11 @@ public class RoleResourceController : ControllerBase
     {
         return await _roleResourceService.UpdateRoleResourceAsync(roleResourceRequests);
     }
+    
+    [HttpGet("view-role-resources")]
+    public async Task<ResponseDto> ViewRoleResources([FromQuery] RoleFillter roleFillter)
+    {
+        return await _roleResourceService.GetRoleResourceAsync(roleFillter);
+    }
+    
 }

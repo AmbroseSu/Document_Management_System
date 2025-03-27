@@ -18,6 +18,8 @@ public class Role
         get => _createdDate?.ToLocalTime();
         set => _createdDate = value?.ToUniversalTime();
     }
+    
+    public bool IsDeleted { get; set; }
 
 
     public List<Step>? Steps { get; set; }

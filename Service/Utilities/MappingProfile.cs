@@ -105,5 +105,7 @@ public class MappingProfile : Profile
         CreateMap<RoleDto, Role>();
         CreateMap<RoleResource, RoleResourceDto>();
         CreateMap<RoleResourceDto, RoleResource>();
+        CreateMap<Resource, ResourceResponse>();
+        CreateMap<ResourceResponse, Resource>();
     }
 }

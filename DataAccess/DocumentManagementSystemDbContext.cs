@@ -357,6 +357,7 @@ public class DocumentManagementSystemDbContext : DbContext
                 .HasDefaultValueSql("gen_random_uuid()");
             entity.Property(e => e.RoleName);
             entity.Property(e => e.CreatedDate);
+            entity.Property(e => e.IsDeleted);
 
             entity.HasMany(e => e.UserRoles)
                 .WithOne(e => e.Role)
