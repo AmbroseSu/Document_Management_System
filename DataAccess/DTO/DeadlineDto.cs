@@ -9,7 +9,7 @@ public class DeadlineDto
     public DateTime EndDate { get; set; }
     public DateTime ReminderDate { get; set; }
     public bool IsDeleted { get; set; }
-    
+
     public Guid? UserId { get; set; }
     public Guid? DocumentId { get; set; }
 }

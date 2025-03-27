@@ -1,5 +1,4 @@
 using BusinessObject;
-using DataAccess.DTO;
 using Task = System.Threading.Tasks.Task;
 
 namespace Repository;
@@ -11,5 +10,4 @@ public interface IPermissionRepository
     Task AddAsync(Permission permission);
     Task<Permission?> FindPermissionByNameAsync(string permissionName);
     Task<Permission?> FindPermissionByIdAsync(Guid? permissionId);
-
 }

@@ -9,10 +9,11 @@ public class Workflow
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     [Key]
     public Guid WorkflowId { get; set; }
+
     public string? WorkflowName { get; set; }
     public Scope Scope { get; set; }
     public bool IsAllocate { get; set; }
-    
+
     public List<Flow>? Flows { get; set; }
     public List<DocumentTypeWorkflow>? DocumentTypeWorkflows { get; set; }
 

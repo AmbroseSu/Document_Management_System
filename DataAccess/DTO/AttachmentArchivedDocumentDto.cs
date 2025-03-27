@@ -6,6 +6,6 @@ public class AttachmentArchivedDocumentDto
     public string? AttachmentName { get; set; }
     public string? AttachmentUrl { get; set; }
     public bool IsDeleted { get; set; }
-    
+
     public Guid? ArchivedDocumentId { get; set; }
 }

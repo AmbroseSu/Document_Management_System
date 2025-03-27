@@ -9,7 +9,7 @@ public static class ResponseMessages
     public const string OperationFailed = "Operation failed";
     public const string ValueNull = "Please insert a valid value";
     public const string FailedToSaveData = "Unable to save data to database";
-    
+
     //User
     public const string UserNameAlreadyExists = "Username already exists";
     public const string InvalidEmailFormat = "Please insert a valid email format";
@@ -17,12 +17,16 @@ public static class ResponseMessages
     public const string EmailNotExists = "Email not exists";
     public const string EmailFormatInvalid = "Invalid email format";
     public const string UserIdInvalid = "Invalid user id";
+    public const string UserHasUpdatedInformation = "User has updated information";
+    public const string NoChangesDetected = "No changes detected";
     public const string PhoneNumberFormatInvalid = "Invalid phone number format";
     public const string FailedToSendEmail = "Tạo tài khoản thành công nhưng gửi email thất bại";
     public const string PasswordNotExists = "Password not exists";
     public const string PasswordChangeSuccess = "Password changed successfully";
     public const string OldPasswordIncorrect = "Old password is incorrect";
+
     public const string PasswordNotMatchConfirm = "New password and confirm password do not match";
+
     //public const string UserDelete = "User is deleted";
     public const string UserNotFound = "User not found";
     public const string UserActive = "User is active";
@@ -36,7 +40,9 @@ public static class ResponseMessages
     public const string OtpVerified = "OTP verified successfully.";
     public const string OtpNotVerified = "OTP has not verified.";
     public const string OtpNotmatch = "OTP has not matched.";
+
     public const string OtpLocked = "Too many failed attempts. Please request a new OTP.";
+
     //Permission
     public const string PermissionAlreadyExists = "Permission already exists";
     public const string PermissionNotExistsWithApi = "No suitable permissions were found for the API";
@@ -46,13 +52,12 @@ public static class ResponseMessages
     public const string ResourceAlreadyExists = "Resource already exists";
     public const string ResourceCannotBeNull = "Resource cannot be null or empty";
     public const string ResourceNotExists = "Resource not found with ID";
-    
+
     //Role
     public const string RoleAlreadyExists = "Role already exists";
     public const string RoleNotExists = "Role not found with ID";
-    
+
     //RoleResource
     public const string RoleWithResourceCannotBeNull = "RoleResourceRequests cannot be null or empty";
     public const string RoleResourceNotExists = "RoleResource not found";
-    
 }

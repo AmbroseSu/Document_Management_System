@@ -8,7 +8,7 @@ namespace Repository.Impl;
 public class RoleResourceRepository : IRoleResourceRepository
 {
     private readonly BaseDao<RoleResource> _roleResourceDao;
-    
+
     public RoleResourceRepository(DocumentManagementSystemDbContext context)
     {
         _roleResourceDao = new BaseDao<RoleResource>(context ?? throw new ArgumentNullException(nameof(context)));

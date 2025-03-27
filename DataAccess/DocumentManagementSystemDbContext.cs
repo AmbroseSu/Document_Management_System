@@ -8,10 +8,17 @@ namespace DataAccess;
 
 public class DocumentManagementSystemDbContext : DbContext
 {
-    public DocumentManagementSystemDbContext() { }
+    private static readonly ILoggerFactory MyLoggerFactory = LoggerFactory.Create(builder => { builder.AddConsole(); });
 
-    public DocumentManagementSystemDbContext(DbContextOptions<DocumentManagementSystemDbContext> options) : base(options) { }
-    
+    public DocumentManagementSystemDbContext()
+    {
+    }
+
+    public DocumentManagementSystemDbContext(DbContextOptions<DocumentManagementSystemDbContext> options) :
+        base(options)
+    {
+    }
+
     public virtual DbSet<ArchivedDocument> ArchivedDocuments { get; set; }
     public virtual DbSet<ArchiveDocumentSignature> ArchiveDocumentSignatures { get; set; }
     public virtual DbSet<AttachmentArchivedDocument> AttachmentArchivedDocuments { get; set; }
@@ -36,24 +43,17 @@ public class DocumentManagementSystemDbContext : DbContext
     public virtual DbSet<UserRole> UserRoles { get; set; }
     public virtual DbSet<VerificationOtp> VerificationOtps { get; set; }
     public virtual DbSet<Workflow> Workflows { get; set; }
-    
-    private static readonly ILoggerFactory MyLoggerFactory = LoggerFactory.Create(builder => 
-    {
-        builder.AddConsole(); 
-    });
-    
-    
+
+
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         if (!optionsBuilder.IsConfigured)
-        {
             optionsBuilder.UseNpgsql(GetConnectionString())
                 .EnableSensitiveDataLogging() // Bật log dữ liệu nhạy cảm
                 .UseLoggerFactory(MyLoggerFactory) // Kích hoạt logger
                 .EnableDetailedErrors(); // Hiển thị lỗi chi tiết;
-        }
     }
-    
+
     private string GetConnectionString()
     {
         IConfiguration config = new ConfigurationBuilder()
@@ -64,13 +64,12 @@ public class DocumentManagementSystemDbContext : DbContext
 
         return strConn;
     }
-    
+
     public void EnsurePgCryptoExtension()
     {
         // Chạy lệnh tạo extension
         Database.ExecuteSqlRaw("CREATE EXTENSION IF NOT EXISTS \"pgcrypto\";");
     }
-    
 
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -134,7 +133,6 @@ public class DocumentManagementSystemDbContext : DbContext
             entity.Property(e => e.ValidFrom);
             entity.Property(e => e.OrderIndex);
             entity.Property(e => e.SignatureValue);
-            
         });
 
         modelBuilder.Entity<AttachmentArchivedDocument>(entity =>
@@ -189,7 +187,7 @@ public class DocumentManagementSystemDbContext : DbContext
             entity.Property(e => e.OwnerName);
             entity.Property(e => e.IsRevoked);
             entity.Property(e => e.SignatureImageUrl);
-            
+
             entity.HasMany(e => e.ArchiveDocumentSignatures)
                 .WithOne(e => e.DigitalCertificate)
                 .HasForeignKey(e => e.DigitalCertificateId);
@@ -207,7 +205,7 @@ public class DocumentManagementSystemDbContext : DbContext
                 .HasDefaultValueSql("gen_random_uuid()");
             entity.Property(e => e.DivisionName);
             entity.Property(e => e.IsDeleted);
-            
+
             entity.HasMany(e => e.Users)
                 .WithOne(e => e.Division)
                 .HasForeignKey(e => e.DivisionId);
@@ -233,7 +231,7 @@ public class DocumentManagementSystemDbContext : DbContext
             entity.Property(e => e.DateReceived);
             entity.Property(e => e.DateIssued);
             entity.Property(e => e.IsDeleted);
-            
+
             entity.HasMany(e => e.Tasks)
                 .WithOne(e => e.Document)
                 .HasForeignKey(e => e.DocumentId);
@@ -247,7 +245,7 @@ public class DocumentManagementSystemDbContext : DbContext
                 .WithOne(e => e.Document)
                 .HasForeignKey(e => e.DocumentId);
         });
-        
+
         modelBuilder.Entity<DocumentSignature>(entity =>
         {
             entity.ToTable("DocumentSignature");
@@ -259,9 +257,8 @@ public class DocumentManagementSystemDbContext : DbContext
             entity.Property(e => e.ValidFrom);
             entity.Property(e => e.OrderIndex);
             entity.Property(e => e.SignatureValue);
-            
         });
-        
+
 
         modelBuilder.Entity<DocumentType>(entity =>
         {
@@ -272,7 +269,7 @@ public class DocumentManagementSystemDbContext : DbContext
                 .HasDefaultValueSql("gen_random_uuid()");
             entity.Property(e => e.DocumentTypeName);
             entity.Property(e => e.IsDeleted);
-            
+
             entity.HasMany(e => e.DocumentTypeWorkflows)
                 .WithOne(e => e.DocumentType)
                 .HasForeignKey(e => e.DocumentTypeId);
@@ -288,12 +285,12 @@ public class DocumentManagementSystemDbContext : DbContext
             entity.Property(e => e.DocumentTypeWorkflowId)
                 .HasColumnType("uuid")
                 .HasDefaultValueSql("gen_random_uuid()");
-            
+
             entity.HasMany(e => e.Documents)
                 .WithOne(e => e.DocumentTypeWorkflow)
                 .HasForeignKey(e => e.DocumentTypeWorkflowId);
         });
-        
+
         modelBuilder.Entity<DocumentVersion>(entity =>
         {
             entity.ToTable("DocumentVersion");
@@ -315,12 +312,12 @@ public class DocumentManagementSystemDbContext : DbContext
                 .HasColumnType("uuid")
                 .HasDefaultValueSql("gen_random_uuid()");
             entity.Property(e => e.FlowNumber);
-            
+
             entity.HasMany(e => e.Steps)
                 .WithOne(e => e.Flow)
                 .HasForeignKey(e => e.FlowId);
         });
-        
+
         modelBuilder.Entity<Permission>(entity =>
         {
             entity.ToTable("Permission");
@@ -329,7 +326,7 @@ public class DocumentManagementSystemDbContext : DbContext
                 .HasColumnType("uuid")
                 .HasDefaultValueSql("gen_random_uuid()");
             entity.Property(e => e.PermissionName);
-            
+
             entity.HasMany(e => e.Resources)
                 .WithOne(e => e.Permission)
                 .HasForeignKey(e => e.PermissionId);
@@ -344,12 +341,12 @@ public class DocumentManagementSystemDbContext : DbContext
                 .HasDefaultValueSql("gen_random_uuid()");
             entity.Property(e => e.ResourceApi);
             entity.Property(e => e.ResourceName);
-            
+
             entity.HasMany(e => e.RoleResources)
                 .WithOne(e => e.Resource)
                 .HasForeignKey(e => e.ResourceId);
         });
-        
+
 
         modelBuilder.Entity<Role>(entity =>
         {
@@ -360,7 +357,7 @@ public class DocumentManagementSystemDbContext : DbContext
                 .HasDefaultValueSql("gen_random_uuid()");
             entity.Property(e => e.RoleName);
             entity.Property(e => e.CreatedDate);
-            
+
             entity.HasMany(e => e.UserRoles)
                 .WithOne(e => e.Role)
                 .HasForeignKey(e => e.RoleId);
@@ -389,7 +386,7 @@ public class DocumentManagementSystemDbContext : DbContext
             entity.Property(e => e.StepNumber);
             entity.Property(e => e.Action);
             entity.Property(e => e.IsDeleted);
-            
+
             entity.HasMany(e => e.Tasks)
                 .WithOne(e => e.Step)
                 .HasForeignKey(e => e.StepId);
@@ -411,12 +408,12 @@ public class DocumentManagementSystemDbContext : DbContext
             entity.Property(e => e.CreatedDate);
             entity.Property(e => e.IsDeleted);
             entity.Property(e => e.IsActive);
-            
+
             entity.HasMany(e => e.Comments)
                 .WithOne(e => e.Task)
                 .HasForeignKey(e => e.TaskId);
         });
-        
+
 
         modelBuilder.Entity<User>(entity =>
         {
@@ -433,6 +430,7 @@ public class DocumentManagementSystemDbContext : DbContext
             entity.Property(e => e.Address);
             entity.Property(e => e.Avatar);
             entity.Property(e => e.Gender);
+            entity.Property(e => e.IdentityCard);
             entity.Property(e => e.CreatedAt);
             entity.Property(e => e.UpdatedAt);
             entity.Property(e => e.FcmToken);
@@ -440,7 +438,7 @@ public class DocumentManagementSystemDbContext : DbContext
             entity.Property(e => e.DateOfBirth);
             entity.Property(e => e.IsDeleted);
             entity.Property(e => e.IsEnable);
-            
+
 
             entity.HasMany(e => e.VerificationOtps)
                 .WithOne(e => e.User)
@@ -464,7 +462,7 @@ public class DocumentManagementSystemDbContext : DbContext
                 .WithOne(e => e.User)
                 .HasForeignKey(e => e.UserId);
         });
-        
+
 
         modelBuilder.Entity<UserDocumentPermission>(entity =>
         {
@@ -508,7 +506,7 @@ public class DocumentManagementSystemDbContext : DbContext
             entity.Property(e => e.WorkflowName);
             entity.Property(e => e.Scope);
             entity.Property(e => e.IsAllocate);
-            
+
             entity.HasMany(e => e.Flows)
                 .WithOne(e => e.Workflow)
                 .HasForeignKey(e => e.WorkflowId);
@@ -517,5 +515,4 @@ public class DocumentManagementSystemDbContext : DbContext
                 .HasForeignKey(e => e.WorkflowId);
         });
     }
-
 }

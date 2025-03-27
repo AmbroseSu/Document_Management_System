@@ -9,5 +9,5 @@ public interface IAuthenticationService
     Task<ResponseDto> SendOtpAsync(string email);
     Task<ResponseDto> VerifyOtpAsync(VerifyOtpRequest verifyOtpRequest);
     Task<ResponseDto> ChangePasswordAsync(ChangePasswordRequest changePasswordRequest);
-    
+    Task<ResponseDto> ForgotPasswordAsync(ForgotPasswordRequest forgotPasswordRequest);
 }

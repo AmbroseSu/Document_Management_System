@@ -11,7 +11,7 @@ public class AuthorizeResourceAttribute : Attribute, IAuthorizationFilter
     {
         _requiredResource = resource;
     }
-    
+
     public void OnAuthorization(AuthorizationFilterContext context)
     {
         var user = context.HttpContext.User;
@@ -24,9 +24,6 @@ public class AuthorizeResourceAttribute : Attribute, IAuthorizationFilter
 
         var resources = user.Claims.FirstOrDefault(c => c.Type == "resources")?.Value.Split(",") ?? new string[] { };
 
-        if (!resources.Contains(_requiredResource))
-        {
-            context.Result = new UnauthorizedResult();
-        }
+        if (!resources.Contains(_requiredResource)) context.Result = new UnauthorizedResult();
     }
 }

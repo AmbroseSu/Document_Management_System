@@ -6,7 +6,7 @@ public class AttachmentDocumentDto
     public string? AttachmentDocumentName { get; set; }
     public string? AttachmentDocumentUrl { get; set; }
     public bool IsDeleted { get; set; }
-    
+
     public Guid? DocumentId { get; set; }
     public Guid? DocumentFileExtensionId { get; set; }
 }

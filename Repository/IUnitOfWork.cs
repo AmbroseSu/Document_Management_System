@@ -9,6 +9,8 @@ public interface IUnitOfWork : IDisposable
     IRoleResourceRepository RoleResourceUOW { get; }
     IUserRoleRepository UserRoleUOW { get; }
     IVerificationOtpRepository VerificationOtpUOW { get; }
-   
+    IDigitalCertificateRepository DigitalCertificateUOW { get; }
+    IDivisionRepository DivisionUOW { get; }
+
     Task<int> SaveChangesAsync();
 }

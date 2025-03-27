@@ -37,12 +37,10 @@ public class RoleRepository : IRoleRepository
         if (roleName == null) throw new ArgumentNullException(nameof(roleName));
         return await _roleDao.FindByAsync(p => p.RoleName == roleName);
     }
-    
+
     public async Task<Role?> FindRoleByIdAsync(Guid? roleId)
     {
         if (roleId == null) throw new ArgumentNullException(nameof(roleId));
         return await _roleDao.FindByAsync(p => p.RoleId == roleId);
     }
-    
-    
 }

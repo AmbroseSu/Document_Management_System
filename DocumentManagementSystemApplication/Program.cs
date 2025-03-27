@@ -1,17 +1,11 @@
 using System.Text;
 using System.Text.Json.Serialization;
 using DataAccess;
-using DataAccess.DAO;
-using DocumentManagementSystemApplication.Middleware;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Server.Kestrel.Core;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Repository;
 using Repository.Impl;
-using Serilog;
-using Serilog.Formatting.Json;
 using Service;
 using Service.Impl;
 
@@ -25,7 +19,7 @@ builder.Services.AddControllers()
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
-    options.SwaggerDoc("v1", new OpenApiInfo() { Title = "Your API", Version = "v1" });
+    options.SwaggerDoc("v1", new OpenApiInfo { Title = "Your API", Version = "v1" });
 
     // Configure Swagger to use the Bearer token
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
@@ -49,7 +43,7 @@ builder.Services.AddSwaggerGen(options =>
                     Id = "Bearer"
                 }
             },
-            new string[] {}
+            new string[] { }
         }
     });
 });
@@ -64,7 +58,7 @@ builder.Services.AddAuthentication(options =>
     {
         options.SaveToken = true;
         options.RequireHttpsMetadata = false; // Cần bật true nếu chạy production
-        options.TokenValidationParameters = new TokenValidationParameters()
+        options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
             ValidateAudience = true,
@@ -122,7 +116,8 @@ builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IUserRoleRepository, UserRoleRepository>();
 builder.Services.AddScoped<IVerificationOtpRepository, VerificationOtpRepository>();
 builder.Services.AddScoped<IEmailService, EmailService>();
-
+builder.Services.AddScoped<IDigitalCertificateRepository, DigitalCertificateRepository>();
+builder.Services.AddScoped<IDivisionRepository, DivisionRepository>();
 
 
 builder.WebHost.UseKestrel();
@@ -144,7 +139,6 @@ builder.Services.Scan(scan => scan
     .AsMatchingInterface()  // Đăng ký các lớp dựa trên interface phù hợp
     .WithScopedLifetime()
 );*/
-
 
 
 var app = builder.Build();

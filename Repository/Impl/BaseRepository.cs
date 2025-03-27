@@ -5,7 +5,7 @@ using DataAccess.DAO;
 namespace Repository.Impl;
 
 public class BaseRepository<T> : IBaseRepository<T> where T : class
-{ 
+{
     private readonly BaseDao<T> _baseDao;
 
     public BaseRepository(BaseDao<T> baseDao)
@@ -22,7 +22,7 @@ public class BaseRepository<T> : IBaseRepository<T> where T : class
         if (entity == null) throw new ArgumentNullException(nameof(entity));
         await _baseDao.AddAsync(entity);
     }
-    
+
     public async Task UpdateAsync(T entity)
     {
         if (entity == null) throw new ArgumentNullException(nameof(entity));
@@ -40,3 +40,4 @@ public class BaseRepository<T> : IBaseRepository<T> where T : class
         return await _baseDao.GetAllAsync();
     }
 }*/
+

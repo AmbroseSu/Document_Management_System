@@ -2,12 +2,6 @@ namespace DataAccess.DTO;
 
 public class MeatadataDto
 {
-    public bool hasNextPage { get; set; }
-    public bool hasPrevPage { get; set; }
-    public int limit { get; set; }
-    public int total { get; set; }
-    public int page { get; set; }
-
     public MeatadataDto()
     {
     }
@@ -20,4 +14,10 @@ public class MeatadataDto
         this.total = total;
         this.page = page;
     }
+
+    public bool hasNextPage { get; set; }
+    public bool hasPrevPage { get; set; }
+    public int limit { get; set; }
+    public int total { get; set; }
+    public int page { get; set; }
 }
