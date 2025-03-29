@@ -118,6 +118,7 @@ builder.Services.AddScoped<IVerificationOtpRepository, VerificationOtpRepository
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IDigitalCertificateRepository, DigitalCertificateRepository>();
 builder.Services.AddScoped<IDivisionRepository, DivisionRepository>();
+builder.Services.AddScoped<IDivisionService, DivisionService>();
 
 
 builder.WebHost.UseKestrel();

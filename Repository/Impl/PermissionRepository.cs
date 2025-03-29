@@ -35,7 +35,7 @@ public class PermissionRepository : IPermissionRepository
     {
         if (permissionName == null) throw new ArgumentNullException(nameof(permissionName));
         return await _permissionDao.FindByAsync(p =>
-            p.PermissionName != null && p.PermissionName.ToLower() == permissionName.ToLower());
+            p.PermissionName != null && p.PermissionName.ToLower().Equals(permissionName.ToLower()));
     }
 
     public async Task<Permission?> FindPermissionByIdAsync(Guid? permissionId)

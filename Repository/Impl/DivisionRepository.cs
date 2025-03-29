@@ -1,27 +1,48 @@
 using BusinessObject;
+using DataAccess;
+using DataAccess.DAO;
+using Microsoft.EntityFrameworkCore;
 using Task = System.Threading.Tasks.Task;
 
 namespace Repository.Impl;
 
 public class DivisionRepository : IDivisionRepository
 {
-    public Task AddAsync(Division entity)
+    
+    private readonly BaseDao<Division> _divisionDao;
+
+    public DivisionRepository(DocumentManagementSystemDbContext context)
     {
-        throw new NotImplementedException();
+        _divisionDao = new BaseDao<Division>(context ?? throw new ArgumentNullException(nameof(context)));
+    }
+    
+    public async Task AddAsync(Division entity)
+    {
+        if (entity == null) throw new ArgumentNullException(nameof(entity));
+        await _divisionDao.AddAsync(entity);
     }
 
-    public Task UpdateAsync(Division entity)
+    public async Task UpdateAsync(Division entity)
     {
-        throw new NotImplementedException();
+        if (entity == null) throw new ArgumentNullException(nameof(entity));
+        await _divisionDao.UpdateAsync(entity);
     }
 
-    public Task<Division?> FindDivisionByIdAsync(Guid? id)
+    public async Task<Division?> FindDivisionByIdAsync(Guid? id)
     {
-        throw new NotImplementedException();
+        if (id == null) throw new ArgumentNullException(nameof(id));
+        return await _divisionDao.FindByAsync(u => u.DivisionId == id);
+    }
+    
+    public async Task<Division?> FindDivisionByNameAsync(string? name)
+    {
+        if (name == null) throw new ArgumentNullException(nameof(name));
+        return await _divisionDao.FindByAsync(u => u.DivisionName!.ToLower().Equals(name.ToLower()));
     }
 
-    public Task<IEnumerable<Division>> FindAllUserAsync()
+    public async Task<IEnumerable<Division>> FindAllDivisionAsync()
     {
-        throw new NotImplementedException();
+        return await _divisionDao.FindAsync(u => true,
+            u => u.Include(d => d.Users));
     }
 }

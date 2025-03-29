@@ -30,8 +30,9 @@ public class UserRepository : IUserRepository
     public async Task<User?> FindUserByEmailAsync(string email)
     {
         if (email == null) throw new ArgumentNullException(nameof(email));
-        return await _userDao.FindByAsync(u => u.Email == email);
+        return await _userDao.FindByAsync(u => u.Email!.ToLower().Equals(email.ToLower()));
     }
+    
 
     public async Task<User?> FindUserByIdAsync(Guid? id)
     {
@@ -42,7 +43,7 @@ public class UserRepository : IUserRepository
     public async Task<User?> FindUserByUserNameAsync(string userName)
     {
         if (userName == null) throw new ArgumentNullException(nameof(userName));
-        return await _userDao.FindByAsync(u => u.UserName == userName);
+        return await _userDao.FindByAsync(u => u.UserName!.ToLower().Equals(userName.ToLower()));
     }
 
     public async Task<IEnumerable<User>> FindAllUserAsync()

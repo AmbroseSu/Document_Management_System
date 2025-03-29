@@ -60,4 +60,14 @@ public static class ResponseMessages
     //RoleResource
     public const string RoleWithResourceCannotBeNull = "RoleResourceRequests cannot be null or empty";
     public const string RoleResourceNotExists = "RoleResource not found";
+    
+    //Divison
+    public const string DivisionNameNotNull = "Division name cannot be null or empty";
+    public const string DivisionNotChanged = "has not changed anything.";
+    public const string DivisionNotFound = "Division not found";
+    public const string DivisionNameExisted = "Division name already exists";
+    public const string DivisionHasDeleted = "Division has been deleted";
+    public const string DivisionIdInvalid = "Invalid division id";
+    public const string DivisionActive = "Division is active";
+    //public const string DivisionHasDeleted = "Division has been deleted";
 }
