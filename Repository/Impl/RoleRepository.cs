@@ -50,7 +50,7 @@ public class RoleRepository : IRoleRepository
     public async Task<Role?> FindRoleByNameAsync(string roleName)
     {
         if (roleName == null) throw new ArgumentNullException(nameof(roleName));
-        return await _roleDao.FindByAsync(p => p.RoleName == roleName && !p.IsDeleted);
+        return await _roleDao.FindByAsync(p => p.RoleName.ToLower().Equals(roleName.ToLower()) && !p.IsDeleted);
     }
 
     public async Task<Role?> FindRoleByIdAsync(Guid? roleId)

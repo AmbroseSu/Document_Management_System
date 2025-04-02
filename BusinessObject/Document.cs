@@ -44,13 +44,14 @@ public class Document
     public ArchivedDocument? TemplateArchiveDocument { get; set; }
     public Guid? FinalArchiveDocumentId { get; set; }
     public ArchivedDocument? FinalArchiveDocument { get; set; }
-    public Guid? DocumentTypeWorkflowId { get; set; }
-    public DocumentTypeWorkflow? DocumentTypeWorkflow { get; set; }
+    public Guid? DocumentTypeId { get; set; }
+    public DocumentType? DocumentType { get; set; }
 
     public List<Task>? Tasks { get; set; }
     public List<DocumentSignature>? DocumentSignatures { get; set; }
     public List<AttachmentDocument>? AttachmentDocuments { get; set; }
     public List<DocumentVersion>? DocumentVersions { get; set; }
+    public List<DocumentWorkflowStatus>? DocumentWorkflowStatuses { get; set; }
 
 
     /*public Document()

@@ -60,4 +60,38 @@ public static class ResponseMessages
     //RoleResource
     public const string RoleWithResourceCannotBeNull = "RoleResourceRequests cannot be null or empty";
     public const string RoleResourceNotExists = "RoleResource not found";
+    
+    //Divison
+    public const string DivisionNameNotNull = "Division name cannot be null or empty";
+    public const string DivisionNotChanged = "Division has not changed anything.";
+    public const string DivisionNotFound = "Division not found";
+    public const string DivisionNameExisted = "Division name already exists";
+    public const string DivisionHasDeleted = "Division has been deleted";
+    public const string DivisionIdInvalid = "Invalid division id";
+    public const string DivisionActive = "Division is active";
+    //public const string DivisionHasDeleted = "Division has been deleted";
+    
+    //DocumentType
+    public const string DocumentTypeNameNotNull = "Document Type name cannot be null or empty";
+    public const string DocumentTypeNameExisted = "Document Type name already exists";
+    public const string DocumentTypeNotChanged = "Document Type has not changed anything.";
+    public const string DocumentTypeNotFound = "Document Type not found";
+    //public const string DocumentTypeNameExisted = "Document Type name already exists";
+    public const string DocumentTypeIdInvalid = "Invalid document type id";
+    
+    //Workflow
+    public const string WorkflowNameNotNull = "Workflow name cannot be null or empty";
+    public const string WorkflowNameExisted = "Workflow name already exists";
+    public const string WorkflowNotChanged = "Workflow has not changed anything.";
+    public const string WorkflowNotFound = "Workflow not found";
+    //public const string WorkflowNameExisted = "Workflow name already exists";
+    public const string WorkflowIdInvalid = "Invalid workflow id";
+    public const string WorkflowInvalid = "Workflow data is invalid";
+    public const string WorkflowActive = "Workflow is active";
+    public const string WorkflowHasDeleted = "Workflow has been deleted";
+    
+    //WorkflowFlow
+    public const string RoleEndCurrentFlowNotMatchRoleStartNextFlow = "RoleEnd of current flow does not match RoleStart of next flow.";
+    public const string WorkflowFlowNotFound = "WorkflowFlow not found";
+    
 }

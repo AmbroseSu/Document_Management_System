@@ -65,6 +65,14 @@ public class BaseDao<T> where T : class
         _context.Set<T>().Update(entity);
         //await _context.SaveChangesAsync();
     }
+    
+    public async Task UpdateRangeAsync(List<T> entities)
+    {
+        if (entities == null || entities.Count == 0) return;
+        //using var context = new DocumentManagementSystemDbContext();
+        _context.Set<T>().UpdateRange(entities);
+        //await _context.SaveChangesAsync();
+    }
 
     public async Task<IEnumerable<T>> GetAllAsync()
     {

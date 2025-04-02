@@ -266,6 +266,12 @@ namespace DataAccess.Migrations
                         .HasColumnType("uuid")
                         .HasDefaultValueSql("gen_random_uuid()");
 
+                    b.Property<DateTime>("CreateAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("CreateBy")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("DivisionName")
                         .HasColumnType("text");
 
@@ -305,7 +311,7 @@ namespace DataAccess.Migrations
                     b.Property<int>("DocumentPriority")
                         .HasColumnType("integer");
 
-                    b.Property<Guid?>("DocumentTypeWorkflowId")
+                    b.Property<Guid?>("DocumentTypeId")
                         .HasColumnType("uuid");
 
                     b.Property<string>("DocumentUrl")
@@ -337,7 +343,7 @@ namespace DataAccess.Migrations
 
                     b.HasKey("DocumentId");
 
-                    b.HasIndex("DocumentTypeWorkflowId");
+                    b.HasIndex("DocumentTypeId");
 
                     b.HasIndex("FinalArchiveDocumentId")
                         .IsUnique();
@@ -390,6 +396,12 @@ namespace DataAccess.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
                         .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<DateTime>("CreateAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("CreateBy")
+                        .HasColumnType("uuid");
 
                     b.Property<string>("DocumentTypeName")
                         .HasColumnType("text");
@@ -453,6 +465,42 @@ namespace DataAccess.Migrations
                     b.ToTable("DocumentVersion", (string)null);
                 });
 
+            modelBuilder.Entity("BusinessObject.DocumentWorkflowStatus", b =>
+                {
+                    b.Property<Guid>("DocumentWorkflowStatusId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<Guid>("CurrentWorkflowFlowId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("DocumentId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("StatusDoc")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("StatusDocWorkflow")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("WorkflowId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("DocumentWorkflowStatusId");
+
+                    b.HasIndex("CurrentWorkflowFlowId");
+
+                    b.HasIndex("DocumentId");
+
+                    b.HasIndex("WorkflowId");
+
+                    b.ToTable("DocumentWorkflowStatus", (string)null);
+                });
+
             modelBuilder.Entity("BusinessObject.Flow", b =>
                 {
                     b.Property<Guid>("FlowId")
@@ -460,15 +508,13 @@ namespace DataAccess.Migrations
                         .HasColumnType("uuid")
                         .HasDefaultValueSql("gen_random_uuid()");
 
-                    b.Property<int>("FlowNumber")
-                        .HasColumnType("integer");
+                    b.Property<string>("RoleEnd")
+                        .HasColumnType("text");
 
-                    b.Property<Guid>("WorkflowId")
-                        .HasColumnType("uuid");
+                    b.Property<string>("RoleStart")
+                        .HasColumnType("text");
 
                     b.HasKey("FlowId");
-
-                    b.HasIndex("WorkflowId");
 
                     b.ToTable("Flow", (string)null);
                 });
@@ -571,6 +617,12 @@ namespace DataAccess.Migrations
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
+
+                    b.Property<Guid?>("NextStepId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("RejectStepId")
+                        .HasColumnType("uuid");
 
                     b.Property<Guid>("RoleId")
                         .HasColumnType("uuid");
@@ -799,8 +851,21 @@ namespace DataAccess.Migrations
                         .HasColumnType("uuid")
                         .HasDefaultValueSql("gen_random_uuid()");
 
+                    b.Property<DateTime>("CreateAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("CreateBy")
+                        .HasColumnType("uuid");
+
                     b.Property<bool>("IsAllocate")
                         .HasColumnType("boolean");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("RequiredRolesJson")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<int>("Scope")
                         .HasColumnType("integer");
@@ -811,6 +876,62 @@ namespace DataAccess.Migrations
                     b.HasKey("WorkflowId");
 
                     b.ToTable("Workflow", (string)null);
+                });
+
+            modelBuilder.Entity("BusinessObject.WorkflowFlow", b =>
+                {
+                    b.Property<Guid>("WorkflowFlowId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<Guid>("FlowId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("FlowNumber")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("WorkflowId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("WorkflowFlowId");
+
+                    b.HasIndex("FlowId");
+
+                    b.HasIndex("WorkflowId");
+
+                    b.ToTable("WorkflowFlow", (string)null);
+                });
+
+            modelBuilder.Entity("BusinessObject.WorkflowFlowTransition", b =>
+                {
+                    b.Property<Guid>("WorkflowFlowTransitionId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<int>("Condition")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("CurrentWorkFlowFlowId")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid>("NextWorkFlowFlowId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("WorkflowFlowTransitionId");
+
+                    b.HasIndex("CurrentWorkFlowFlowId");
+
+                    b.HasIndex("NextWorkFlowFlowId");
+
+                    b.ToTable("WorkflowFlowTransition", (string)null);
                 });
 
             modelBuilder.Entity("BusinessObject.ArchiveDocumentSignature", b =>
@@ -905,9 +1026,9 @@ namespace DataAccess.Migrations
 
             modelBuilder.Entity("BusinessObject.Document", b =>
                 {
-                    b.HasOne("BusinessObject.DocumentTypeWorkflow", "DocumentTypeWorkflow")
+                    b.HasOne("BusinessObject.DocumentType", "DocumentType")
                         .WithMany("Documents")
-                        .HasForeignKey("DocumentTypeWorkflowId");
+                        .HasForeignKey("DocumentTypeId");
 
                     b.HasOne("BusinessObject.ArchivedDocument", "FinalArchiveDocument")
                         .WithOne("FinalDocument")
@@ -923,7 +1044,7 @@ namespace DataAccess.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("DocumentTypeWorkflow");
+                    b.Navigation("DocumentType");
 
                     b.Navigation("FinalArchiveDocument");
 
@@ -981,13 +1102,29 @@ namespace DataAccess.Migrations
                     b.Navigation("Document");
                 });
 
-            modelBuilder.Entity("BusinessObject.Flow", b =>
+            modelBuilder.Entity("BusinessObject.DocumentWorkflowStatus", b =>
                 {
+                    b.HasOne("BusinessObject.WorkflowFlow", "CurrentWorkflowFlow")
+                        .WithMany("DocumentWorkflowStatuses")
+                        .HasForeignKey("CurrentWorkflowFlowId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("BusinessObject.Document", "Document")
+                        .WithMany("DocumentWorkflowStatuses")
+                        .HasForeignKey("DocumentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("BusinessObject.Workflow", "Workflow")
-                        .WithMany("Flows")
+                        .WithMany("DocumentWorkflowStatuses")
                         .HasForeignKey("WorkflowId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("CurrentWorkflowFlow");
+
+                    b.Navigation("Document");
 
                     b.Navigation("Workflow");
                 });
@@ -1126,6 +1263,44 @@ namespace DataAccess.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("BusinessObject.WorkflowFlow", b =>
+                {
+                    b.HasOne("BusinessObject.Flow", "Flow")
+                        .WithMany("WorkflowFlows")
+                        .HasForeignKey("FlowId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("BusinessObject.Workflow", "Workflow")
+                        .WithMany("WorkflowFlows")
+                        .HasForeignKey("WorkflowId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Flow");
+
+                    b.Navigation("Workflow");
+                });
+
+            modelBuilder.Entity("BusinessObject.WorkflowFlowTransition", b =>
+                {
+                    b.HasOne("BusinessObject.WorkflowFlow", "CurrentWorkFlowFlow")
+                        .WithMany("CurrentWorkflowFlowTransitions")
+                        .HasForeignKey("CurrentWorkFlowFlowId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("BusinessObject.WorkflowFlow", "NextWorkFlowFlow")
+                        .WithMany("NextWorkflowFlowTransitions")
+                        .HasForeignKey("NextWorkFlowFlowId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("CurrentWorkFlowFlow");
+
+                    b.Navigation("NextWorkFlowFlow");
+                });
+
             modelBuilder.Entity("BusinessObject.ArchivedDocument", b =>
                 {
                     b.Navigation("ArchiveDocumentSignatures");
@@ -1163,6 +1338,8 @@ namespace DataAccess.Migrations
 
                     b.Navigation("DocumentVersions");
 
+                    b.Navigation("DocumentWorkflowStatuses");
+
                     b.Navigation("Tasks");
                 });
 
@@ -1171,16 +1348,15 @@ namespace DataAccess.Migrations
                     b.Navigation("ArchivedDocuments");
 
                     b.Navigation("DocumentTypeWorkflows");
-                });
 
-            modelBuilder.Entity("BusinessObject.DocumentTypeWorkflow", b =>
-                {
                     b.Navigation("Documents");
                 });
 
             modelBuilder.Entity("BusinessObject.Flow", b =>
                 {
                     b.Navigation("Steps");
+
+                    b.Navigation("WorkflowFlows");
                 });
 
             modelBuilder.Entity("BusinessObject.Permission", b =>
@@ -1233,7 +1409,18 @@ namespace DataAccess.Migrations
                 {
                     b.Navigation("DocumentTypeWorkflows");
 
-                    b.Navigation("Flows");
+                    b.Navigation("DocumentWorkflowStatuses");
+
+                    b.Navigation("WorkflowFlows");
+                });
+
+            modelBuilder.Entity("BusinessObject.WorkflowFlow", b =>
+                {
+                    b.Navigation("CurrentWorkflowFlowTransitions");
+
+                    b.Navigation("DocumentWorkflowStatuses");
+
+                    b.Navigation("NextWorkflowFlowTransitions");
                 });
 #pragma warning restore 612, 618
         }

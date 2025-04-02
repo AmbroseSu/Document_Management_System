@@ -9,10 +9,10 @@ public class Flow
     [Key]
     public Guid FlowId { get; set; }
 
-    public int FlowNumber { get; set; }
-
-    public Guid WorkflowId { get; set; }
-    public Workflow? Workflow { get; set; }
-
+    public string? RoleStart { get; set; }
+    public string? RoleEnd { get; set; }
+    
+    public List<WorkflowFlow>? WorkflowFlows { get; set; }
     public List<Step>? Steps { get; set; }
+
 }

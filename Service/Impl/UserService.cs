@@ -247,6 +247,7 @@ public class UserService : IUserService
             if (user == null)
                 return ResponseUtil.Error(ResponseMessages.UserNotFound, ResponseMessages.OperationFailed,
                     HttpStatusCode.NotFound);
+            
 
             if (user.IsDeleted)
             {
@@ -283,6 +284,9 @@ public class UserService : IUserService
             if (user == null)
                 return ResponseUtil.Error(ResponseMessages.UserNotFound, ResponseMessages.OperationFailed,
                     HttpStatusCode.NotFound);
+            if (user.IsDeleted)
+                return ResponseUtil.Error(ResponseMessages.UserHasDeleted, ResponseMessages.OperationFailed,
+                    HttpStatusCode.BadRequest);
 
 
             var hasChanges = false; // Biến kiểm tra có thay đổi gì không
@@ -340,6 +344,9 @@ public class UserService : IUserService
             if (user == null)
                 return ResponseUtil.Error(ResponseMessages.UserNotFound, ResponseMessages.OperationFailed,
                     HttpStatusCode.NotFound);
+            if (user.IsDeleted)
+                return ResponseUtil.Error(ResponseMessages.UserHasDeleted, ResponseMessages.OperationFailed,
+                    HttpStatusCode.BadRequest);
 
             var hasChanges = false;
 

@@ -11,6 +11,8 @@ public class Step
 
     public int StepNumber { get; set; }
     public string? Action { get; set; }
+    public Guid? NextStepId { get; set; }
+    public Guid? RejectStepId { get; set; }
     public bool IsDeleted { get; set; }
 
     public Guid FlowId { get; set; }

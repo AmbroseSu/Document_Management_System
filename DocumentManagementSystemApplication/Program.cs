@@ -118,6 +118,15 @@ builder.Services.AddScoped<IVerificationOtpRepository, VerificationOtpRepository
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IDigitalCertificateRepository, DigitalCertificateRepository>();
 builder.Services.AddScoped<IDivisionRepository, DivisionRepository>();
+builder.Services.AddScoped<IDivisionService, DivisionService>();
+builder.Services.AddScoped<IDocumentTypeRepository, DocumentTypeRepository>();
+builder.Services.AddScoped<IDocumentTypeService, DocumentTypeService>();
+builder.Services.AddScoped<IWorkflowRepository, WorkflowRepository>();
+builder.Services.AddScoped<IWorkflowService, WorkflowService>();
+builder.Services.AddScoped<IStepRepository, StepRepository>();
+builder.Services.AddScoped<IWorkflowFlowRepository, WorkflowFlowRepository>();
+builder.Services.AddScoped<IFlowRepository, FlowRepository>();
+builder.Services.AddScoped<IWorkflowFlowTransitionRepository, WorkflowFlowTransitionRepository>();
 
 
 builder.WebHost.UseKestrel();

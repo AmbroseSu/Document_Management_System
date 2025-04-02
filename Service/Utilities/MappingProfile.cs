@@ -107,5 +107,11 @@ public class MappingProfile : Profile
         CreateMap<RoleResourceDto, RoleResource>();
         CreateMap<Resource, ResourceResponse>();
         CreateMap<ResourceResponse, Resource>();
+        CreateMap<Division, DivisionDto>();
+        CreateMap<DivisionDto, Division>();
+        CreateMap<DocumentType, DocumentTypeDto>();
+        CreateMap<DocumentTypeDto, DocumentType>();
+        CreateMap<Workflow, WorkflowDto>();
+        CreateMap<WorkflowDto, Workflow>();
     }
 }
