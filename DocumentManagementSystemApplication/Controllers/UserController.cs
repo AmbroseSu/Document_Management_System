@@ -23,7 +23,7 @@ public class UserController : ControllerBase
         return await _userService.CreateUserByForm(userRequest);
     }
 
-    [HttpPost("view-profile-user")]
+    [HttpGet("view-profile-user")]
     public async Task<ResponseDto> ViewProfileUser([FromQuery] Guid userId)
     {
         return await _userService.GetProfileAsync(userId);

@@ -204,6 +204,9 @@ public class DocumentManagementSystemDbContext : DbContext
                 .HasColumnType("uuid")
                 .HasDefaultValueSql("gen_random_uuid()");
             entity.Property(e => e.DivisionName);
+            entity.Property(e => e.CreateAt);
+            entity.Property(e => e.CreateBy);
+            
             entity.Property(e => e.IsDeleted);
 
             entity.HasMany(e => e.Users)
@@ -244,6 +247,9 @@ public class DocumentManagementSystemDbContext : DbContext
             entity.HasMany(e => e.DocumentVersions)
                 .WithOne(e => e.Document)
                 .HasForeignKey(e => e.DocumentId);
+            entity.HasMany(e => e.DocumentWorkflowStatuses)
+                .WithOne(e => e.Document)
+                .HasForeignKey(e => e.DocumentId);
         });
 
         modelBuilder.Entity<DocumentSignature>(entity =>
@@ -268,12 +274,17 @@ public class DocumentManagementSystemDbContext : DbContext
                 .HasColumnType("uuid")
                 .HasDefaultValueSql("gen_random_uuid()");
             entity.Property(e => e.DocumentTypeName);
+            entity.Property(e => e.CreateAt);
+            entity.Property(e => e.CreateBy);
             entity.Property(e => e.IsDeleted);
 
             entity.HasMany(e => e.DocumentTypeWorkflows)
                 .WithOne(e => e.DocumentType)
                 .HasForeignKey(e => e.DocumentTypeId);
             entity.HasMany(e => e.ArchivedDocuments)
+                .WithOne(e => e.DocumentType)
+                .HasForeignKey(e => e.DocumentTypeId);
+            entity.HasMany(e => e.Documents)
                 .WithOne(e => e.DocumentType)
                 .HasForeignKey(e => e.DocumentTypeId);
         });
@@ -285,10 +296,6 @@ public class DocumentManagementSystemDbContext : DbContext
             entity.Property(e => e.DocumentTypeWorkflowId)
                 .HasColumnType("uuid")
                 .HasDefaultValueSql("gen_random_uuid()");
-
-            entity.HasMany(e => e.Documents)
-                .WithOne(e => e.DocumentTypeWorkflow)
-                .HasForeignKey(e => e.DocumentTypeWorkflowId);
         });
 
         modelBuilder.Entity<DocumentVersion>(entity =>
@@ -304,6 +311,20 @@ public class DocumentManagementSystemDbContext : DbContext
             entity.Property(e => e.IsFinalVersion);
         });
 
+        modelBuilder.Entity<DocumentWorkflowStatus>(entity =>
+        {
+            entity.ToTable("DocumentWorkflowStatus");
+            entity.HasKey(e => e.DocumentWorkflowStatusId);
+            entity.Property(e => e.DocumentWorkflowStatusId)
+                .HasColumnType("uuid")
+                .HasDefaultValueSql("gen_random_uuid()");
+            entity.Property(e => e.StatusDocWorkflow);
+            entity.Property(e => e.StatusDoc);
+            entity.Property(e => e.UpdatedAt);
+            
+        });
+        
+
         modelBuilder.Entity<Flow>(entity =>
         {
             entity.ToTable("Flow");
@@ -311,12 +332,17 @@ public class DocumentManagementSystemDbContext : DbContext
             entity.Property(e => e.FlowId)
                 .HasColumnType("uuid")
                 .HasDefaultValueSql("gen_random_uuid()");
-            entity.Property(e => e.FlowNumber);
+            entity.Property(e => e.RoleStart);
+            entity.Property(e => e.RoleEnd);
 
+            entity.HasMany(e => e.WorkflowFlows)
+                .WithOne(e => e.Flow)
+                .HasForeignKey(e => e.FlowId);
             entity.HasMany(e => e.Steps)
                 .WithOne(e => e.Flow)
                 .HasForeignKey(e => e.FlowId);
         });
+        
 
         modelBuilder.Entity<Permission>(entity =>
         {
@@ -386,6 +412,8 @@ public class DocumentManagementSystemDbContext : DbContext
                 .HasDefaultValueSql("gen_random_uuid()");
             entity.Property(e => e.StepNumber);
             entity.Property(e => e.Action);
+            entity.Property(e => e.NextStepId);
+            entity.Property(e => e.RejectStepId);
             entity.Property(e => e.IsDeleted);
 
             entity.HasMany(e => e.Tasks)
@@ -506,14 +534,54 @@ public class DocumentManagementSystemDbContext : DbContext
                 .HasDefaultValueSql("gen_random_uuid()");
             entity.Property(e => e.WorkflowName);
             entity.Property(e => e.Scope);
+            entity.Property(e => e.RequiredRolesJson);
+            entity.Property(e => e.CreateAt);
+            entity.Property(e => e.CreateBy);
             entity.Property(e => e.IsAllocate);
+            entity.Property(e => e.IsDeleted);
 
-            entity.HasMany(e => e.Flows)
+            entity.HasMany(e => e.WorkflowFlows)
                 .WithOne(e => e.Workflow)
                 .HasForeignKey(e => e.WorkflowId);
             entity.HasMany(e => e.DocumentTypeWorkflows)
                 .WithOne(e => e.Workflow)
                 .HasForeignKey(e => e.WorkflowId);
+            entity.HasMany(e => e.DocumentWorkflowStatuses)
+                .WithOne(e => e.Workflow)
+                .HasForeignKey(e => e.WorkflowId);
+        });
+        
+        
+        modelBuilder.Entity<WorkflowFlow>(entity =>
+        {
+            entity.ToTable("WorkflowFlow");
+            entity.HasKey(e => e.WorkflowFlowId);
+            entity.Property(e => e.WorkflowFlowId)
+                .HasColumnType("uuid")
+                .HasDefaultValueSql("gen_random_uuid()");
+            entity.Property(e => e.FlowNumber);
+            entity.Property(e => e.Status);
+            
+            entity.HasMany(e => e.CurrentWorkflowFlowTransitions)
+                .WithOne(e => e.CurrentWorkFlowFlow)
+                .HasForeignKey(e => e.CurrentWorkFlowFlowId);
+            entity.HasMany(e => e.NextWorkflowFlowTransitions)
+                .WithOne(e => e.NextWorkFlowFlow)
+                .HasForeignKey(e => e.NextWorkFlowFlowId);
+            entity.HasMany(e => e.DocumentWorkflowStatuses)
+                 .WithOne(e => e.CurrentWorkflowFlow)
+                 .HasForeignKey(e => e.CurrentWorkflowFlowId);
+        });
+        
+        modelBuilder.Entity<WorkflowFlowTransition>(entity =>
+        {
+            entity.ToTable("WorkflowFlowTransition");
+            entity.HasKey(e => e.WorkflowFlowTransitionId);
+            entity.Property(e => e.WorkflowFlowTransitionId)
+                .HasColumnType("uuid")
+                .HasDefaultValueSql("gen_random_uuid()");
+            entity.Property(e => e.Condition);
+            entity.Property(e => e.IsDeleted);
         });
     }
 }

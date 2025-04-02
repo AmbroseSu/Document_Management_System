@@ -3,6 +3,7 @@ using System;
 using DataAccess;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace DataAccess.Migrations
 {
     [DbContext(typeof(DocumentManagementSystemDbContext))]
-    partial class DocumentManagementSystemDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250331110142_UpdateDataBaseVersion3_1_Update_Relation_Doc_Type")]
+    partial class UpdateDataBaseVersion3_1_Update_Relation_Doc_Type
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -266,12 +269,6 @@ namespace DataAccess.Migrations
                         .HasColumnType("uuid")
                         .HasDefaultValueSql("gen_random_uuid()");
 
-                    b.Property<DateTime>("CreateAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid?>("CreateBy")
-                        .HasColumnType("uuid");
-
                     b.Property<string>("DivisionName")
                         .HasColumnType("text");
 
@@ -396,12 +393,6 @@ namespace DataAccess.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
                         .HasDefaultValueSql("gen_random_uuid()");
-
-                    b.Property<DateTime>("CreateAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid?>("CreateBy")
-                        .HasColumnType("uuid");
 
                     b.Property<string>("DocumentTypeName")
                         .HasColumnType("text");
@@ -619,9 +610,6 @@ namespace DataAccess.Migrations
                         .HasColumnType("boolean");
 
                     b.Property<Guid?>("NextStepId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid?>("RejectStepId")
                         .HasColumnType("uuid");
 
                     b.Property<Guid>("RoleId")
@@ -851,21 +839,11 @@ namespace DataAccess.Migrations
                         .HasColumnType("uuid")
                         .HasDefaultValueSql("gen_random_uuid()");
 
-                    b.Property<DateTime>("CreateAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid?>("CreateBy")
-                        .HasColumnType("uuid");
-
                     b.Property<bool>("IsAllocate")
                         .HasColumnType("boolean");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
-
-                    b.Property<string>("RequiredRolesJson")
-                        .IsRequired()
-                        .HasColumnType("text");
 
                     b.Property<int>("Scope")
                         .HasColumnType("integer");
@@ -888,8 +866,8 @@ namespace DataAccess.Migrations
                     b.Property<Guid>("FlowId")
                         .HasColumnType("uuid");
 
-                    b.Property<int>("FlowNumber")
-                        .HasColumnType("integer");
+                    b.Property<bool>("FlowNumber")
+                        .HasColumnType("boolean");
 
                     b.Property<int>("Status")
                         .HasColumnType("integer");

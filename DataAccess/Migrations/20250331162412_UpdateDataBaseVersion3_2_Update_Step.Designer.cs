@@ -3,6 +3,7 @@ using System;
 using DataAccess;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace DataAccess.Migrations
 {
     [DbContext(typeof(DocumentManagementSystemDbContext))]
-    partial class DocumentManagementSystemDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250331162412_UpdateDataBaseVersion3_2_Update_Step")]
+    partial class UpdateDataBaseVersion3_2_Update_Step
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -888,8 +891,8 @@ namespace DataAccess.Migrations
                     b.Property<Guid>("FlowId")
                         .HasColumnType("uuid");
 
-                    b.Property<int>("FlowNumber")
-                        .HasColumnType("integer");
+                    b.Property<bool>("FlowNumber")
+                        .HasColumnType("boolean");
 
                     b.Property<int>("Status")
                         .HasColumnType("integer");

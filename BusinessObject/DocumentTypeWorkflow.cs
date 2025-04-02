@@ -14,6 +14,5 @@ public class DocumentTypeWorkflow
 
     public Guid WorkflowId { get; set; }
     public Workflow? Workflow { get; set; }
-
-    public List<Document>? Documents { get; set; }
+    
 }

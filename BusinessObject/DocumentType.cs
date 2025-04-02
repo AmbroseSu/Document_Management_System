@@ -10,10 +10,18 @@ public class DocumentType
     public Guid DocumentTypeId { get; set; }
 
     public string? DocumentTypeName { get; set; }
+    private DateTime _createAt;
+    public DateTime CreateAt
+    {
+        get => _createAt.ToLocalTime();
+        set => _createAt = value.ToUniversalTime();
+    }
+    public Guid? CreateBy { get; set; }
     public bool IsDeleted { get; set; }
 
     public List<DocumentTypeWorkflow>? DocumentTypeWorkflows { get; set; }
     public List<ArchivedDocument>? ArchivedDocuments { get; set; }
+    public List<Document>? Documents { get; set; }
 
     /*public DocumentType()
     {

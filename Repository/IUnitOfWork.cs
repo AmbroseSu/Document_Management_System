@@ -1,3 +1,5 @@
+using Microsoft.EntityFrameworkCore.Storage;
+
 namespace Repository;
 
 public interface IUnitOfWork : IDisposable
@@ -11,6 +13,16 @@ public interface IUnitOfWork : IDisposable
     IVerificationOtpRepository VerificationOtpUOW { get; }
     IDigitalCertificateRepository DigitalCertificateUOW { get; }
     IDivisionRepository DivisionUOW { get; }
+    IDocumentTypeRepository DocumentTypeUOW { get; }
+    IWorkflowRepository WorkflowUOW { get; }
+    IStepRepository StepUOW { get; }
+    IFlowRepository FlowUOW { get; }
+    IWorkflowFlowTransitionRepository WorkflowFlowTransitionUOW { get; }
+    IWorkflowFlowRepository WorkflowFlowUOW { get; }
 
     Task<int> SaveChangesAsync();
+    
+    Task<IDbContextTransaction> BeginTransactionAsync();
+    Task CommitTransactionAsync();
+    Task RollbackTransactionAsync();
 }
