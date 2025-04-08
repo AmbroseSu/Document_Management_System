@@ -8,6 +8,7 @@ using Repository;
 using Repository.Impl;
 using Service;
 using Service.Impl;
+using Service.SignalRHub;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -72,6 +73,20 @@ builder.Services.AddAuthentication(options =>
             //RoleClaimType = ClaimTypes.Role,
             ClockSkew = TimeSpan.Zero // Giảm độ trễ token xuống 0 để token hết hạn đúng thời điểm
         };
+        // options.Events = new JwtBearerEvents
+        // {
+        //     OnMessageReceived = context =>
+        //     {
+        //         // Cho phép lấy access token qua query (dành cho SignalR)
+        //         var accessToken = context.Request.Query["access_token"];
+        //         var path = context.HttpContext.Request.Path;
+        //         if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/notificationHub"))
+        //         {
+        //             context.Token = accessToken;
+        //         }
+        //         return Task.CompletedTask;
+        //     }
+        // };
     });
 builder.Services.AddAuthorization(options =>
 {
@@ -96,6 +111,8 @@ builder.Host.UseSerilog();*/
 IConfiguration configuration = new ConfigurationBuilder().AddJsonFile("appsettings.json").Build();
 builder.Logging.AddConsole();
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+
+builder.Services.AddSignalR();
 
 /*builder.Services.AddScoped(typeof(IBaseRepository<>), typeof(BaseRepository<>));*/
 builder.Services.AddHostedService<StartupTaskService>();
@@ -127,6 +144,11 @@ builder.Services.AddScoped<IStepRepository, StepRepository>();
 builder.Services.AddScoped<IWorkflowFlowRepository, WorkflowFlowRepository>();
 builder.Services.AddScoped<IFlowRepository, FlowRepository>();
 builder.Services.AddScoped<IWorkflowFlowTransitionRepository, WorkflowFlowTransitionRepository>();
+builder.Services.AddScoped<ITaskRepository, TaskRepository>();
+builder.Services.AddScoped<ITaskService, TaskService>();
+builder.Services.AddScoped<IArchivedDocumentRepository, ArchivedDocumentRepository>();
+builder.Services.AddScoped<IArchiveDocumentService, ArchiveDocumentService>();
+builder.Services.AddScoped<IArchiveDocumentSignatureRepository, ArchiveDocumentSignatureRepository>();
 
 
 builder.WebHost.UseKestrel();
@@ -180,6 +202,9 @@ app.UseMiddleware<ApiLoggingMiddleware>(); // ✅ Ghi log API request/response
 
 //app.UseSerilogRequestLogging();
 //app.UseHttpsRedirection();
+
+app.MapHub<NotificationHub>("/notificationHub"); 
+
 app.UseAuthentication();
 app.UseAuthorization();
 /*

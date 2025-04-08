@@ -9,4 +9,5 @@ public interface IWorkflowFlowRepository
     Task AddRangeAsync(List<WorkflowFlow> workflowFlows);
     Task UpdateAsync(WorkflowFlow entity);
     Task<IEnumerable<WorkflowFlow>> FindWorkflowFlowByWorkflowIdAsync(Guid? id);
+    Task<WorkflowFlow?> FindWorkflowFlowByFlowIdAsync(Guid? id);
 }

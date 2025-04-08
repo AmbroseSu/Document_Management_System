@@ -20,7 +20,7 @@ public class Step
     public Flow? Flow { get; set; }
     public Role? Role { get; set; }
 
-    public List<Task>? Tasks { get; set; }
+    public List<Tasks>? Tasks { get; set; }
 
     /*public Step()
     {

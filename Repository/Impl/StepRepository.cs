@@ -57,4 +57,10 @@ public class StepRepository : IStepRepository
             .Where(s => flowIds.Contains(s.FlowId))
             .ToListAsync();*/
     }
+    
+    public async Task<IEnumerable<Step>?> FindStepByFlowIdAsync(Guid? id)
+    {
+        if (id == null) throw new ArgumentNullException(nameof(id));
+        return await _stepDao.FindAsync(s => s.FlowId == id, st => st.Include(st => st.Tasks));
+    }
 }

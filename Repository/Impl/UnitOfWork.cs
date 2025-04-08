@@ -13,7 +13,7 @@ public class UnitOfWork : IUnitOfWork
         IResourceRepository resourceUow, IPermissionRepository permissionUow, IRoleRepository roleUow,
         IRoleResourceRepository roleResourceUow, IUserRoleRepository userRoleUow,
         IVerificationOtpRepository verificationOtpUow, IDigitalCertificateRepository digitalCertificateUow,
-        IDivisionRepository divisionUow, IDocumentTypeRepository documentTypeUow, IWorkflowRepository workflowUow, IStepRepository stepUow, IFlowRepository flowUow, IWorkflowFlowTransitionRepository workflowFlowTransitionUow, IWorkflowFlowRepository workflowFlowUow)
+        IDivisionRepository divisionUow, IDocumentTypeRepository documentTypeUow, IWorkflowRepository workflowUow, IStepRepository stepUow, IFlowRepository flowUow, IWorkflowFlowTransitionRepository workflowFlowTransitionUow, IWorkflowFlowRepository workflowFlowUow, ITaskRepository taskUow, IArchivedDocumentRepository archivedDocumentUow, IArchiveDocumentSignatureRepository archiveDocumentSignatureUow)
     {
         UserUOW = userUow ?? throw new ArgumentNullException(nameof(userUow));
         _disposed = false;
@@ -33,6 +33,9 @@ public class UnitOfWork : IUnitOfWork
         FlowUOW = flowUow;
         WorkflowFlowTransitionUOW = workflowFlowTransitionUow;
         WorkflowFlowUOW = workflowFlowUow;
+        TaskUOW = taskUow;
+        ArchivedDocumentUOW = archivedDocumentUow;
+        ArchiveDocumentSignatureUOW = archiveDocumentSignatureUow;
     }
 
     public IUserRepository UserUOW { get; }
@@ -50,6 +53,9 @@ public class UnitOfWork : IUnitOfWork
     public IFlowRepository FlowUOW { get; }
     public IWorkflowFlowTransitionRepository WorkflowFlowTransitionUOW { get; }
     public IWorkflowFlowRepository WorkflowFlowUOW { get; }
+    public ITaskRepository TaskUOW { get; }
+    public IArchivedDocumentRepository ArchivedDocumentUOW { get; }
+    public IArchiveDocumentSignatureRepository ArchiveDocumentSignatureUOW { get; }
 
     public async Task<int> SaveChangesAsync()
     {

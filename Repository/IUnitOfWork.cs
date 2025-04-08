@@ -19,6 +19,9 @@ public interface IUnitOfWork : IDisposable
     IFlowRepository FlowUOW { get; }
     IWorkflowFlowTransitionRepository WorkflowFlowTransitionUOW { get; }
     IWorkflowFlowRepository WorkflowFlowUOW { get; }
+    ITaskRepository TaskUOW { get; }
+    IArchivedDocumentRepository ArchivedDocumentUOW { get; }
+    IArchiveDocumentSignatureRepository ArchiveDocumentSignatureUOW { get; }
 
     Task<int> SaveChangesAsync();
     

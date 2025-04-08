@@ -1,4 +1,5 @@
 using BusinessObject;
+using DataAccess;
 using DataAccess.DAO;
 using Task = System.Threading.Tasks.Task;
 
@@ -8,6 +9,10 @@ public class DigitalCertificateRepository : IDigitalCertificateRepository
 {
     private readonly BaseDao<DigitalCertificate> _digitalCetificateDao;
 
+    public DigitalCertificateRepository(DocumentManagementSystemDbContext context)
+    {
+        _digitalCetificateDao = new BaseDao<DigitalCertificate>(context ?? throw new ArgumentNullException(nameof(context)));
+    }
 
     public async Task AddAsync(DigitalCertificate entity)
     {
@@ -30,5 +35,11 @@ public class DigitalCertificateRepository : IDigitalCertificateRepository
     public async Task<IEnumerable<DigitalCertificate>?> FindAllDigitalCertificateByIdAsync(Guid? id)
     {
         return await _digitalCetificateDao.FindAsync(dc => dc.DigitalCertificateId == id && dc.IsRevoked == false);
+    }
+    
+    public async Task<DigitalCertificate?> FindDigitalCertificateBySerialnumberlAsync(string serialNumber)
+    {
+        if (string.IsNullOrWhiteSpace(serialNumber)) throw new ArgumentNullException(nameof(serialNumber));
+        return await _digitalCetificateDao.FindByAsync(dc => dc.SerialNumber == serialNumber);
     }
 }

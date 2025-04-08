@@ -1,11 +1,10 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using BusinessObject.Enums;
-using TaskStatus = System.Threading.Tasks.TaskStatus;
 
 namespace BusinessObject;
 
-public class Task
+public class Tasks
 {
     private DateTime _createdDate;
     private DateTime _endDate;
@@ -30,7 +29,7 @@ public class Task
         set => _endDate = value.ToUniversalTime();
     }
 
-    public TaskStatus TaskStatus { get; set; }
+    public TasksStatus TaskStatus { get; set; }
     public TaskType TaskType { get; set; }
 
     public DateTime CreatedDate
@@ -38,12 +37,13 @@ public class Task
         get => _createdDate.ToLocalTime();
         set => _createdDate = value.ToUniversalTime();
     }
+    public int TaskNumber { get; set; }
 
     public bool IsDeleted { get; set; }
     public bool IsActive { get; set; }
 
     public Guid StepId { get; set; }
-    public Guid DocumentId { get; set; }
+    public Guid? DocumentId { get; set; }
     public Guid UserId { get; set; }
     public Step? Step { get; set; }
     public Document? Document { get; set; }

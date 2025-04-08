@@ -2,4 +2,8 @@
 
 public enum TaskType
 {
+    Document,
+    Task,
+    Step,
+    Workflow,
 }

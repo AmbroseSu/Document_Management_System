@@ -3,6 +3,7 @@ using System;
 using DataAccess;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace DataAccess.Migrations
 {
     [DbContext(typeof(DocumentManagementSystemDbContext))]
-    partial class DocumentManagementSystemDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250407031037_UpdateDataBaseVersion3_7_Update_Tasks")]
+    partial class UpdateDataBaseVersion3_7_Update_Tasks
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -652,7 +655,7 @@ namespace DataAccess.Migrations
                     b.Property<string>("Description")
                         .HasColumnType("text");
 
-                    b.Property<Guid?>("DocumentId")
+                    b.Property<Guid>("DocumentId")
                         .HasColumnType("uuid");
 
                     b.Property<DateTime>("EndDate")
@@ -892,6 +895,9 @@ namespace DataAccess.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<int>("FlowNumber")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Status")
                         .HasColumnType("integer");
 
                     b.Property<Guid>("WorkflowId")
@@ -1182,7 +1188,9 @@ namespace DataAccess.Migrations
                 {
                     b.HasOne("BusinessObject.Document", "Document")
                         .WithMany("Tasks")
-                        .HasForeignKey("DocumentId");
+                        .HasForeignKey("DocumentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.HasOne("BusinessObject.Step", "Step")
                         .WithMany("Tasks")
