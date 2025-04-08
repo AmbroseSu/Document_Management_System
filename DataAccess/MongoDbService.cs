@@ -1,4 +1,5 @@
-/*using BusinessObject;
+/*
+using BusinessObject;
 using Microsoft.Extensions.Configuration;
 using MongoDB.Driver;
 using Task = System.Threading.Tasks.Task;
@@ -7,23 +8,21 @@ namespace DataAccess;
 
 public class MongoDbService
 {
-    private readonly IMongoCollection<Log> _logCollection;
+    private readonly IMongoDatabase _database;
+    private readonly IMongoCollection<Notification> _notifications;
 
     public MongoDbService(IConfiguration config)
     {
         var client = new MongoClient(config["MongoSettings:ConnectionString"]);
-        var database = client.GetDatabase(config["MongoSettings:DatabaseName"]);
-        _logCollection = database.GetCollection<Log>("Logs");
+        _database = client.GetDatabase(config["MongoSettings:DatabaseName"]);
+        _notifications = _database.GetCollection<Notification>("Notifications");
     }
 
-    public async Task AddLogAsync(Log log)
+    public async Task CreateNotificationAsync(Notification notification)
     {
-        await _logCollection.InsertOneAsync(log);
+        await _notifications.InsertOneAsync(notification);
     }
 
-    public async Task<List<Log>> GetLogsAsync()
-    {
-        return await _logCollection.Find(log => true).ToListAsync();
-    }
-}*/
+}
+*/
 

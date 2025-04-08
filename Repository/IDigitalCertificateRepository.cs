@@ -9,4 +9,5 @@ public interface IDigitalCertificateRepository
     Task UpdateAsync(DigitalCertificate entity);
     Task<DigitalCertificate?> FindDigitalCertificateByIdlAsync(Guid? id);
     Task<IEnumerable<DigitalCertificate>?> FindAllDigitalCertificateByIdAsync(Guid? id);
+    Task<DigitalCertificate?> FindDigitalCertificateBySerialnumberlAsync(string serialNumber);
 }

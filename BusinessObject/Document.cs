@@ -47,7 +47,7 @@ public class Document
     public Guid? DocumentTypeId { get; set; }
     public DocumentType? DocumentType { get; set; }
 
-    public List<Task>? Tasks { get; set; }
+    public List<Tasks>? Tasks { get; set; }
     public List<DocumentSignature>? DocumentSignatures { get; set; }
     public List<AttachmentDocument>? AttachmentDocuments { get; set; }
     public List<DocumentVersion>? DocumentVersions { get; set; }

@@ -2,7 +2,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using Task = BusinessObject.Task;
 
 namespace DataAccess;
 
@@ -37,7 +36,7 @@ public class DocumentManagementSystemDbContext : DbContext
     public virtual DbSet<Role> Roles { get; set; }
     public virtual DbSet<RoleResource> RoleResources { get; set; }
     public virtual DbSet<Step> Steps { get; set; }
-    public virtual DbSet<Task> Tasks { get; set; }
+    public virtual DbSet<Tasks> Tasks { get; set; }
     public virtual DbSet<User> Users { get; set; }
     public virtual DbSet<UserDocumentPermission> UserDocumentPermissions { get; set; }
     public virtual DbSet<UserRole> UserRoles { get; set; }
@@ -421,9 +420,9 @@ public class DocumentManagementSystemDbContext : DbContext
                 .HasForeignKey(e => e.StepId);
         });
 
-        modelBuilder.Entity<Task>(entity =>
+        modelBuilder.Entity<Tasks>(entity =>
         {
-            entity.ToTable("Task");
+            entity.ToTable("Tasks");
             entity.HasKey(e => e.TaskId);
             entity.Property(e => e.TaskId)
                 .HasColumnType("uuid")
@@ -435,6 +434,7 @@ public class DocumentManagementSystemDbContext : DbContext
             entity.Property(e => e.TaskStatus);
             entity.Property(e => e.TaskType);
             entity.Property(e => e.CreatedDate);
+            entity.Property(e => e.TaskNumber);
             entity.Property(e => e.IsDeleted);
             entity.Property(e => e.IsActive);
 
@@ -560,7 +560,6 @@ public class DocumentManagementSystemDbContext : DbContext
                 .HasColumnType("uuid")
                 .HasDefaultValueSql("gen_random_uuid()");
             entity.Property(e => e.FlowNumber);
-            entity.Property(e => e.Status);
             
             entity.HasMany(e => e.CurrentWorkflowFlowTransitions)
                 .WithOne(e => e.CurrentWorkFlowFlow)

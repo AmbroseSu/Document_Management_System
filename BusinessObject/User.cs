@@ -55,7 +55,7 @@ public class User
     public List<Comment>? Comments { get; set; }
     public List<UserDocumentPermission>? UserDocumentPermissions { get; set; }
     public List<UserRole>? UserRoles { get; set; }
-    public List<Task>? Tasks { get; set; }
+    public List<Tasks>? Tasks { get; set; }
     public List<Document>? Documents { get; set; }
     public List<DigitalCertificate>? DigitalCertificates { get; set; }
 

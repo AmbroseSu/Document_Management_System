@@ -24,6 +24,7 @@ public static class ResponseMessages
     public const string PasswordNotExists = "Password not exists";
     public const string PasswordChangeSuccess = "Password changed successfully";
     public const string OldPasswordIncorrect = "Old password is incorrect";
+    public const string UserIdNull = "UserId cannot be null";
 
     public const string PasswordNotMatchConfirm = "New password and confirm password do not match";
 
@@ -71,6 +72,9 @@ public static class ResponseMessages
     public const string DivisionActive = "Division is active";
     //public const string DivisionHasDeleted = "Division has been deleted";
     
+    //Document
+    public const string DocumentIdNull = "Document id cannot be null";
+    
     //DocumentType
     public const string DocumentTypeNameNotNull = "Document Type name cannot be null or empty";
     public const string DocumentTypeNameExisted = "Document Type name already exists";
@@ -94,4 +98,12 @@ public static class ResponseMessages
     public const string RoleEndCurrentFlowNotMatchRoleStartNextFlow = "RoleEnd of current flow does not match RoleStart of next flow.";
     public const string WorkflowFlowNotFound = "WorkflowFlow not found";
     
+    //Tasks
+    public const string TaskStartdayEndDayFailed = "Start and end times must be greater than current";
+    public const string TaskEndDayFailed = "End date must be greater than start date";
+    public const string TaskNotFound = "Task not found";
+    public const string TaskAlreadyDeleted = "Task already deleted";
+    
+    //Step
+    public const string StepIdNull = "Step id cannot be null";
 }

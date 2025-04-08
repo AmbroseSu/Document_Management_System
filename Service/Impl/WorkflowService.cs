@@ -92,9 +92,6 @@ public class WorkflowService : IWorkflowService
                     WorkflowId = workflow.WorkflowId,
                     FlowId = flow.FlowId,
                     FlowNumber = workflowRequest.Flows.IndexOf(flowDto) + 1,
-                    Status = (workflowRequest.Flows.IndexOf(flowDto) == 0) 
-                        ? WorkflowFlowStatus.InProgress 
-                        : WorkflowFlowStatus.Pending
                     // Không lưu IsFallbackFlow vào WorkflowFlow mà xử lý logic sau
                 };
                 workflowFlows.Add(workflowFlow);

@@ -10,7 +10,6 @@ public class WorkflowFlow
     public Workflow? Workflow { get; set; }
     public Flow? Flow { get; set; }
     public int FlowNumber { get; set; }
-    public WorkflowFlowStatus Status { get; set; }
     
     public List<WorkflowFlowTransition>? CurrentWorkflowFlowTransitions { get; set; }
     public List<WorkflowFlowTransition>? NextWorkflowFlowTransitions { get; set; }

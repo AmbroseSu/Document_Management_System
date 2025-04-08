@@ -7,20 +7,25 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="12.0.1"/>
-        <PackageReference Include="BCrypt.Net-Next" Version="4.0.3"/>
-        <PackageReference Include="FluentValidation" Version="11.9.2"/>
-        <PackageReference Include="MailKit" Version="4.7.1.1"/>
-        <PackageReference Include="Microsoft.AspNetCore.Identity" Version="2.2.0"/>
-        <PackageReference Include="Microsoft.AspNetCore.Mvc" Version="2.2.0"/>
-        <PackageReference Include="payOS" Version="1.0.8"/>
+        <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="12.0.1" />
+        <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
+        <PackageReference Include="BouncyCastle" Version="1.8.9" />
+        <PackageReference Include="FluentValidation" Version="11.9.2" />
+        <PackageReference Include="itext7" Version="7.2.5" />
+        <PackageReference Include="MailKit" Version="4.7.1.1" />
+        <PackageReference Include="Microsoft.AspNetCore.Identity" Version="2.2.0" />
+        <PackageReference Include="Microsoft.AspNetCore.Mvc" Version="2.2.0" />
+        <PackageReference Include="Microsoft.AspNetCore.SignalR" Version="1.2.0" />
+        <PackageReference Include="payOS" Version="1.0.8" />
+        <PackageReference Include="Syncfusion.Pdf.Net.Core" Version="20.1.0.56" />
+        <PackageReference Include="System.Security.Cryptography.X509Certificates" Version="4.3.2" />
 
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\BusinessObject\BusinessObject.csproj"/>
-        <ProjectReference Include="..\DataAccess\DataAccess.csproj"/>
-        <ProjectReference Include="..\Repository\Repository.csproj"/>
+        <ProjectReference Include="..\BusinessObject\BusinessObject.csproj" />
+        <ProjectReference Include="..\DataAccess\DataAccess.csproj" />
+        <ProjectReference Include="..\Repository\Repository.csproj" />
     </ItemGroup>
 
 </Project>

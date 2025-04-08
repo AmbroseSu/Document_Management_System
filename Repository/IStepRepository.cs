@@ -12,4 +12,5 @@ public interface IStepRepository
     Task<IEnumerable<Step>> FindAllStepAsync();
     Task<Step?> FindStepByIdAsync(Guid? id);
     Task<IEnumerable<Step>> FindByFlowIdsAsync(List<Guid> flowIds);
+    Task<IEnumerable<Step>?> FindStepByFlowIdAsync(Guid? id);
 }
