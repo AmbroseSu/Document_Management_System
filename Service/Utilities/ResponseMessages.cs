@@ -25,7 +25,8 @@ public static class ResponseMessages
     public const string PasswordChangeSuccess = "Password changed successfully";
     public const string OldPasswordIncorrect = "Old password is incorrect";
     public const string UserIdNull = "UserId cannot be null";
-
+    public const string EmailNotMatch = "Email does not match";
+    public const string SendEmailSuccessfully = "Send email successfully";
     public const string PasswordNotMatchConfirm = "New password and confirm password do not match";
 
     //public const string UserDelete = "User is deleted";
