@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 using BusinessObject.Enums;
 
 namespace BusinessObject;
@@ -39,8 +40,10 @@ public class Document
     public bool IsDeleted { get; set; }
 
     public Guid UserId { get; set; }
+    [JsonIgnore]
     public User? User { get; set; }
     public Guid? TemplateArchiveDocumentId { get; set; }
+    
     public ArchivedDocument? TemplateArchiveDocument { get; set; }
     public Guid? FinalArchiveDocumentId { get; set; }
     public ArchivedDocument? FinalArchiveDocument { get; set; }

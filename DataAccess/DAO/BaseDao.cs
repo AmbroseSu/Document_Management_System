@@ -44,6 +44,7 @@ public class BaseDao<T> where T : class
         _context.Set<T>().Add(entity);
         //await context.SaveChangesAsync();
     }
+    
 
     public async Task AddRangeAsync(List<T> entities)
     {

@@ -13,7 +13,7 @@ public class UnitOfWork : IUnitOfWork
         IResourceRepository resourceUow, IPermissionRepository permissionUow, IRoleRepository roleUow,
         IRoleResourceRepository roleResourceUow, IUserRoleRepository userRoleUow,
         IVerificationOtpRepository verificationOtpUow, IDigitalCertificateRepository digitalCertificateUow,
-        IDivisionRepository divisionUow, IDocumentTypeRepository documentTypeUow, IWorkflowRepository workflowUow, IStepRepository stepUow, IFlowRepository flowUow, IWorkflowFlowTransitionRepository workflowFlowTransitionUow, IWorkflowFlowRepository workflowFlowUow, ITaskRepository taskUow, IArchivedDocumentRepository archivedDocumentUow, IArchiveDocumentSignatureRepository archiveDocumentSignatureUow)
+        IDivisionRepository divisionUow, IDocumentTypeRepository documentTypeUow, IWorkflowRepository workflowUow, IStepRepository stepUow, IFlowRepository flowUow, IWorkflowFlowTransitionRepository workflowFlowTransitionUow, IWorkflowFlowRepository workflowFlowUow, ITaskRepository taskUow, IArchivedDocumentRepository archivedDocumentUow, IArchiveDocumentSignatureRepository archiveDocumentSignatureUow, IDocumentRepository documentUow, IDocumentSignatureRepository documentSignatureUow)
     {
         UserUOW = userUow ?? throw new ArgumentNullException(nameof(userUow));
         _disposed = false;
@@ -36,6 +36,8 @@ public class UnitOfWork : IUnitOfWork
         TaskUOW = taskUow;
         ArchivedDocumentUOW = archivedDocumentUow;
         ArchiveDocumentSignatureUOW = archiveDocumentSignatureUow;
+        DocumentUOW = documentUow;
+        DocumentSignatureUOW = documentSignatureUow;
     }
 
     public IUserRepository UserUOW { get; }
@@ -54,8 +56,10 @@ public class UnitOfWork : IUnitOfWork
     public IWorkflowFlowTransitionRepository WorkflowFlowTransitionUOW { get; }
     public IWorkflowFlowRepository WorkflowFlowUOW { get; }
     public ITaskRepository TaskUOW { get; }
+    public IDocumentRepository DocumentUOW { get; }
     public IArchivedDocumentRepository ArchivedDocumentUOW { get; }
     public IArchiveDocumentSignatureRepository ArchiveDocumentSignatureUOW { get; }
+    public IDocumentSignatureRepository DocumentSignatureUOW { get; }
 
     public async Task<int> SaveChangesAsync()
     {

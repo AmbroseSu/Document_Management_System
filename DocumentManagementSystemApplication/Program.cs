@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json.Serialization;
+using BusinessObject.Option;
 using DataAccess;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -20,7 +21,9 @@ builder.Services.AddControllers()
     .AddJsonOptions(options => { options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()); });
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
-
+builder.Services.Configure<AiScanApiOptions>(
+    builder.Configuration.GetSection("AiScanApi")
+);
 builder.Services.AddSwaggerGen(options =>
 {
     options.SwaggerDoc("v1", new OpenApiInfo { Title = "Your API", Version = "v1" });
@@ -117,12 +120,15 @@ builder.Services.AddStackExchangeRedisCache(options =>
 {
     options.Configuration = configuration.GetConnectionString("Cache");
 });
-builder.Logging.AddConsole();
-builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+// Add logging configuration
+builder.Logging.ClearProviders();
+builder.Logging.AddConsole(); // Logs to the terminal
+builder.Logging.AddDebug();builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
 builder.Services.AddSignalR();
 
 /*builder.Services.AddScoped(typeof(IBaseRepository<>), typeof(BaseRepository<>));*/
+builder.Services.AddScoped<IExternalApiService, ExternalApiService>();
 builder.Services.AddScoped<IRedisCacheRepository, RedisCacheRepository>();
 builder.Services.AddHostedService<StartupTaskService>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
@@ -131,6 +137,13 @@ builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<DocumentManagementSystemDbContext>();
 builder.Services.AddScoped<IResourceRepository, ResourceRepository>();
+builder.Services.AddScoped<IDocumentRepository, DocumentRepository>();
+builder.Services.AddHttpClient<IExternalApiService, ExternalApiService>();
+builder.Services.AddScoped<IDigitalCertificateService, DigitalCertificateService>();
+builder.Services.AddScoped<IDocumentSignatureRepository, DocumentSignatureRepository>();
+builder.Services.AddScoped<IDocumentSignatureService, DocumentSignatureService>();
+
+
 builder.Services.AddScoped<IResourceService, ResourceService>();
 builder.Services.AddScoped<IPermissionRepository, PermissionRepository>();
 builder.Services.AddScoped<IPermissionService, PermissionService>();
@@ -158,7 +171,8 @@ builder.Services.AddScoped<ITaskService, TaskService>();
 builder.Services.AddScoped<IArchivedDocumentRepository, ArchivedDocumentRepository>();
 builder.Services.AddScoped<IArchiveDocumentService, ArchiveDocumentService>();
 builder.Services.AddScoped<IArchiveDocumentSignatureRepository, ArchiveDocumentSignatureRepository>();
-
+builder.Services.AddScoped<IDocumentService, DocumentService>();
+builder.Services.AddScoped<IFileService, FileService>();
 
 builder.WebHost.UseKestrel();
 

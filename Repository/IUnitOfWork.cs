@@ -20,6 +20,8 @@ public interface IUnitOfWork : IDisposable
     IWorkflowFlowTransitionRepository WorkflowFlowTransitionUOW { get; }
     IWorkflowFlowRepository WorkflowFlowUOW { get; }
     ITaskRepository TaskUOW { get; }
+    IDocumentRepository DocumentUOW { get; }
+    IDocumentSignatureRepository DocumentSignatureUOW { get; }
     IArchivedDocumentRepository ArchivedDocumentUOW { get; }
     IArchiveDocumentSignatureRepository ArchiveDocumentSignatureUOW { get; }
 

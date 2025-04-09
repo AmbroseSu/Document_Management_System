@@ -11,7 +11,9 @@
         <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
         <PackageReference Include="BouncyCastle" Version="1.8.9" />
         <PackageReference Include="FluentValidation" Version="11.9.2" />
-        <PackageReference Include="itext7" Version="7.2.5" />
+        <PackageReference Include="itext7" Version="9.1.0" />
+        <PackageReference Include="itext7.bouncy-castle-adapter" Version="9.1.0" />
+        <PackageReference Include="itext7.bouncy-castle-fips-adapter" Version="9.1.0" />
         <PackageReference Include="MailKit" Version="4.7.1.1" />
         <PackageReference Include="Microsoft.AspNetCore.Identity" Version="2.2.0" />
         <PackageReference Include="Microsoft.AspNetCore.Mvc" Version="2.2.0" />

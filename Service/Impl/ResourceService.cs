@@ -54,14 +54,15 @@ public class ResourceService : IResourceService
                          .Where(x => x is ControllerActionDescriptor)
                          .Cast<ControllerActionDescriptor>())
             {
-                var permissionId = await ConvertApiToAction(x.AttributeRouteInfo?.Template);
+                var normalizedRoute = NormalizeRoute(x.AttributeRouteInfo?.Template);
+
+                var permissionId = await ConvertApiToAction(normalizedRoute);
 
                 if (permissionId == Guid.Empty)
                     throw new Exception($"Không tìm thấy quyền phù hợp cho API: {x.AttributeRouteInfo?.Template}");
-
                 routes.Add(new ResourceDto
                 {
-                    ResourceName = ConvertLastSegmentToTitleCase(x.AttributeRouteInfo?.Template),
+                    ResourceName = ConvertLastSegmentToTitleCase(normalizedRoute),
                     ResourceApi = $"/{x.AttributeRouteInfo?.Template}",
                     PermissionId = permissionId
                 });
@@ -116,7 +117,17 @@ public class ResourceService : IResourceService
             return ResponseUtil.Error(e.Message, ResponseMessages.OperationFailed, HttpStatusCode.InternalServerError);
         }
     }
+    private string NormalizeRoute(string? route)
+    {
+        if (string.IsNullOrWhiteSpace(route))
+            return string.Empty;
 
+        // Bỏ các tham số {userId}, {docId}, ...
+        var parts = route.Split('/', StringSplitOptions.RemoveEmptyEntries);
+        var filtered = parts.Where(p => !(p.StartsWith("{") && p.EndsWith("}")));
+
+        return string.Join('/', filtered);
+    }
     private string ConvertLastSegmentToTitleCase(string? route)
     {
         if (string.IsNullOrWhiteSpace(route))
