@@ -60,7 +60,7 @@ public class UnitOfWork : IUnitOfWork
     public IArchivedDocumentRepository ArchivedDocumentUOW { get; }
     public IArchiveDocumentSignatureRepository ArchiveDocumentSignatureUOW { get; }
     public IDocumentSignatureRepository DocumentSignatureUOW { get; }
-
+    public IDocumentWorkflowStatusRepository DocumentWorkflowStatusUOW { get; }
     public async Task<int> SaveChangesAsync()
     {
         //using var context = new DocumentManagementSystemDbContext();
