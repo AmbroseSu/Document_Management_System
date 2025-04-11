@@ -100,7 +100,7 @@ public partial class DocumentService : IDocumentService
             CreatedDate = DateTime.UtcNow,
             UserId = userId,
             IsDeleted = false,
-            DocumentSignatures = [], // Initialize an empty list for document signatures
+            //DocumentSignatures = [], // Initialize an empty list for document signatures
             DocumentType = docType,
             DocumentVersions =
             [
@@ -124,7 +124,7 @@ public partial class DocumentService : IDocumentService
         }
 
         // Extract the names of the signers from the document signatures
-        var signBy = ExtractSigners(document.DocumentSignatures);
+        //var signBy = ExtractSigners(document.DocumentSignatures);
 
         // Create a response object with the document details
         var docDto = new DocumentUploadDto()
@@ -133,12 +133,12 @@ public partial class DocumentService : IDocumentService
             Name = document.DocumentName,
             Sender = document.Sender,
             DateReceived = document.DateReceived,
-            ValidFrom = document.DocumentSignatures.Max(signature => signature.SignedAt), // Get the latest signing date
-            ValidTo = document.DocumentSignatures.Min(signature => signature.DigitalCertificate?.ValidTo), // Get the earliest expiration date
+            //ValidFrom = document.DocumentSignatures.Max(signature => signature.SignedAt), // Get the latest signing date
+            //ValidTo = document.DocumentSignatures.Min(signature => signature.DigitalCertificate?.ValidTo), // Get the earliest expiration date
             NumberOfDocument = document.NumberOfDocument,
             DocumentTypeName = document.DocumentType?.DocumentTypeName,
             WorkflowName = document.DocumentWorkflowStatuses?[0].Workflow?.WorkflowName, // Get the workflow name if available
-            SignBy = signBy, // List of signers
+            //SignBy = signBy, // List of signers
             DocumentContent = document.DocumentContent
         };
 
@@ -170,7 +170,7 @@ public partial class DocumentService : IDocumentService
                 (DocumentSignature)(await _documentSignatureService.CreateSignature(document, certificate, meta, userId,
                     index)).Content;
 
-            document.DocumentSignatures!.Add(signature);
+            //document.DocumentSignatures.Add(signature);
             await SaveDocumentAsync(document);
         }
     }
