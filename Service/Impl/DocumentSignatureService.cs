@@ -21,8 +21,8 @@ public class DocumentSignatureService : IDocumentSignatureService
         var docSig = new DocumentSignature()
         {
             SignedAt = meta.SingingDate,
-            SignatureValue = meta.SerialNumber,
-            ValidFrom = meta.SingingDate,
+            //SignatureValue = meta.SerialNumber,
+            //ValidFrom = meta.SingingDate,
             OrderIndex = index,
             DocumentId = document.DocumentId,
             DocumentSignatureId=digitalCertificate.DigitalCertificateId

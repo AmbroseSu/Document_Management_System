@@ -2,6 +2,7 @@ using System.Text;
 using System.Text.Json.Serialization;
 using BusinessObject.Option;
 using DataAccess;
+using DotNetEnv;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -13,9 +14,11 @@ using Service;
 using Service.Impl;
 using Service.SignalRHub;
 
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
+DotNetEnv.Env.Load();
 
 builder.Services.AddControllers()
     .AddJsonOptions(options => { options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()); });
@@ -114,7 +117,7 @@ Log.Logger = new LoggerConfiguration()
 
 builder.Host.UseSerilog();*/
 
-IConfiguration configuration = new ConfigurationBuilder().AddJsonFile("appsettings.json").Build();
+IConfiguration configuration = new ConfigurationBuilder().AddJsonFile("appsettings.json").AddEnvironmentVariables().Build();
 
 builder.Services.AddStackExchangeRedisCache(options =>
 {

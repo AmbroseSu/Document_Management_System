@@ -26,11 +26,8 @@ public class DigitalCertificate
         get => _validTo.ToLocalTime();
         set => _validTo = value.ToUniversalTime();
     }
-
-    public string? PublicKey { get; set; }
-    public string? HashAlgorithm { get; set; }
-    public string? OwnerName { get; set; }
-    public bool IsRevoked { get; set; }
+    
+    public string? Subject { get; set; }
     public string? SignatureImageUrl { get; set; }
 
     public Guid UserId { get; set; }

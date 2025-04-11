@@ -25,6 +25,7 @@ public class EmailService : IEmailService
     {
         _config = config;
         _unitOfWork = unitOfWork;
+
     }
 
     public async Task<ResponseDto> SendEmail(string emailResponse, string subject, string content)
@@ -148,8 +149,8 @@ public class EmailService : IEmailService
         var values = new Dictionary<string, string>
         {
             { "code", code },
-            { "client_id", "574718261918-j6trtu7cd141fqc26nt436ipmicdaagf.apps.googleusercontent.com" },
-            { "client_secret", "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" },
+            { "client_id", Environment.GetEnvironmentVariable("CLIENT_ID")! },
+            { "client_secret", Environment.GetEnvironmentVariable("CLIENT_SECRET")! },
             { "redirect_uri", "http://127.0.0.1:5500/test.html" },
             { "grant_type", "authorization_code" }
         };
