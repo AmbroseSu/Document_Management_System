@@ -14,7 +14,7 @@ using Service.Utilities;
 
 namespace Service.Impl;
 
-public class DocumentService : IDocumentService
+public partial class DocumentService : IDocumentService
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMapper _mapper;
@@ -97,12 +97,21 @@ public class DocumentService : IDocumentService
             DocumentContent = aiResponse.DocumentContent,
             DateIssued = aiResponse.DateIssued,
             NumberOfDocument = aiResponse.NumberOfDocument,
-            //DocumentUrl = url,
             CreatedDate = DateTime.UtcNow,
             UserId = userId,
             IsDeleted = false,
             DocumentSignatures = [], // Initialize an empty list for document signatures
-            DocumentType = docType
+            DocumentType = docType,
+            DocumentVersions =
+            [
+                new DocumentVersion()
+                {
+                    VersionNumber = 1.ToString(),
+                    DocumentVersionUrl = url,
+                    CreateDate = DateTime.Now,
+                    IsFinalVersion = true
+                }
+            ]
         };
 
         // Save the document to the database
@@ -152,7 +161,7 @@ public class DocumentService : IDocumentService
 
     private async Task ProcessMetaDataAsync(List<MetaDataDocument> metaData, Document document, Guid userId)
     {
-        for (int index = 0; index < metaData.Count; index++)
+        for (var index = 0; index < metaData.Count; index++)
         {
             var meta = metaData[index];
             var certificate =
@@ -161,26 +170,16 @@ public class DocumentService : IDocumentService
                 (DocumentSignature)(await _documentSignatureService.CreateSignature(document, certificate, meta, userId,
                     index)).Content;
 
-            document.DocumentSignatures.Add(signature);
+            document.DocumentSignatures!.Add(signature);
             await SaveDocumentAsync(document);
         }
     }
 
-    private List<string?> ExtractSigners(List<DocumentSignature> signatures)
+    private static List<string?> ExtractSigners(List<DocumentSignature> signatures)
     {
-        var regex = new Regex(@"CN=([^,]+)");
-        var signBy = new List<string?>();
+        var regex = MyRegex();
 
-        foreach (var signature in signatures)
-        {
-            var match = regex.Match(signature.DigitalCertificate?.Subject ?? string.Empty);
-            if (match.Success)
-            {
-                signBy.Add(match.Groups[1].Value);
-            }
-        }
-
-        return signBy;
+        return (from signature in signatures select regex.Match(signature.DigitalCertificate?.Subject ?? string.Empty) into match where match.Success select match.Groups[1].Value).ToList();
     }
     
     private List<MetaDataDocument>? CheckMetaDataFile(string url)
@@ -198,36 +197,32 @@ public class DocumentService : IDocumentService
         var signatureUtil = new SignatureUtil(pdfDocument);
         var signatureNames = signatureUtil.GetSignatureNames();
 
-        if (signatureNames.Count > 0)
-        {
-            var listMetaData = new List<MetaDataDocument>();
-            foreach (var name in signatureNames)
+        if (signatureNames.Count <= 0) return null;
+
+
+        return (from name in signatureNames
+            let signature = signatureUtil.GetSignature(name)
+            let pkcs7 = signatureUtil.ReadSignatureData(name)
+            select new MetaDataDocument
             {
-                var signature = signatureUtil.GetSignature(name);
-                var pkcs7 = signatureUtil.ReadSignatureData(name);
-
-                listMetaData.Add(new MetaDataDocument
-                {
-                    SignatureName = name,
-                    SignerName = pkcs7.GetSigningCertificate().GetSubjectDN().ToString(),
-                    SingingDate = pkcs7.GetSignDate(),
-                    Reason = signature.GetReason(),
-                    Location = signature.GetLocation(),
-                    Valid = pkcs7.VerifySignatureIntegrityAndAuthenticity(),
-                    SerialNumber = pkcs7.GetSigningCertificate().GetSerialNumber().ToString(),
-                    ValidFrom = pkcs7.GetSigningCertificate().GetNotBefore().ToLocalTime(),
-                    ExpirationDate = pkcs7.GetSigningCertificate().GetNotAfter().ToLocalTime(),
-                    Algorithm = pkcs7.GetSignatureAlgorithmName()
-                });
-            }
-
-
-            return listMetaData;
-        }
+                SignatureName = name,
+                SignerName = pkcs7.GetSigningCertificate().GetSubjectDN().ToString(),
+                SingingDate = pkcs7.GetSignDate(),
+                Reason = signature.GetReason(),
+                Location = signature.GetLocation(),
+                Valid = pkcs7.VerifySignatureIntegrityAndAuthenticity(),
+                SerialNumber = pkcs7.GetSigningCertificate().GetSerialNumber().ToString(),
+                ValidFrom = pkcs7.GetSigningCertificate().GetNotBefore().ToLocalTime(),
+                ExpirationDate = pkcs7.GetSigningCertificate().GetNotAfter().ToLocalTime(),
+                Algorithm = pkcs7.GetSignatureAlgorithmName()
+            }).ToList();
 
         // else
         {
             return null;
         }
     }
+
+    [GeneratedRegex(@"CN=([^,]+)")]
+    private static partial Regex MyRegex();
 }
