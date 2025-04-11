@@ -130,6 +130,18 @@ builder.Logging.AddDebug();builder.Services.AddAutoMapper(AppDomain.CurrentDomai
 
 builder.Services.AddSignalR();
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        policy
+            .AllowAnyOrigin() // địa chỉ chạy file HTML
+            .AllowAnyHeader()
+            .AllowAnyMethod();
+        //.AllowCredentials(); // rất quan trọng cho SignalR
+    });
+});
+
 /*builder.Services.AddScoped(typeof(IBaseRepository<>), typeof(BaseRepository<>));*/
 builder.Services.AddScoped<IExternalApiService, ExternalApiService>();
 builder.Services.AddScoped<IRedisCacheRepository, RedisCacheRepository>();
@@ -208,6 +220,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+
 /*using (var scope = app.Services.CreateScope())
 {
     var apiResourceService = scope.ServiceProvider.GetRequiredService<IResourceService>();
@@ -229,6 +242,7 @@ app.UseMiddleware<ApiLoggingMiddleware>(); // ✅ Ghi log API request/response
 
 //app.UseSerilogRequestLogging();
 //app.UseHttpsRedirection();
+app.UseCors("AllowFrontend");
 
 app.MapHub<NotificationHub>("/notificationHub"); 
 

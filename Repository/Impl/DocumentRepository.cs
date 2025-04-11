@@ -43,4 +43,14 @@ public class DocumentRepository : IDocumentRepository
     {
         return await _documentDao.FindAsync(u => true);
     }
+    
+    public async Task<IEnumerable<Document>> FindAllDocumentForTaskAsync(Guid userId)
+    {
+        if (userId == Guid.Empty) throw new ArgumentNullException(nameof(userId));
+        return await _documentDao.FindAsync(
+            d => !d.IsDeleted && d.Tasks.Any(t => t.UserId == userId),
+            q => q.Include(d => d.Tasks).Include(d => d.DocumentVersions)
+        );
+    }
+    
 }

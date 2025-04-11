@@ -18,7 +18,6 @@ public class Document
     public string? DocumentContent { get; set; }
     public string? NumberOfDocument { get; set; }
     public string? SignedBy { get; set; }
-    public string? DocumentUrl { get; set; }
 
     public DateTime CreatedDate
     {
