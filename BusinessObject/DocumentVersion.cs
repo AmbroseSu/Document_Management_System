@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace BusinessObject;
 
@@ -24,4 +25,5 @@ public class DocumentVersion
 
     public Guid DocumentId { get; set; }
     public Document? Document { get; set; }
+    public List<DocumentSignature>? DocumentSignatures { get; set; }
 }

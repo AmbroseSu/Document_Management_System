@@ -22,6 +22,7 @@ public class DocumentSignature
 
     public Guid DigitalCertificateId { get; set; }
     public DigitalCertificate? DigitalCertificate { get; set; }
-    public Guid DocumentId { get; set; }
-    public Document? Document { get; set; }
+    public Guid DocumentVersionId { get; set; }
+    public DocumentVersion? DocumentVersion { get; set; }
+    
 }

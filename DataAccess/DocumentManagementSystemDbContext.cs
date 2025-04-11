@@ -231,9 +231,6 @@ public class DocumentManagementSystemDbContext : DbContext
             entity.HasMany(e => e.Tasks)
                 .WithOne(e => e.Document)
                 .HasForeignKey(e => e.DocumentId);
-            entity.HasMany(e => e.DocumentSignatures)
-                .WithOne(e => e.Document)
-                .HasForeignKey(e => e.DocumentId);
             entity.HasMany(e => e.AttachmentDocuments)
                 .WithOne(e => e.Document)
                 .HasForeignKey(e => e.DocumentId);
@@ -300,6 +297,10 @@ public class DocumentManagementSystemDbContext : DbContext
             entity.Property(e => e.DocumentVersionUrl);
             entity.Property(e => e.CreateDate);
             entity.Property(e => e.IsFinalVersion);
+            
+            entity.HasMany(e => e.DocumentSignatures)
+                .WithOne(e => e.DocumentVersion)
+                .HasForeignKey(e => e.DocumentVersionId);
         });
 
         modelBuilder.Entity<DocumentWorkflowStatus>(entity =>

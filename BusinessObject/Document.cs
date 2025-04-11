@@ -9,6 +9,7 @@ public class Document
 {
     private DateTime _createdDate;
     private DateTime _deadline;
+    private DateTime _dateReceived;
 
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     [Key]
@@ -34,7 +35,12 @@ public class Document
     public ProcessingStatus ProcessingStatus { get; set; }
     public DocumentPriority DocumentPriority { get; set; }
     public string? Sender { get; set; }
-    public DateTime? DateReceived { get; set; }
+
+    public DateTime? DateReceived
+    {
+        get => _dateReceived.ToLocalTime();
+        set => _dateReceived = value.HasValue ? value.Value.ToUniversalTime() : default;
+    }
     public string? DateIssued { get; set; }
     public bool IsDeleted { get; set; }
 
@@ -50,7 +56,6 @@ public class Document
     public DocumentType? DocumentType { get; set; }
 
     public List<Tasks>? Tasks { get; set; }
-    public List<DocumentSignature>? DocumentSignatures { get; set; }
     public List<AttachmentDocument>? AttachmentDocuments { get; set; }
     public List<DocumentVersion>? DocumentVersions { get; set; }
     public List<DocumentWorkflowStatus>? DocumentWorkflowStatuses { get; set; }
