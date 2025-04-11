@@ -166,7 +166,8 @@ public class TaskService : ITaskService
                 .Skip((page - 1) * limit)
                 .Take(limit)
                 .ToList();
-            return allDocuments;
+            var result = _mapper.Map<IEnumerable<DivisionDto>>(documentResults);
+            return ResponseUtil.GetCollection(result, ResponseMessages.GetSuccessfully, HttpStatusCode.OK, totalRecords, page, limit, totalPages);
 
         case DocumentTab.Draft:
             return allDocuments
@@ -223,7 +224,8 @@ public class TaskService : ITaskService
         default:
             return new List<Document>();
     }
-}*/
+}
+*/
 
     
     
