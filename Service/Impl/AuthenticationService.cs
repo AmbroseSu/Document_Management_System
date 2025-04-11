@@ -262,6 +262,12 @@ public class AuthenticationService : IAuthenticationService
             if (!BCrypt.Net.BCrypt.Verify(changePasswordRequest.OldPassword, user.Password))
                 return ResponseUtil.Error(ResponseMessages.OldPasswordIncorrect, ResponseMessages.OperationFailed,
                     HttpStatusCode.BadRequest);
+            
+            string error;
+            bool isValid = IsValidPassword(changePasswordRequest.NewPassword, out error);
+            if (!isValid)
+                return ResponseUtil.Error(error, ResponseMessages.OperationFailed,
+                    HttpStatusCode.BadRequest);
 
             user.Password = BCrypt.Net.BCrypt.HashPassword(changePasswordRequest.NewPassword);
             await _unitOfWork.UserUOW.UpdateAsync(user);
@@ -298,6 +304,12 @@ public class AuthenticationService : IAuthenticationService
             if (forgotPasswordRequest.NewPassword != forgotPasswordRequest.ConfirmPassword)
                 return ResponseUtil.Error(ResponseMessages.PasswordNotMatchConfirm, ResponseMessages.OperationFailed,
                     HttpStatusCode.BadRequest);
+            
+            string error;
+            bool isValid = IsValidPassword(forgotPasswordRequest.NewPassword, out error);
+            if (!isValid)
+                return ResponseUtil.Error(error, ResponseMessages.OperationFailed,
+                    HttpStatusCode.BadRequest);
 
             user.Password = BCrypt.Net.BCrypt.HashPassword(forgotPasswordRequest.NewPassword);
             await _unitOfWork.UserUOW.UpdateAsync(user);
@@ -318,5 +330,31 @@ public class AuthenticationService : IAuthenticationService
         var random = new Random();
         var otp = random.Next(100000, 999999); // Tạo một số ngẫu nhiên từ 100000 đến 999999
         return otp;
+    }
+    
+    public bool IsValidPassword(string password, out string errorMessage)
+    {
+        errorMessage = string.Empty;
+
+        if (string.IsNullOrWhiteSpace(password))
+        {
+            errorMessage = "Password không được để trống.";
+            return false;
+        }
+
+        if (password.Length < 8)
+            errorMessage = "Password phải có ít nhất 8 ký tự.";
+        else if (!password.Any(char.IsUpper))
+            errorMessage = "Password phải có ít nhất một chữ cái viết hoa.";
+        else if (!password.Any(char.IsLower))
+            errorMessage = "Password phải có ít nhất một chữ cái thường.";
+        else if (!password.Any(char.IsDigit))
+            errorMessage = "Password phải có ít nhất một chữ số.";
+        else if (!password.Any(ch => "!@#$%^&*()_+-=[]{}|;:'\",.<>/?".Contains(ch)))
+            errorMessage = "Password phải có ít nhất một ký tự đặc biệt.";
+        else
+            return true; // hợp lệ
+
+        return false;
     }
 }

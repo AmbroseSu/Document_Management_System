@@ -37,6 +37,9 @@ public class TaskService : ITaskService
             if (taskDto.UserId == null)
                 return ResponseUtil.Error(ResponseMessages.UserIdNull, ResponseMessages.OperationFailed,
                     HttpStatusCode.BadRequest);
+            if (taskDto.DocumentId == null)
+                return ResponseUtil.Error(ResponseMessages.DocumentIdNull, ResponseMessages.OperationFailed,
+                    HttpStatusCode.BadRequest);
 
             
             if (taskDto.StartDate < DateTime.Now || taskDto.EndDate < DateTime.Now)
@@ -146,6 +149,82 @@ public class TaskService : ITaskService
             return ResponseUtil.Error(e.Message, ResponseMessages.OperationFailed, HttpStatusCode.InternalServerError);
         }
     }
+    
+    
+    /*public async Task<ResponseDto> GetDocumentsByTabForUser(Guid userId, DocumentTab tab, int page, int limit)
+{
+    var allDocuments = await _unitOfWork.DocumentUOW.FindAllDocumentForTaskAsync(userId);
+
+    var now = DateTime.UtcNow;
+
+    switch (tab)
+    {
+        case DocumentTab.All:
+            var totalRecords = allDocuments.Count();
+            var totalPages = (int)Math.Ceiling((double)totalRecords / limit);
+            IEnumerable<Document> documentResults = allDocuments
+                .Skip((page - 1) * limit)
+                .Take(limit)
+                .ToList();
+            return allDocuments;
+
+        case DocumentTab.Draft:
+            return allDocuments
+                .Where(d => d.UserId == userId &&
+                            d.Tasks.All(t => t.TaskStatus == TasksStatus.Pending))
+                .ToList();
+
+        case DocumentTab.Overdue:
+            return allDocuments
+                .Where(d => d.Tasks.Any(t => t.UserId == userId &&
+                                             t.TaskStatus == TasksStatus.Pending &&
+                                             d.Deadline < now))
+                .ToList();
+
+        case DocumentTab.Rejected:
+            return allDocuments
+                .Where(d => d.Tasks.Any(t => t.UserId == userId &&
+                                             t.TaskStatus == TasksStatus.Rejected))
+                .ToList();
+
+        case DocumentTab.Accepted:
+            return allDocuments
+                .Where(d => d.Tasks.All(t => t.TaskStatus == TasksStatus.Done))
+                .ToList();
+
+        case DocumentTab.PendingApproval: // đến lượt duyệt
+            return allDocuments
+                .Where(d =>
+                {
+                    var myTask = d.Tasks.FirstOrDefault(t => t.UserId == userId);
+                    if (myTask == null || myTask.TaskStatus != TasksStatus.Pending)
+                        return false;
+
+                    return d.Tasks
+                             .Where(t => t.TaskNumber < myTask.TaskNumber)
+                             .All(t => t.TaskStatus == TasksStatus.Done);
+                })
+                .ToList();
+
+        case DocumentTab.Waiting: // đang chờ duyệt
+            return allDocuments
+                .Where(d =>
+                {
+                    var myTask = d.Tasks.FirstOrDefault(t => t.UserId == userId);
+                    if (myTask == null || myTask.TaskStatus != TasksStatus.Done)
+                        return false;
+
+                    return d.Tasks
+                             .Where(t => t.TaskNumber > myTask.TaskNumber)
+                             .Any(t => t.TaskStatus == TasksStatus.Pending);
+                })
+                .ToList();
+
+        default:
+            return new List<Document>();
+    }
+}*/
+
     
     
     

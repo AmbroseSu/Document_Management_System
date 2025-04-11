@@ -219,7 +219,6 @@ public class DocumentManagementSystemDbContext : DbContext
             entity.Property(e => e.DocumentContent);
             entity.Property(e => e.NumberOfDocument);
             entity.Property(e => e.SignedBy);
-            entity.Property(e => e.DocumentUrl);
             entity.Property(e => e.CreatedDate);
             entity.Property(e => e.Deadline);
             entity.Property(e => e.ProcessingStatus);

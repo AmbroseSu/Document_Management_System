@@ -47,7 +47,7 @@ public class DocumentService : IDocumentService
             DocumentContent = aiResponse.DocumentContent,
             DateIssued = aiResponse.DateIssued,
             NumberOfDocument = aiResponse.NumberOfDocument,
-            DocumentUrl = url,
+            //DocumentUrl = url,
             CreatedDate = DateTime.UtcNow,
             UserId = userId,
             IsDeleted = false,
