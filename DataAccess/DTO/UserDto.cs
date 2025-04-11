@@ -20,6 +20,7 @@ public class UserDto
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
     public DateTime DateOfBirth { get; set; }
+    public string? Position { get; set; }
     public string? FcmToken { get; set; }
     public List<RoleDto>? Roles { get; set; }  
     public bool IsDeleted { get; set; }
