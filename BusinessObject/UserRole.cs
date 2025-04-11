@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace BusinessObject;
 
@@ -13,7 +14,9 @@ public class UserRole
 
     public Guid UserId { get; set; }
     public Guid RoleId { get; set; }
+    [JsonIgnore]
     public User? User { get; set; }
+    [JsonIgnore]
     public Role? Role { get; set; }
 
     /*public UserRole()
