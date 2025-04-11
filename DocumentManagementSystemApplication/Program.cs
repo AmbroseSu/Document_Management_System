@@ -157,6 +157,7 @@ builder.Services.AddHttpClient<IExternalApiService, ExternalApiService>();
 builder.Services.AddScoped<IDigitalCertificateService, DigitalCertificateService>();
 builder.Services.AddScoped<IDocumentSignatureRepository, DocumentSignatureRepository>();
 builder.Services.AddScoped<IDocumentSignatureService, DocumentSignatureService>();
+builder.Services.AddScoped<IDocumentWorkflowStatusRepository, DocumentWorkflowStatusRepository>();
 
 
 builder.Services.AddScoped<IResourceService, ResourceService>();

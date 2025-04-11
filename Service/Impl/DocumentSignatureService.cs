@@ -25,7 +25,7 @@ public class DocumentSignatureService : IDocumentSignatureService
             //ValidFrom = meta.SingingDate,
             OrderIndex = index,
             DocumentId = document.DocumentId,
-            DocumentSignatureId=digitalCertificate.DigitalCertificateId
+            DigitalCertificateId= digitalCertificate.DigitalCertificateId
         };
         await _unitOfWork.DocumentSignatureUOW.AddAsync(docSig);
         try

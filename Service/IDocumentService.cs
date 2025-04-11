@@ -6,5 +6,5 @@ namespace Service;
 public interface IDocumentService
 { 
     Task<ResponseDto> UploadDocument(IFormFile file,Guid userId);
-    Task<ResponseDto> InsertSimpleDocument(DocumentDto document);
+    Task<ResponseDto> InsertSimpleDocument(DocumentUploadDto document);
 }

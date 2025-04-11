@@ -34,7 +34,7 @@ public class Document
     public ProcessingStatus ProcessingStatus { get; set; }
     public DocumentPriority DocumentPriority { get; set; }
     public string? Sender { get; set; }
-    public string? DateReceived { get; set; }
+    public DateTime? DateReceived { get; set; }
     public string? DateIssued { get; set; }
     public bool IsDeleted { get; set; }
 
