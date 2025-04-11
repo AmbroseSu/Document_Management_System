@@ -24,12 +24,12 @@ public class DigitalCertificateService : IDigitalCertificateService
             Issuer = meta.SignerName,
             ValidFrom = meta.ValidFrom,
             ValidTo = meta.ExpirationDate,
-            HashAlgorithm = meta.Algorithm,
-            PublicKey = "PublicKey",
-            IsRevoked = false,
+            //HashAlgorithm = meta.Algorithm,
+            //PublicKey = "PublicKey",
+            //IsRevoked = false,
             SignatureImageUrl = "SignatureImageUrl",
             UserId = userId,
-            OwnerName = meta.SignerName
+            //OwnerName = meta.SignerName
         };
         await _unitOfWork.DigitalCertificateUOW.AddAsync(certificate);
         try

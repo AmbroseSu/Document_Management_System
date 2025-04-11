@@ -129,9 +129,7 @@ public class DocumentManagementSystemDbContext : DbContext
                 .HasColumnType("uuid")
                 .HasDefaultValueSql("gen_random_uuid()");
             entity.Property(e => e.SignedAt);
-            entity.Property(e => e.ValidFrom);
             entity.Property(e => e.OrderIndex);
-            entity.Property(e => e.SignatureValue);
         });
 
         modelBuilder.Entity<AttachmentArchivedDocument>(entity =>
@@ -181,10 +179,7 @@ public class DocumentManagementSystemDbContext : DbContext
             entity.Property(e => e.Issuer);
             entity.Property(e => e.ValidFrom);
             entity.Property(e => e.ValidTo);
-            entity.Property(e => e.PublicKey);
-            entity.Property(e => e.HashAlgorithm);
-            entity.Property(e => e.OwnerName);
-            entity.Property(e => e.IsRevoked);
+            entity.Property(e => e.Subject);
             entity.Property(e => e.SignatureImageUrl);
 
             entity.HasMany(e => e.ArchiveDocumentSignatures)
@@ -259,9 +254,7 @@ public class DocumentManagementSystemDbContext : DbContext
                 .HasColumnType("uuid")
                 .HasDefaultValueSql("gen_random_uuid()");
             entity.Property(e => e.SignedAt);
-            entity.Property(e => e.ValidFrom);
             entity.Property(e => e.OrderIndex);
-            entity.Property(e => e.SignatureValue);
         });
 
 

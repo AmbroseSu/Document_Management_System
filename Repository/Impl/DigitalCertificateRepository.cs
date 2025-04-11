@@ -29,12 +29,12 @@ public class DigitalCertificateRepository : IDigitalCertificateRepository
     public async Task<DigitalCertificate?> FindDigitalCertificateByIdlAsync(Guid? id)
     {
         if (id == null) throw new ArgumentNullException(nameof(id));
-        return await _digitalCetificateDao.FindByAsync(dc => dc.DigitalCertificateId == id && dc.IsRevoked == false);
+        return await _digitalCetificateDao.FindByAsync(dc => dc.DigitalCertificateId == id);
     }
 
     public async Task<IEnumerable<DigitalCertificate>?> FindAllDigitalCertificateByIdAsync(Guid? id)
     {
-        return await _digitalCetificateDao.FindAsync(dc => dc.DigitalCertificateId == id && dc.IsRevoked == false);
+        return await _digitalCetificateDao.FindAsync(dc => dc.DigitalCertificateId == id);
     }
     
     public async Task<DigitalCertificate?> FindDigitalCertificateBySerialnumberlAsync(string serialNumber)
