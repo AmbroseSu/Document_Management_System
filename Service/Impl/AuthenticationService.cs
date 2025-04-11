@@ -115,10 +115,7 @@ public class AuthenticationService : IAuthenticationService
                 } */
                 verificationOtp.IsDeleted = true;
                 await _unitOfWork.VerificationOtpUOW.UpdateAsync(verificationOtp);
-                var saveChange = await _unitOfWork.SaveChangesAsync();
-                if (saveChange != 0)
-                    return ResponseUtil.Error(ResponseMessages.FailedToSaveData, ResponseMessages.OperationFailed,
-                        HttpStatusCode.InternalServerError);
+                await _unitOfWork.SaveChangesAsync();
             }
 
             var otpCode = GenerateOtp();
