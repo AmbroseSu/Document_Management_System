@@ -30,7 +30,7 @@ public class DigitalCertificate
     public string? Subject { get; set; }
     public string? SignatureImageUrl { get; set; }
 
-    public Guid UserId { get; set; }
+    public Guid? UserId { get; set; }
     public User? User { get; set; }
 
     public List<ArchiveDocumentSignature>? ArchiveDocumentSignatures { get; set; }

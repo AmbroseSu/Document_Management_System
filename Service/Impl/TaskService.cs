@@ -156,18 +156,18 @@ public class TaskService : ITaskService
     var allDocuments = await _unitOfWork.DocumentUOW.FindAllDocumentForTaskAsync(userId);
 
     var now = DateTime.UtcNow;
+    
+    IEnumerable<Document> filteredDocuments = new List<Document>();
+    int totalRecords = 0;
+    int totalPages = 0;
+    IEnumerable<Document> documentResults = new List<Document>();
+    IEnumerable<DivisionDto> result = new List<DivisionDto>();
 
     switch (tab)
     {
         case DocumentTab.All:
-            var totalRecords = allDocuments.Count();
-            var totalPages = (int)Math.Ceiling((double)totalRecords / limit);
-            IEnumerable<Document> documentResults = allDocuments
-                .Skip((page - 1) * limit)
-                .Take(limit)
-                .ToList();
-            var result = _mapper.Map<IEnumerable<DivisionDto>>(documentResults);
-            return ResponseUtil.GetCollection(result, ResponseMessages.GetSuccessfully, HttpStatusCode.OK, totalRecords, page, limit, totalPages);
+            filteredDocuments = allDocuments;
+            break;
 
         case DocumentTab.Draft:
             return allDocuments
@@ -207,8 +207,9 @@ public class TaskService : ITaskService
                 })
                 .ToList();
 
-        case DocumentTab.Waiting: // đang chờ duyệt
-            return allDocuments
+        case DocumentTab.Waiting:
+        {
+            filteredDocuments = allDocuments
                 .Where(d =>
                 {
                     var myTask = d.Tasks.FirstOrDefault(t => t.UserId == userId);
@@ -216,16 +217,25 @@ public class TaskService : ITaskService
                         return false;
 
                     return d.Tasks
-                             .Where(t => t.TaskNumber > myTask.TaskNumber)
-                             .Any(t => t.TaskStatus == TasksStatus.Pending);
-                })
-                .ToList();
-
-        default:
-            return new List<Document>();
+                        .Where(t => t.TaskNumber > myTask.TaskNumber)
+                        .Any(t => t.TaskStatus == TasksStatus.Pending);
+                });
+            break;
+        }
     }
-}
-*/
+    
+    totalRecords = filteredDocuments.Count();
+    totalPages = (int)Math.Ceiling((double)totalRecords / limit);
+    documentResults = filteredDocuments
+        .Skip((page - 1) * limit)
+        .Take(limit)
+        .ToList();
+
+    result = _mapper.Map<IEnumerable<DivisionDto>>(documentResults);
+
+    return ResponseUtil.GetCollection(result, ResponseMessages.GetSuccessfully, HttpStatusCode.OK, totalRecords, page, limit, totalPages);*/
+    
+//}
 
     
     
