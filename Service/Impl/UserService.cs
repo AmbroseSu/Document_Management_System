@@ -75,6 +75,7 @@ public class UserService : IUserService
             user.DateOfBirth = userRequest.DateOfBirth;
             user.FullName = userRequest.FullName;
             user.Position = userRequest.Position;
+            user.IdentityCard = userRequest.IdentityCard;
             user.IsDeleted = false;
             user.IsEnable = false;
             user.CreatedAt = DateTime.Now;
@@ -154,7 +155,25 @@ public class UserService : IUserService
             if (user.IsDeleted)
                 return ResponseUtil.Error(ResponseMessages.UserHasDeleted, ResponseMessages.OperationFailed,
                     HttpStatusCode.BadRequest);
+            
+            var userRoles = await _unitOfWork.UserRoleUOW.FindRolesByUserIdAsync(user.UserId);
+            var roles = new List<RoleDto>();
+            foreach (var userRole in userRoles)
+            {
+                var roleResources = await _unitOfWork.RoleResourceUOW.FindRoleResourcesByRoleIdAsync(userRole.RoleId);
+                var role = await _unitOfWork.RoleUOW.FindRoleByIdAsync(userRole.RoleId);
+                var roleDto = _mapper.Map<RoleDto>(role);
+                roles.Add(roleDto);
+            }
+            
             var result = _mapper.Map<UserDto>(user);
+            result.Roles = roles;
+            var division = await _unitOfWork.DivisionUOW.FindDivisionByIdAsync(user.DivisionId);
+            if (division != null)
+            {
+                var divisionDto = _mapper.Map<DivisionDto>(division);
+                result.DivisionDto = divisionDto;
+            }
             return ResponseUtil.GetObject(result, ResponseMessages.GetSuccessfully, HttpStatusCode.OK, 1);
         }
         catch (Exception ex)

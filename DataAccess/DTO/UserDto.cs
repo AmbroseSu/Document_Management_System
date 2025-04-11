@@ -1,4 +1,5 @@
-﻿using BusinessObject.Enums;
+﻿using BusinessObject;
+using BusinessObject.Enums;
 
 namespace DataAccess.DTO;
 
@@ -15,13 +16,16 @@ public class UserDto
     public string? Address { get; set; }
     public string? Avatar { get; set; }
     public Gender Gender { get; set; }
+    public string? IdentityCard { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
+    public DateTime DateOfBirth { get; set; }
     public string? FcmToken { get; set; }
+    public List<RoleDto>? Roles { get; set; }  
     public bool IsDeleted { get; set; }
     public bool IsEnable { get; set; }
 
-    public Guid? DivisionId { get; set; }
+    public DivisionDto? DivisionDto { get; set; }
     public int? VerificationOtpId { get; set; }
     public List<Guid>? TaskUserIds { get; set; }
     public List<Guid>? CommentIds { get; set; }
