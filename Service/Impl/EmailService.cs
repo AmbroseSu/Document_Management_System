@@ -1,6 +1,9 @@
 ﻿using System.Net;
+using System.Net.Http.Headers;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using DataAccess.DTO;
+using DataAccess.DTO.Request;
 using MailKit.Net.Smtp;
 using MailKit.Security;
 using Microsoft.Extensions.Configuration;
@@ -78,5 +81,100 @@ public class EmailService : IEmailService
         var random = new Random();
         var otp = random.Next(100000, 999999); // Tạo một số ngẫu nhiên từ 100000 đến 999999
         return otp;
+    }
+    
+    public async Task<ResponseDto> SendEmailWithOAuth2(EmailRequest emailRequest)
+    {
+        string token = ExchangeCodeForAccessToken(emailRequest.AccessToken).Result;
+        string email = await GetEmailFromAccessToken(token);
+        if (email != emailRequest.YourEmail)
+        {
+            return ResponseUtil.GetObject(ResponseMessages.EmailNotMatch, ResponseMessages.OperationFailed, HttpStatusCode.BadRequest, 1);
+        }
+        var message = new MimeMessage();
+        message.From.Add(new MailboxAddress(emailRequest.YourEmail, emailRequest.YourEmail));
+        message.To.Add(new MailboxAddress(emailRequest.ReceiverEmail, emailRequest.ReceiverEmail));
+        message.Subject = emailRequest.Subject;
+
+        // Tạo phần thân dạng Multipart (nội dung + file)
+        var multipart = new Multipart("mixed");
+
+        // Nội dung văn bản
+        var textPart = new TextPart("plain") { Text = emailRequest.Body };
+        multipart.Add(textPart);
+        var memoryStream = new MemoryStream();
+        // Nếu có file đính kèm thì thêm vào
+        if (emailRequest.FilePath != null && emailRequest.FilePath.Length > 0)
+        {
+            
+            await emailRequest.FilePath.CopyToAsync(memoryStream);
+            memoryStream.Position = 0;
+            var attachment = new MimePart()
+            {
+                Content = new MimeContent(memoryStream),
+                ContentDisposition = new ContentDisposition(ContentDisposition.Attachment),
+                ContentTransferEncoding = ContentEncoding.Base64,
+                FileName = emailRequest.FilePath.FileName
+            };
+            multipart.Add(attachment);
+        }
+
+        message.Body = multipart;
+
+        using var client = new SmtpClient();
+        try
+        {
+            await client.ConnectAsync("smtp.gmail.com", 587, SecureSocketOptions.StartTls);
+            var oauth2 = new SaslMechanismOAuth2(emailRequest.YourEmail, token);
+            await client.AuthenticateAsync(oauth2);
+
+            await client.SendAsync(message);
+            await client.DisconnectAsync(true);
+        }
+        catch (Exception ex)
+        {
+            return ResponseUtil.Error(ex.Message, ResponseMessages.OperationFailed, HttpStatusCode.InternalServerError);
+        }
+        finally
+        {
+            memoryStream.Dispose();
+        }
+        return ResponseUtil.GetObject(ResponseMessages.SendEmailSuccessfully, ResponseMessages.CreatedSuccessfully, HttpStatusCode.OK, 1);
+    }
+    
+    private async Task<string> ExchangeCodeForAccessToken(string code)
+    {
+        var httpClient = new HttpClient();
+        var values = new Dictionary<string, string>
+        {
+            { "code", code },
+            { "client_id", "574718261918-j6trtu7cd141fqc26nt436ipmicdaagf.apps.googleusercontent.com" },
+            { "client_secret", "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" },
+            { "redirect_uri", "http://127.0.0.1:5500/test.html" },
+            { "grant_type", "authorization_code" }
+        };
+
+        var content = new FormUrlEncodedContent(values);
+        var response = await httpClient.PostAsync("https://oauth2.googleapis.com/token", content);
+        var responseString = await response.Content.ReadAsStringAsync();
+        var tokenResponse = JsonDocument.Parse(responseString);
+        var accessToken = tokenResponse.RootElement.GetProperty("access_token").GetString();
+
+        return accessToken;
+        //return responseString; // chứa access_token, refresh_token, ...
+    }
+    
+    private async Task<string> GetEmailFromAccessToken(string accessToken)
+    {
+        using var client = new HttpClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+    
+        var response = await client.GetAsync("https://www.googleapis.com/oauth2/v3/userinfo");
+        var responseString = await response.Content.ReadAsStringAsync();
+
+        var json = JsonDocument.Parse(responseString);
+        string email = json.RootElement.GetProperty("email").GetString();
+
+        return email;
     }
 }

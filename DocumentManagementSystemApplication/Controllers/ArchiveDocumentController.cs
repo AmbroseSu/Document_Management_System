@@ -1,3 +1,5 @@
+using DataAccess.DTO;
+using DataAccess.DTO.Request;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Service;
@@ -10,10 +12,12 @@ namespace DocumentManagementSystemApplication.Controllers
     public class ArchiveDocumentController : ControllerBase
     {
         private readonly IArchiveDocumentService _archiveDocumentService;
+        private readonly IEmailService _emailService;
 
-        public ArchiveDocumentController(IArchiveDocumentService archiveDocumentService)
+        public ArchiveDocumentController(IArchiveDocumentService archiveDocumentService, IEmailService emailService)
         {
             _archiveDocumentService = archiveDocumentService;
+            _emailService = emailService;
         }
 
         /*[HttpPost("create-upload-pdf")]
@@ -22,5 +26,13 @@ namespace DocumentManagementSystemApplication.Controllers
             var signatureInfo = _archiveDocumentService.ExtractSignatures(file);
             return Ok(new { Signatures = signatureInfo });
         }*/
+        
+        
+        [HttpPost("create-send-email")]
+        public async Task<ResponseDto> SendEmail([FromForm] EmailRequest emailRequest)
+        {
+            var result = await _emailService.SendEmailWithOAuth2(emailRequest);
+            return result;
+        }
     }
 }
