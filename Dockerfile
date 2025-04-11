@@ -43,7 +43,6 @@
 # Base image for runtime
 FROM mcr.microsoft.com/dotnet/aspnet:8.0-alpine AS base
 WORKDIR /app
-EXPOSE 8080 8443
 
 # Copy HTTPS certificate into container
 USER root
@@ -70,18 +69,19 @@ COPY Repository/*.csproj Repository/
 COPY Service/*.csproj Service/
 COPY *.sln ./
 RUN dotnet restore DocumentManagementSystemApplication/DocumentManagementSystemApplication.csproj
+#RUN dotnet restore Service/Service.csproj
 
 # Copy toàn bộ source code vào container
 COPY . .
-
 # Build project
 WORKDIR /src/DocumentManagementSystemApplication
-RUN dotnet publish DocumentManagementSystemApplication.csproj -c $BUILD_CONFIGURATION -o /app/publish --no-restore
+RUN dotnet publish DocumentManagementSystemApplication.csproj -c $BUILD_CONFIGURATION -o /app/publish
 
 # Final runtime stage
 FROM base AS final
 WORKDIR /app
 COPY --from=build /app/publish .
+EXPOSE 5290 5291
 
 ENTRYPOINT ["dotnet", "DocumentManagementSystemApplication.dll"]
 

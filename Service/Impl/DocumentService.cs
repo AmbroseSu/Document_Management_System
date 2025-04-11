@@ -173,7 +173,7 @@ public class DocumentService : IDocumentService
 
         foreach (var signature in signatures)
         {
-            var match = regex.Match(signature.DigitalCertificate?.OwnerName ?? string.Empty);
+            var match = regex.Match(signature.DigitalCertificate?.Subject ?? string.Empty);
             if (match.Success)
             {
                 signBy.Add(match.Groups[1].Value);
