@@ -27,13 +27,13 @@ public class User
     public DateTime CreatedAt
     {
         get => _createdAt.ToLocalTime();
-        set => _createdAt = value;
+        set => _createdAt = value.ToUniversalTime();
     }
 
     public DateTime UpdatedAt
     {
         get => _updatedAt.ToLocalTime();
-        set => _updatedAt = value;
+        set => _updatedAt = value.ToUniversalTime();
     }
 
     public string? FcmToken { get; set; }
@@ -42,7 +42,7 @@ public class User
     public DateTime DateOfBirth
     {
         get => _dateOfBirth.ToLocalTime();
-        set => _dateOfBirth = value;
+        set => _dateOfBirth = value.ToUniversalTime();
     }
 
     public bool IsDeleted { get; set; }

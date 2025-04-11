@@ -39,9 +39,9 @@ public class UserService : IUserService
                 return ResponseUtil.Error(ResponseMessages.EmailAlreadyExists, ResponseMessages.OperationFailed,
                     HttpStatusCode.BadRequest);
 
-            if (userExistEmail!.IsDeleted)
+            /*if (userExistEmail!.IsDeleted)
                 return ResponseUtil.Error(ResponseMessages.UserHasDeleted, ResponseMessages.OperationFailed,
-                    HttpStatusCode.BadRequest);
+                    HttpStatusCode.BadRequest);*/
             //var emailAttribute = new EmailAddressAttribute();
             /*if (IsValidEmail(userRequest.Email))
             {
@@ -52,9 +52,9 @@ public class UserService : IUserService
                 return ResponseUtil.Error(ResponseMessages.UserNameAlreadyExists, ResponseMessages.OperationFailed,
                     HttpStatusCode.BadRequest);
 
-            if (userExistUserName!.IsDeleted)
+            /*if (userExistUserName!.IsDeleted)
                 return ResponseUtil.Error(ResponseMessages.UserHasDeleted, ResponseMessages.OperationFailed,
-                    HttpStatusCode.BadRequest);
+                    HttpStatusCode.BadRequest);*/
 
             if (!IsValidEmail(userRequest.Email))
                 return ResponseUtil.Error(ResponseMessages.EmailFormatInvalid, ResponseMessages.OperationFailed,
