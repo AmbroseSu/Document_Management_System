@@ -24,9 +24,9 @@ namespace DocumentManagementSystemApplication.Controllers
         }
         
         [HttpGet("view-all-workflow")]
-        public async Task<ResponseDto> ViewAllWorkflow([FromQuery] int page = 1,[FromQuery] int limit = 10)
+        public async Task<ResponseDto> ViewAllWorkflow([FromQuery] string? workflowName, [FromQuery] int page = 1,[FromQuery] int limit = 10)
         {
-            return await _workflowService.GetAllWorkflowAsync(page, limit);
+            return await _workflowService.GetAllWorkflowAsync(workflowName, page, limit);
         }
         
         [HttpPost("delete-workflow")]

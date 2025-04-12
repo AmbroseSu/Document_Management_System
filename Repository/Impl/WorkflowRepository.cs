@@ -49,6 +49,9 @@ public class WorkflowRepository : IWorkflowRepository
     public async Task<IEnumerable<Workflow>> FindAllWorkflowAsync()
     {
         return await _workflowDao.FindAsync(u => true,
-            u => u.Include(d => d.DocumentTypeWorkflows).Include(d => d.WorkflowFlows));
+            u => u.Include(d => d.DocumentTypeWorkflows)
+                .Include(d => d.WorkflowFlows)
+                .ThenInclude(f => f.Flow)
+                .ThenInclude(s => s.Steps));
     }
 }

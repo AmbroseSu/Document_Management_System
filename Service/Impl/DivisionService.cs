@@ -86,11 +86,17 @@ public class DivisionService : IDivisionService
         }
     }
     
-    public async Task<ResponseDto> GetAllDivisionAsync(int page, int limit)
+    public async Task<ResponseDto> GetAllDivisionAsync(string? divisionName, int page, int limit)
     {
         try
         {
             var divisions = await _unitOfWork.DivisionUOW.FindAllDivisionAsync();
+            
+            if (!string.IsNullOrWhiteSpace(divisionName))
+            {
+                divisionName = divisionName.ToLower();
+                divisions = divisions.Where(d => d.DivisionName.ToLower().Contains(divisionName.ToLower())).ToList();
+            }
             
             var totalRecords = divisions.Count();
             var totalPages = (int)Math.Ceiling((double)totalRecords / limit);
