@@ -86,11 +86,18 @@ public class DocumentTypeService : IDocumentTypeService
         }
     }
     
-    public async Task<ResponseDto> GetAllDocumentTypeAsync(int page, int limit)
+    public async Task<ResponseDto> GetAllDocumentTypeAsync(string? documentTypeName, int page, int limit)
     {
         try
         {
             var documentTypes = await _unitOfWork.DocumentTypeUOW.FindAllDocumentTypeAsync();
+            
+            if (!string.IsNullOrWhiteSpace(documentTypeName))
+            {
+                documentTypes = documentTypes
+                    .Where(d => d.DocumentTypeName.ToLower().Contains(documentTypeName.ToLower()))
+                    .ToList();
+            }
             
             var totalRecords = documentTypes.Count();
             var totalPages = (int)Math.Ceiling((double)totalRecords / limit);

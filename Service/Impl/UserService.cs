@@ -9,6 +9,8 @@ using Repository;
 using Service.Response;
 using Service.Utilities;
 using Task = System.Threading.Tasks.Task;
+using System.Linq.Dynamic.Core;
+
 
 namespace Service.Impl;
 
@@ -222,14 +224,11 @@ public class UserService : IUserService
             if (!string.IsNullOrEmpty(userFilterRequest.Filters.Role))
                 query = query.Where(u =>
                     u.UserRoles!.Any(ur => ur.Role!.RoleName.ToLower().Contains(userFilterRequest.Filters.Role.ToLower())));
-            if (userFilterRequest.Sort != null)
+            if (!string.IsNullOrEmpty(userFilterRequest.Sort?.Field))
             {
-                var isDescending = userFilterRequest.Sort.Order.ToLower() == "desc";
-
-                // Dùng Reflection để sort theo tên field
-                query = isDescending
-                    ? query.OrderByDescending(u => GetPropertyValue(u, userFilterRequest.Sort.Field))
-                    : query.OrderBy(u => GetPropertyValue(u, userFilterRequest.Sort.Field));
+                var sortField = userFilterRequest.Sort.Field;
+                var sortOrder = userFilterRequest.Sort.Order?.ToLower() == "desc" ? "descending" : "ascending";
+                query = query.OrderBy($"{sortField} {sortOrder}");
             }
             else
             {

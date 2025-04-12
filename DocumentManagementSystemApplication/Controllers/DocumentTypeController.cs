@@ -30,9 +30,9 @@ namespace DocumentManagementSystemApplication.Controllers
         }
         
         [HttpGet("view-all-document-type")]
-        public async Task<ResponseDto> ViewAllDocumentType([FromQuery] int page = 1,[FromQuery] int limit = 10)
+        public async Task<ResponseDto> ViewAllDocumentType([FromQuery] string? documentTypeName, [FromQuery] int page = 1,[FromQuery] int limit = 10)
         {
-            return await _documentTypeService.GetAllDocumentTypeAsync(page, limit);
+            return await _documentTypeService.GetAllDocumentTypeAsync(documentTypeName, page, limit);
         }
         
         [HttpPost("delete-document-type")]

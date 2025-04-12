@@ -302,11 +302,18 @@ public class WorkflowService : IWorkflowService
         }
     }
     
-    public async Task<ResponseDto> GetAllWorkflowAsync(int page, int limit)
+    public async Task<ResponseDto> GetAllWorkflowAsync(string? workflowName, int page, int limit)
     {
         try
         {
             var workflows = await _unitOfWork.WorkflowUOW.FindAllWorkflowAsync();
+            
+            if (!string.IsNullOrWhiteSpace(workflowName))
+            {
+                workflows = workflows
+                    .Where(w => w.WorkflowName.ToLower().Contains(workflowName.ToLower()))
+                    .ToList();
+            }
             
             var totalRecords = workflows.Count();
             var totalPages = (int)Math.Ceiling((double)totalRecords / limit);
