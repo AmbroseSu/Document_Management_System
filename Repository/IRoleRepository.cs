@@ -13,5 +13,6 @@ public interface IRoleRepository
     Task AddAsync(Role role);
     Task<Role?> FindRoleByNameAsync(string roleName);
     Task<Role?> FindRoleByIdAsync(Guid? roleId);
-    
+    Task<IEnumerable<Role>> FindRolesByIdsAsync(List<Guid> roleIds);
+
 }

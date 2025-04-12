@@ -220,6 +220,7 @@ public class DocumentManagementSystemDbContext : DbContext
             entity.Property(e => e.NumberOfDocument);
             entity.Property(e => e.SignedBy);
             entity.Property(e => e.CreatedDate);
+            entity.Property(e => e.UpdatedDate);
             entity.Property(e => e.Deadline);
             entity.Property(e => e.ProcessingStatus);
             entity.Property(e => e.DocumentPriority);
@@ -427,6 +428,7 @@ public class DocumentManagementSystemDbContext : DbContext
             entity.Property(e => e.TaskStatus);
             entity.Property(e => e.TaskType);
             entity.Property(e => e.CreatedDate);
+            entity.Property(e => e.UpdatedDate);
             entity.Property(e => e.TaskNumber);
             entity.Property(e => e.IsDeleted);
             entity.Property(e => e.IsActive);

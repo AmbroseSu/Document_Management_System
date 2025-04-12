@@ -221,7 +221,7 @@ public class UserService : IUserService
                 query = query.Where(u => u.Position!.ToLower().Contains(userFilterRequest.Filters.Position.ToLower()));
             if (!string.IsNullOrEmpty(userFilterRequest.Filters.Role))
                 query = query.Where(u =>
-                    u.UserRoles!.Any(ur => ur.Role!.RoleName.Contains(userFilterRequest.Filters.Role)));
+                    u.UserRoles!.Any(ur => ur.Role!.RoleName.ToLower().Contains(userFilterRequest.Filters.Role.ToLower())));
             if (userFilterRequest.Sort != null)
             {
                 var isDescending = userFilterRequest.Sort.Order.ToLower() == "desc";
@@ -243,7 +243,36 @@ public class UserService : IUserService
                 .Skip((userFilterRequest.Page - 1) * userFilterRequest.Limit)
                 .Take(userFilterRequest.Limit)
                 .ToList();
-            var result = _mapper.Map<IEnumerable<UserDto>>(userResults);
+            
+            
+            var userIds = userResults.Select(u => u.UserId).ToList();
+            var divisionIds = userResults.Where(u => u.DivisionId != null).Select(u => u.DivisionId!.Value).Distinct().ToList();
+
+            // 1. Lấy tất cả UserRoles
+            var userRoles = await _unitOfWork.UserRoleUOW.FindUserRolesByUserIdsAsync(userIds);
+
+            // 2. Lấy tất cả Roles
+            var roleIds = userRoles.Select(ur => ur.RoleId).Distinct().ToList();
+            var roles = await _unitOfWork.RoleUOW.FindRolesByIdsAsync(roleIds);
+            var roleMap = roles.ToDictionary(r => r.RoleId, r => _mapper.Map<RoleDto>(r));
+
+            // 3. Lấy tất cả Divisions
+            var divisions = await _unitOfWork.DivisionUOW.FindDivisionsByIdsAsync(divisionIds);
+            var divisionMap = divisions.ToDictionary(d => d.DivisionId, d => _mapper.Map<DivisionDto>(d));
+
+            // 4. Map vào kết quả
+            var result = _mapper.Map<List<UserDto>>(userResults);
+            foreach (var userDto in result)
+            {
+                var ur = userRoles.Where(ur => ur.UserId == userDto.UserId).ToList();
+                userDto.Roles = ur.Select(r => roleMap[r.RoleId]).ToList();
+
+                if (userDto.DivisionId.HasValue && divisionMap.TryGetValue(userDto.DivisionId.Value, out var divDto))
+                {
+                    userDto.DivisionDto = divDto;
+                }
+            }
+            
 
             return ResponseUtil.GetCollection(result, ResponseMessages.GetSuccessfully, HttpStatusCode.OK, totalRecords,
                 userFilterRequest.Page, userFilterRequest.Limit, totalPages);

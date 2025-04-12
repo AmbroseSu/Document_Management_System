@@ -58,4 +58,14 @@ public class RoleRepository : IRoleRepository
         if (roleId == null) throw new ArgumentNullException(nameof(roleId));
         return await _roleDao.FindByAsync(p => p.RoleId == roleId && !p.IsDeleted);
     }
+    
+    public async Task<IEnumerable<Role>> FindRolesByIdsAsync(List<Guid> roleIds)
+    {
+        if (roleIds == null || !roleIds.Any())
+            return new List<Role>();
+
+        return await _roleDao.FindAsync(
+            r => roleIds.Contains(r.RoleId)
+        );
+    }
 }
