@@ -151,7 +151,7 @@ public class TaskService : ITaskService
     }
     
     
-    /*public async Task<ResponseDto> GetDocumentsByTabForUser(Guid userId, DocumentTab tab, int page, int limit)
+    public async Task<ResponseDto> GetDocumentsByTabForUser(Guid userId, DocumentTab tab, int page, int limit)
 {
     var allDocuments = await _unitOfWork.DocumentUOW.FindAllDocumentForTaskAsync(userId);
 
@@ -170,31 +170,46 @@ public class TaskService : ITaskService
             break;
 
         case DocumentTab.Draft:
-            return allDocuments
+        {
+            filteredDocuments = allDocuments
                 .Where(d => d.UserId == userId &&
                             d.Tasks.All(t => t.TaskStatus == TasksStatus.Pending))
                 .ToList();
+            break;
+        }
 
         case DocumentTab.Overdue:
-            return allDocuments
+        {
+            filteredDocuments = allDocuments
                 .Where(d => d.Tasks.Any(t => t.UserId == userId &&
                                              t.TaskStatus == TasksStatus.Pending &&
                                              d.Deadline < now))
                 .ToList();
+            break;
+        }
 
         case DocumentTab.Rejected:
-            return allDocuments
+        {
+            filteredDocuments = allDocuments
                 .Where(d => d.Tasks.Any(t => t.UserId == userId &&
                                              t.TaskStatus == TasksStatus.Rejected))
                 .ToList();
+            break;
+        }
+            
 
         case DocumentTab.Accepted:
-            return allDocuments
-                .Where(d => d.Tasks.All(t => t.TaskStatus == TasksStatus.Done))
+        {
+            filteredDocuments = allDocuments
+                .Where(d => d.Tasks.All(t => t.TaskStatus == TasksStatus.Completed))
                 .ToList();
+            break;
+        }
+            
 
         case DocumentTab.PendingApproval: // đến lượt duyệt
-            return allDocuments
+        {
+            filteredDocuments = allDocuments
                 .Where(d =>
                 {
                     var myTask = d.Tasks.FirstOrDefault(t => t.UserId == userId);
@@ -202,10 +217,12 @@ public class TaskService : ITaskService
                         return false;
 
                     return d.Tasks
-                             .Where(t => t.TaskNumber < myTask.TaskNumber)
-                             .All(t => t.TaskStatus == TasksStatus.Done);
+                        .Where(t => t.TaskNumber < myTask.TaskNumber)
+                        .All(t => t.TaskStatus == TasksStatus.Completed);
                 })
                 .ToList();
+            break;
+        }
 
         case DocumentTab.Waiting:
         {
@@ -213,7 +230,7 @@ public class TaskService : ITaskService
                 .Where(d =>
                 {
                     var myTask = d.Tasks.FirstOrDefault(t => t.UserId == userId);
-                    if (myTask == null || myTask.TaskStatus != TasksStatus.Done)
+                    if (myTask == null || myTask.TaskStatus != TasksStatus.Completed)
                         return false;
 
                     return d.Tasks
@@ -233,9 +250,9 @@ public class TaskService : ITaskService
 
     result = _mapper.Map<IEnumerable<DivisionDto>>(documentResults);
 
-    return ResponseUtil.GetCollection(result, ResponseMessages.GetSuccessfully, HttpStatusCode.OK, totalRecords, page, limit, totalPages);*/
+    return ResponseUtil.GetCollection(result, ResponseMessages.GetSuccessfully, HttpStatusCode.OK, totalRecords, page, limit, totalPages);
     
-//}
+}
 
     
     
