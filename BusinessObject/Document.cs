@@ -8,6 +8,7 @@ namespace BusinessObject;
 public class Document
 {
     private DateTime _createdDate;
+    private DateTime _updatedDate;
     private DateTime _deadline;
     private DateTime _dateReceived;
 
@@ -24,6 +25,11 @@ public class Document
     {
         get => _createdDate.ToLocalTime();
         set => _createdDate = value.ToUniversalTime();
+    }
+    public DateTime UpdatedDate
+    {
+        get => _updatedDate.ToLocalTime();
+        set => _updatedDate = value.ToUniversalTime();
     }
 
     public DateTime Deadline

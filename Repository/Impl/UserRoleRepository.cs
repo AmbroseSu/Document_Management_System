@@ -26,4 +26,16 @@ public class UserRoleRepository : IUserRoleRepository
         if (userId == null) throw new ArgumentNullException(nameof(userId));
         return await _userRoleDao.FindAsync(p => p.UserId == userId, r => r.Include(r => r.Role).Include(u => u.User));
     }
+    
+    public async Task<IEnumerable<UserRole>> FindUserRolesByUserIdsAsync(List<Guid> userIds)
+    {
+        if (userIds == null || !userIds.Any())
+            return new List<UserRole>();
+
+        return await _userRoleDao.FindAsync(
+            ur => userIds.Contains(ur.UserId),
+            q => q.Include(ur => ur.Role)
+        );
+    }
+    
 }

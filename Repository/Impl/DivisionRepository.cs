@@ -45,4 +45,14 @@ public class DivisionRepository : IDivisionRepository
         return await _divisionDao.FindAsync(u => true,
             u => u.Include(d => d.Users));
     }
+    
+    public async Task<IEnumerable<Division>> FindDivisionsByIdsAsync(List<Guid> divisionIds)
+    {
+        if (divisionIds == null || !divisionIds.Any())
+            return new List<Division>();
+
+        return await _divisionDao.FindAsync(
+            d => divisionIds.Contains(d.DivisionId)
+        );
+    }
 }

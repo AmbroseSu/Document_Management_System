@@ -7,4 +7,5 @@ public interface IUserRoleRepository
 {
     Task AddAsync(UserRole role);
     Task<IEnumerable<UserRole>> FindRolesByUserIdAsync(Guid? userId);
+    Task<IEnumerable<UserRole>> FindUserRolesByUserIdsAsync(List<Guid> userIds);
 }

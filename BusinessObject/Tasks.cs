@@ -7,6 +7,7 @@ namespace BusinessObject;
 public class Tasks
 {
     private DateTime _createdDate;
+    private DateTime _updatedDate;
     private DateTime _endDate;
     private DateTime _startDate;
 
@@ -36,6 +37,12 @@ public class Tasks
     {
         get => _createdDate.ToLocalTime();
         set => _createdDate = value.ToUniversalTime();
+    }
+    
+    public DateTime UpdatedDate
+    {
+        get => _updatedDate.ToLocalTime();
+        set => _updatedDate = value.ToUniversalTime();
     }
     public int TaskNumber { get; set; }
 

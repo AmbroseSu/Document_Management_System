@@ -26,6 +26,7 @@ public class UserDto
     public bool IsDeleted { get; set; }
     public bool IsEnable { get; set; }
 
+    public Guid? DivisionId { get; set; }
     public DivisionDto? DivisionDto { get; set; }
     public int? VerificationOtpId { get; set; }
     public List<Guid>? TaskUserIds { get; set; }

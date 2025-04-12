@@ -75,6 +75,9 @@ public static class ResponseMessages
     
     //Document
     public const string DocumentIdNull = "Document id cannot be null";
+    public const string DocumentNotFound = "Document not found";
+    public const string DocumentRejected = "Document has been rejected";
+    public const string InvalidAction = "Invalid action";
     
     //DocumentType
     public const string DocumentTypeNameNotNull = "Document Type name cannot be null or empty";
@@ -104,6 +107,12 @@ public static class ResponseMessages
     public const string TaskEndDayFailed = "End date must be greater than start date";
     public const string TaskNotFound = "Task not found";
     public const string TaskAlreadyDeleted = "Task already deleted";
+    public const string TaskNotExists = "The task does not exist or is not within your control.";
+    public const string TaskHadAccepted = "Task has been accepted";
+    public const string TaskHadNotAccepted = "You have not accepted to process this task.";
+    public const string TaskHadRejected = "Task has been rejected";
+    public const string TaskHadNotCompleted = "It's not your turn to approve yet.";
+    public const string TaskApproved = "Task approved";
     
     //Step
     public const string StepIdNull = "Step id cannot be null";

@@ -94,7 +94,8 @@ public class MappingProfile : Profile
 
         CreateMap<User, UserDto>()
             .ForMember(dest => dest.Roles, opt => opt.Ignore())
-            .ForMember(dest => dest.DivisionDto, opt => opt.Ignore());
+            .ForMember(dest => dest.DivisionDto, opt => opt.Ignore())
+            .ForMember(dest => dest.DivisionId, opt => opt.MapFrom(src => src.DivisionId));
         CreateMap<UserDto, User>();
         CreateMap<User, UserRequest>()
             .ForMember(dest => dest.RoleId, opt => opt.Ignore());
