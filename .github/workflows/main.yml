@@ -77,8 +77,10 @@ jobs:
             docker rm dms || true
           
             # Chạy container mới
-            docker run -d --name dms -p 5290:5290 -p 5291:5291 wiramin/dms:latest -v ./DocumentManagementSystemApplication/data:/app/data
-          
-            # Xóa các image cũ của wiramin/dms, trừ image đang dùng
+#            docker run -d --name dms -p 5290:5290 -p 5291:5291 wiramin/dms:latest -v ./DocumentManagementSystemApplication/data:/app/data
+            cd ~/document_management_system_capstone/dms 
+            curl -o docker-compose.yml https://raw.githubusercontent.com/AmbroseSu/Document_Management_System/7f6f2ab7eafeddf53c720c02f6d3f6e175ec4566/docker-compose.yaml
+            docker compose up -d   
+          # Xóa các image cũ của wiramin/dms, trừ image đang dùng
             docker images wiramin/dms --format '{{.ID}}' | grep -v "$NEW_IMAGE_ID" | sort -u | xargs -r docker rmi -f
           EOF
