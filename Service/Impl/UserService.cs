@@ -14,24 +14,27 @@ using System.Linq.Dynamic.Core;
 
 using BusinessObject.Enums;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 
 
 namespace Service.Impl;
 
 public class UserService : IUserService
-{
+{   
+    private readonly IFileService _fileService;
     private readonly IEmailService _emailService;
     private readonly IMapper _mapper;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IUserRepository _userRepository;
 
     public UserService(IUserRepository userRepository, IMapper mapper, IUnitOfWork unitOfWork,
-        IEmailService emailService)
+        IEmailService emailService, IFileService fileService)
     {
         _userRepository = userRepository;
         _mapper = mapper;
         _unitOfWork = unitOfWork;
         _emailService = emailService;
+        _fileService = fileService;
     }
 
     public async Task<ResponseDto> CreateUserByForm(UserRequest userRequest)
@@ -564,9 +567,16 @@ public class UserService : IUserService
     
     
 
-    public Task<ResponseDto> UpdateAvatarAsync(IFormFile file)
+    public async Task<ResponseDto> UpdateAvatarAsync(IFormFile file,string id)
     {
-        throw new NotImplementedException();
+        var url = "http://nghetrenghetre.xyz:5290/api/User/view-avatar/"+ await _fileService.SaveAvatar(file, id);
+        
+        return ResponseUtil.GetObject(url,"ok",HttpStatusCode.OK,1);
+    }
+
+    public async Task<IActionResult> GetAvatar(string userId)
+    {
+        return await _fileService.GetAvatar(userId);
     }
 
     public static string GenerateRandomString(int length)
