@@ -86,7 +86,7 @@ public partial class DocumentService : IDocumentService
     
     public async Task<ResponseDto> UploadDocument(IFormFile file, string? userId)
     {
-        var url = await _fileService.SaveFile(file);
+        var url = await _fileService.SaveUploadFile(file);
         var metaData = CheckMetaDataFile(url);
 
         if (metaData?.Any(meta => !meta.ValidTo) == true)
