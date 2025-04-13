@@ -1,5 +1,6 @@
 using BusinessObject;
 using DataAccess.DTO;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Service;
@@ -8,6 +9,8 @@ namespace DocumentManagementSystemApplication.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
+
     public class DocumentController : ControllerBase
     {
         private readonly IDocumentService _documentService;
@@ -17,18 +20,20 @@ namespace DocumentManagementSystemApplication.Controllers
             _documentService = documentService;
         }
 
-        [HttpPost("view-metadata-document")]
-        public async Task<string> ReadMetadataDocument([FromForm] IFormFile file)
-        {
-            await _documentService.UploadDocument(file, Guid.Empty);
-            return "ok";
-
-        }
+        // [HttpPost("view-metadata-document")]
+        // public async Task<string> ReadMetadataDocument([FromForm] IFormFile file)
+        // {
+        //     await _documentService.UploadDocument(file, Guid.Empty);
+        //     return "ok";
+        //
+        // }
         
-        [HttpPost("create-upload-document/{userId}")]
-        public async Task<IActionResult> UploadDocument([FromForm] IFormFile file, [FromRoute] Guid userId)
+        
+        [HttpPost("create-upload-document")]
+        public async Task<IActionResult> UploadDocument([FromForm] IFormFile file)
         {
-            var result = await _documentService.UploadDocument(file, userId);
+            var id = User.FindFirst("userid")?.Value;
+            var result = await _documentService.UploadDocument(file, id);
             return Ok(result);
         }
     }

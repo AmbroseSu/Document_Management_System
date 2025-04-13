@@ -12,5 +12,6 @@ public interface IUserService
     Task<ResponseDto> UpdateUserActiveOrDeleteAsync(Guid userId);
     Task<ResponseDto> UpdateUserAsync(UserUpdateRequest userUpdateRequest);
     Task<ResponseDto> AdminUpdateUserAsync(AdminUpdateUserRequest adminUpdateUserRequest);
+    Task<ResponseDto> UpdateAvatarAsync(IFormFile file);
     //Task<ResponseDto> ImportUsersFromExcelAsync(IFormFile file, Guid divisionId);
 }

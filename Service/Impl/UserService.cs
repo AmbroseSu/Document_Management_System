@@ -11,6 +11,7 @@ using Service.Response;
 using Service.Utilities;
 using Task = System.Threading.Tasks.Task;
 using System.Linq.Dynamic.Core;
+
 using BusinessObject.Enums;
 using Microsoft.AspNetCore.Http;
 
@@ -562,6 +563,11 @@ public class UserService : IUserService
     }
     
     
+
+    public Task<ResponseDto> UpdateAvatarAsync(IFormFile file)
+    {
+        throw new NotImplementedException();
+    }
 
     public static string GenerateRandomString(int length)
     {
