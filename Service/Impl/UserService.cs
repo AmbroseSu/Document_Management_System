@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Net;
 using System.Text.RegularExpressions;
 using AutoMapper;
@@ -10,6 +11,8 @@ using Service.Response;
 using Service.Utilities;
 using Task = System.Threading.Tasks.Task;
 using System.Linq.Dynamic.Core;
+using BusinessObject.Enums;
+using Microsoft.AspNetCore.Http;
 
 
 namespace Service.Impl;
@@ -474,6 +477,91 @@ public class UserService : IUserService
             return ResponseUtil.Error(ResponseMessages.FailedToSaveData, e.Message, HttpStatusCode.InternalServerError);
         }
     }
+    
+    
+    /*public async Task<ResponseDto> ImportUsersFromExcelAsync(IFormFile file, Guid divisionId)
+    {
+        var users = new List<UserRequest>();
+
+        //OfficeOpenXml.ExcelPackage.LicenseContext = OfficeOpenXml.LicenseContext.NonCommercial;
+
+        using var stream = new MemoryStream();
+        await file.CopyToAsync(stream);
+        stream.Position = 0;
+
+        //using var package = new ExcelPackage(stream);
+        //var worksheet = package.Workbook.Worksheets[0];
+        int rowCount = worksheet.Dimension.Rows;
+
+        for (int row = 2; row <= rowCount; row++)
+        {
+            var fullName = worksheet.Cells[row, 2].Text.Trim();
+            var userName = worksheet.Cells[row, 3].Text.Trim();
+            var email = worksheet.Cells[row, 4].Text.Trim();
+            var phone = worksheet.Cells[row, 5].Text.Trim();
+            var idCard = worksheet.Cells[row, 6].Text.Trim();
+            var dobRaw = worksheet.Cells[row, 7].Text.Trim();
+            var address = worksheet.Cells[row, 8].Text.Trim();
+            var genderRaw = worksheet.Cells[row, 9].Text.Trim().ToLower();
+            var position = worksheet.Cells[row, 10].Text.Trim();
+            var roleName = worksheet.Cells[row, 11].Text.Trim();
+
+            if (string.IsNullOrWhiteSpace(fullName)) continue;
+
+            if (!DateTime.TryParse(dobRaw, new CultureInfo("vi-VN"), DateTimeStyles.None, out DateTime dob))
+            {
+                throw new Exception($"Dòng {row}: Ngày sinh không đúng định dạng.");
+            }
+
+            Gender gender = genderRaw switch
+            {
+                "nam" => Gender.MALE,
+                "nữ" or "nu" => Gender.FEMALE,
+                _ => Gender.OTHER
+            };
+
+            Guid roleId = await GetRoleIdByName(roleName); // Bạn có thể dùng repo lấy role theo tên
+
+            var userRequest = new UserRequest
+            {
+                FullName = fullName,
+                UserName = userName,
+                Email = email,
+                PhoneNumber = phone,
+                IdentityCard = idCard,
+                DateOfBirth = dob,
+                Address = address,
+                Gender = gender,
+                Position = position,
+                RoleId = roleId,
+                DivisionId = divisionId
+            };
+            var result = await CreateUserByForm(userRequest);
+            if (result.StatusCode != (int)HttpStatusCode.Created)
+            {
+                return ResponseUtil.Error($"Dòng {row}: {result.Message}", ResponseMessages.OperationFailed,
+                    HttpStatusCode.BadRequest);
+                //throw new Exception($"Dòng {row}: {result.Message}");
+            }
+        }
+        
+
+        return ResponseUtil.GetObject(ResponseMessages.ImportSuccessfully, ResponseMessages.CreatedSuccessfully,
+            HttpStatusCode.OK, 1);
+    }*/
+    
+    
+    
+    
+    
+
+    private async Task<Guid> GetRoleIdByName(string roleName)
+    {
+        var role = await _unitOfWork.RoleUOW.FindRoleByNameAsync(roleName);
+        return role?.RoleId ?? Guid.Empty;
+    }
+    
+    
 
     public static string GenerateRandomString(int length)
     {

@@ -394,6 +394,8 @@ public class WorkflowService : IWorkflowService
                     {
                         FlowId = flow.FlowId,
                         IsFallbackFlow = isFallbackFlow,
+                        RoleStart = flow.RoleStart,
+                        RoleEnd = flow.RoleEnd,
                         Steps = stepsInFlow
                             .OrderBy(s => s.StepNumber) // 🔹 Nếu cần sắp xếp steps theo StepNumber
                             .Select(s => new StepDto
@@ -402,6 +404,12 @@ public class WorkflowService : IWorkflowService
                                 StepNumber = s.StepNumber,
                                 Action = s.Action,
                                 RoleId = s.RoleId,
+                                Role = new RoleDto
+                                {
+                                    RoleId = s.RoleId,
+                                    RoleName = s.Role?.RoleName,
+                                    CreatedDate = s.Role?.CreatedDate
+                                },
                                 NextStepId = s.NextStepId,
                                 RejectStepId = s.RejectStepId,
                                 IsFallbackStep = s.RejectStepId == null, // ✅ Gán giá trị ở đây thay vì sửa trong entity
