@@ -52,7 +52,7 @@ public class StepRepository : IStepRepository
     
     public async Task<IEnumerable<Step>> FindByFlowIdsAsync(List<Guid> flowIds)
     {
-        return await _stepDao.FindAsync(s => flowIds.Contains(s.FlowId), st => st.Include(st => st.Tasks));
+        return await _stepDao.FindAsync(s => flowIds.Contains(s.FlowId), st => st.Include(st => st.Tasks).Include(r => r.Role));
         /*return await _context.Steps
             .Where(s => flowIds.Contains(s.FlowId))
             .ToListAsync();*/
@@ -74,9 +74,19 @@ public class StepRepository : IStepRepository
                 .ThenInclude(f => f.WorkflowFlows)
                 .ThenInclude(wff => wff.Workflow)
         );
-        
-        
     }
+    
+    public async Task<Step?> GetFirstStepOfFlowAsync(Guid nextFlowId)
+    {
+        return await _stepDao.FindByAsync(
+            s => s.FlowId == nextFlowId,
+            q => q.OrderBy(s => s.StepNumber)
+                .Include(s => s.Flow)
+                .ThenInclude(f => f.WorkflowFlows)
+                .ThenInclude(wff => wff.Workflow)
+        );
+    }
+    
     
     
 }
