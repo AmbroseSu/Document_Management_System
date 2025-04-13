@@ -38,11 +38,11 @@ namespace DocumentManagementSystemApplication.Controllers
 
         
         [HttpPost("create-upload-document")]
-        public async Task<IActionResult> UploadDocument([FromForm] IFormFile file)
+        public async Task<ResponseDto> UploadDocument([FromForm] IFormFile file)
         {
             var id = User.FindFirst("userid")?.Value;
             var result = await _documentService.UploadDocument(file, id);
-            return Ok(result);
+            return result;
         }
     }
 }
