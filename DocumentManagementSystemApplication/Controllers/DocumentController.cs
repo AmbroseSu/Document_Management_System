@@ -14,7 +14,7 @@ namespace DocumentManagementSystemApplication.Controllers
     public class DocumentController : ControllerBase
     {
         private readonly IDocumentService _documentService;
-
+        
         public DocumentController(IDocumentService documentService)
         {
             _documentService = documentService;
@@ -28,6 +28,14 @@ namespace DocumentManagementSystemApplication.Controllers
         //
         // }
         
+        
+        [HttpGet("view-hello-document")]
+        public async Task<string?> ViewHelloDocument()
+        {
+            var id = User.FindFirst("userid")?.Value;
+            return id;
+        }
+
         
         [HttpPost("create-upload-document")]
         public async Task<IActionResult> UploadDocument([FromForm] IFormFile file)
