@@ -54,6 +54,22 @@ public partial class DocumentService : IDocumentService
         document.DateReceived = documentUploadDto.DateReceived;
         document.NumberOfDocument = documentUploadDto.NumberOfDocument;
         document.DocumentType = await _unitOfWork.DocumentTypeUOW.FindDocumentTypeByNameAsync(documentUploadDto.DocumentTypeName);
+        if (documentUploadDto.SignBys.Count > 1)
+        {
+            document.DocumentVersions!.OrderByDescending(v => int.Parse(v.VersionNumber))
+                .FirstOrDefault()
+                .DocumentSignatures = documentUploadDto.SignBys.Select((v,index) => new DocumentSignature
+                {
+                    SignedAt = v.SignAt,
+                    OrderIndex = index+1,
+                    DigitalCertificate = new DigitalCertificate()
+                    {
+                        Subject = v.Name
+                    }
+                }).ToList();
+                
+        }
+        
         var workflow =await _unitOfWork.WorkflowUOW.FindWorkflowByNameAsync(documentUploadDto.WorkflowName);
         
         var documentWorkflowStatus = new DocumentWorkflowStatus()
@@ -67,7 +83,7 @@ public partial class DocumentService : IDocumentService
         };
         await _unitOfWork.DocumentWorkflowStatusUOW.AddAsync(documentWorkflowStatus);
         await _unitOfWork.SaveChangesAsync();
-        throw new NotImplementedException();
+        return ResponseUtil.GetObject(null!, "oke", HttpStatusCode.OK, 0);
     }
 
     /// <summary>
@@ -84,11 +100,34 @@ public partial class DocumentService : IDocumentService
         // Check for metadata in the uploaded file
         var metaData = CheckMetaDataFile(url);
 
+        if (metaData != null && metaData.Any(meta => !meta.ValidTo))
+        {
+            return ResponseUtil.Error("null", "Signature is not valid", HttpStatusCode.BadRequest);
+        }
         // Scan the PDF using an external API to extract AI-generated information
         var aiResponse = await _externalApiService.ScanPdfAsync(url);
 
         // Find the document type based on the AI response
         var docType = await _unitOfWork.DocumentTypeUOW.FindDocumentTypeByNameAsync(aiResponse.DocumentType);
+        var listSignature = new List<DocumentSignature>();
+        if (metaData != null)
+        {
+             listSignature = metaData.Select((signature, index) => new DocumentSignature
+            {
+                SignedAt = signature.SingingDate,
+                OrderIndex = index + 1, // Bắt đầu từ 1
+                DigitalCertificate = new DigitalCertificate
+                {
+                    Subject = signature.SignerName,
+                    SerialNumber = signature.SerialNumber,
+                    ValidFrom = signature.ValidFrom,
+                    Issuer = signature.Issuer,
+                    ValidTo = signature.ExpirationDate
+                    
+                }
+                
+            }).ToList();
+        }
 
         // Create a new document object with the extracted information
         var document = new Document
@@ -109,7 +148,8 @@ public partial class DocumentService : IDocumentService
                     VersionNumber = 1.ToString(),
                     DocumentVersionUrl = url,
                     CreateDate = DateTime.Now,
-                    IsFinalVersion = true
+                    IsFinalVersion = true,
+                    DocumentSignatures = listSignature,
                 }
             ]
         };
@@ -124,7 +164,10 @@ public partial class DocumentService : IDocumentService
         }
 
         // Extract the names of the signers from the document signatures
-        //var signBy = ExtractSigners(document.DocumentSignatures);
+        var signBy = ExtractSigners(document.DocumentVersions?
+            .OrderByDescending(v => int.Parse(v.VersionNumber!))
+            .FirstOrDefault()?
+            .DocumentSignatures?.ToList() ?? []);
 
         // Create a response object with the document details
         var docDto = new DocumentUploadDto()
@@ -138,7 +181,7 @@ public partial class DocumentService : IDocumentService
             NumberOfDocument = document.NumberOfDocument,
             DocumentTypeName = document.DocumentType?.DocumentTypeName,
             WorkflowName = document.DocumentWorkflowStatuses?[0].Workflow?.WorkflowName, // Get the workflow name if available
-            //SignBy = signBy, // List of signers
+            SignByName = signBy,
             DocumentContent = document.DocumentContent
         };
 
@@ -205,12 +248,13 @@ public partial class DocumentService : IDocumentService
             let pkcs7 = signatureUtil.ReadSignatureData(name)
             select new MetaDataDocument
             {
+                Issuer = pkcs7.GetSigningCertificate().GetIssuerDN().ToString(),
                 SignatureName = name,
                 SignerName = pkcs7.GetSigningCertificate().GetSubjectDN().ToString(),
                 SingingDate = pkcs7.GetSignDate(),
                 Reason = signature.GetReason(),
                 Location = signature.GetLocation(),
-                Valid = pkcs7.VerifySignatureIntegrityAndAuthenticity(),
+                ValidTo = pkcs7.VerifySignatureIntegrityAndAuthenticity(),
                 SerialNumber = pkcs7.GetSigningCertificate().GetSerialNumber().ToString(),
                 ValidFrom = pkcs7.GetSigningCertificate().GetNotBefore().ToLocalTime(),
                 ExpirationDate = pkcs7.GetSigningCertificate().GetNotAfter().ToLocalTime(),
