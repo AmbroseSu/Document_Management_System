@@ -21,10 +21,8 @@ public class DocumentSignatureService : IDocumentSignatureService
         var docSig = new DocumentSignature()
         {
             SignedAt = meta.SingingDate,
-            //SignatureValue = meta.SerialNumber,
-            //ValidFrom = meta.SingingDate,
+            DocumentVersionId = document.DocumentVersions!.OrderByDescending(x => int.Parse(x.VersionNumber!)).FirstOrDefault()!.DocumentVersionId,
             OrderIndex = index,
-            //DocumentId = document.DocumentId,
             DigitalCertificateId= digitalCertificate.DigitalCertificateId
         };
         await _unitOfWork.DocumentSignatureUOW.AddAsync(docSig);

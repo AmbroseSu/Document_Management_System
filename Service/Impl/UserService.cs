@@ -10,6 +10,7 @@ using Service.Response;
 using Service.Utilities;
 using Task = System.Threading.Tasks.Task;
 using System.Linq.Dynamic.Core;
+using Microsoft.AspNetCore.Http;
 
 
 namespace Service.Impl;
@@ -473,6 +474,11 @@ public class UserService : IUserService
         {
             return ResponseUtil.Error(ResponseMessages.FailedToSaveData, e.Message, HttpStatusCode.InternalServerError);
         }
+    }
+
+    public Task<ResponseDto> UpdateAvatarAsync(IFormFile file)
+    {
+        throw new NotImplementedException();
     }
 
     public static string GenerateRandomString(int length)

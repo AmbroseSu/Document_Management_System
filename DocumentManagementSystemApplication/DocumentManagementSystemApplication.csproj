@@ -44,4 +44,11 @@
         <ProjectReference Include="..\Service\Service.csproj"/>
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="data\storage\avatar\" />
+      <Folder Include="data\storage\document\UploadedFiles\" />
+      <Folder Include="data\storage\signature\" />
+      <Folder Include="data\tmp\" />
+    </ItemGroup>
+
 </Project>

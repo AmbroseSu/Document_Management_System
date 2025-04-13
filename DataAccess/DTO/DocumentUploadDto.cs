@@ -12,10 +12,10 @@ public class DocumentUploadDto
     public string? DocumentTypeName { get; set; }
     public string? WorkflowName { get; set; } // Workflow name if available
     public List<SignBy> SignBys { get; set; } = [];
-    public List<string?> SignByName { get; set; } = [];
+    public List<string> SignByName { get; set; } = [];
     public string? DocumentContent { get; set; }
 
-    public class SignBy
+    public abstract class SignBy
     {
         public string Name {get; set;}
         public DateTime SignAt { get; set; }

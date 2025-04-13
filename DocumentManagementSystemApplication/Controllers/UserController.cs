@@ -52,4 +52,10 @@ public class UserController : ControllerBase
     {
         return await _userService.AdminUpdateUserAsync(adminUpdateUserRequest);
     }
+    
+    [HttpPost("update-avatar")]
+    public async Task<ResponseDto> UpdateAvatar([FromForm] IFormFile file)
+    {
+        return await _userService.UpdateAvatarAsync(file);
+    }
 }

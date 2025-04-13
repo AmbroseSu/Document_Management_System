@@ -4,8 +4,7 @@ namespace Service.Impl;
 
 public class FileService : IFileService
 {
-    private readonly string _storagePath = Path.Combine("/home/wiramin/Data/project/Capstone_2025/Document_Management_System/data/storage/document", "UploadedFiles");
-
+    private readonly string _storagePath = Path.Combine(Directory.GetCurrentDirectory(), "data", "storage", "document", "UploadedFiles");
     public async Task<string> SaveFile(IFormFile file)
     {
         
@@ -13,7 +12,7 @@ public class FileService : IFileService
         
 
         var filePath = Path.Combine(_storagePath, file.FileName);
-
+        Directory.CreateDirectory(_storagePath);
         using (var stream = new FileStream(filePath, FileMode.Create))
         {
             await file.CopyToAsync(stream);
