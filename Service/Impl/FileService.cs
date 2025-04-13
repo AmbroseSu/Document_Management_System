@@ -61,7 +61,7 @@ public class FileService : IFileService
         return new FileContentResult(bytes, contentType);
     }
     
-    private string GetContentType(string path)
+    private static string GetContentType(string path)
     {
         var ext = Path.GetExtension(path).ToLowerInvariant();
         return ext switch

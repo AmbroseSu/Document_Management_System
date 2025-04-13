@@ -9,4 +9,17 @@ services:
       - "5291:5291"
     volumes:
       - ./DocumentManagementSystemApplication/data:/app/data
+    networks:
+      - dmsBe
     restart: unless-stopped
+    
+  ai:
+    image: ambrose47/ocr-flask-app:latest
+    container_name: aiDms
+    ports:
+      - "5000:5000"
+    networks:
+      - dmsBe
+networks:
+  dmsBe:
+    driver: bridge
