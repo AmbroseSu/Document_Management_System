@@ -3,5 +3,7 @@ namespace BusinessObject.Enums;
 public enum Scope
 {
     InComing,
-    OutGoing
+    OutGoing,
+    Division,
+    School,
 }

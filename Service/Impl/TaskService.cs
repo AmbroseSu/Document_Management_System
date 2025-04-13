@@ -254,7 +254,6 @@ public class TaskService : ITaskService
     
     }
     
-    /*
     public async Task<ResponseDto> HandleTaskActionAsync(Guid taskId, Guid userId, TaskAction action)
     {
         var task = await _unitOfWork.TaskUOW.FindTaskByIdAsync(taskId);
@@ -304,17 +303,18 @@ public class TaskService : ITaskService
             task.UpdatedDate = DateTime.UtcNow;
             await _unitOfWork.SaveChangesAsync();
 
-            var nextTask = tasksInSameStep.FirstOrDefault(t => t.TaskNumber > task.TaskNumber);
-            if (nextTask != null)
-            {
-                // TODO: Gửi thông báo cho nextTask.UserId: "Đến lượt bạn duyệt"
-                return ResponseUtil.GetObject(ResponseMessages.TaskApproved, ResponseMessages.CreatedSuccessfully,
-                    HttpStatusCode.OK, 1);
-            }
-
-            await PromoteToNextStepOrFlow(task.Step, task.DocumentId!.Value);
-            return ResponseUtil.GetObject(ResponseMessages.TaskApproved, ResponseMessages.CreatedSuccessfully,
-                HttpStatusCode.OK, 1);
+            // var nextTask = tasksInSameStep.FirstOrDefault(t => t.TaskNumber > task.TaskNumber);
+            // if (nextTask != null)
+            // {
+            //     // TODO: Gửi thông báo cho nextTask.UserId: "Đến lượt bạn duyệt"
+            //     return ResponseUtil.GetObject(ResponseMessages.TaskApproved, ResponseMessages.CreatedSuccessfully,
+            //         HttpStatusCode.OK, 1);
+            // }
+            //
+            // return await PromoteToNextStepOrFlow(task.Step, task.DocumentId!.Value);
+            //return ResponseUtil.GetObject(ResponseMessages.TaskApproved, ResponseMessages.CreatedSuccessfully,
+                //HttpStatusCode.OK, 1);
+                return await ActivateNextTask(task);
         }
         
         case TaskAction.RejectDocument:
@@ -356,45 +356,145 @@ public class TaskService : ITaskService
             HttpStatusCode.BadRequest);
     }
     
-    private async Task PromoteToNextStepOrFlow(Step currentStep, Guid documentId)
-{
-    var flow = currentStep.Flow;
-    var allStepsInFlow = await _unitOfWork.StepUOW.FindAllStepsInFlowAsync(flow.FlowId);
-
-    var currentStepIndex = allStepsInFlow.ToList().FindIndex(s => s.StepId == currentStep.StepId);
-    if (currentStepIndex < allStepsInFlow.ToList().Count - 1)
+    
+    private async Task<ResponseDto> ActivateNextTask(Tasks currentTask)
     {
-        var nextStep = allStepsInFlow.ToList()[currentStepIndex + 1];
+        var currentStep = currentTask.Step;
+        var currentFlow = currentStep.Flow;
+        var documentId = currentTask.DocumentId;
 
-        var nextTasks = await _context.Tasks
-            .Where(t => t.StepId == nextStep.StepId && t.DocumentId == documentId)
-            .ToListAsync();
+        // 🔍 Tìm task kế tiếp trong cùng Step
+        var tasksInStep = currentStep.Tasks.OrderBy(t => t.TaskNumber).ToList();
+        var nextTask = tasksInStep.FirstOrDefault(t => t.TaskNumber > currentTask.TaskNumber);
+        if (nextTask != null)
+        {
+            nextTask.TaskStatus = TasksStatus.InProgress;
+            nextTask.UpdatedDate = DateTime.UtcNow;
+
+            // TODO: Gửi thông báo đến nextTask.UserId
+            await _unitOfWork.SaveChangesAsync();
+
+            return ResponseUtil.GetObject("Đến lượt duyệt tiếp theo", ResponseMessages.CreatedSuccessfully,
+                HttpStatusCode.OK, 1);
+        }
+
+        // Không còn task trong Step hiện tại — kiểm tra Step tiếp theo
+        var stepsInFlow = currentFlow.Steps.OrderBy(s => s.StepNumber).ToList();
+        var currentStepIndex = stepsInFlow.FindIndex(s => s.StepId == currentStep.StepId);
+
+        if (currentStepIndex < stepsInFlow.Count - 1)
+        {
+            var nextStep = stepsInFlow[currentStepIndex + 1];
+            var nextStepTasks = (await _unitOfWork.TaskUOW.GetTasksByStepAndDocumentAsync(nextStep.StepId, documentId.Value))
+                .OrderBy(t => t.TaskNumber).ToList();
+            var firstTaskInNextStep = nextStepTasks.FirstOrDefault();
+            if (firstTaskInNextStep != null)
+            {
+                firstTaskInNextStep.TaskStatus = TasksStatus.InProgress;
+                firstTaskInNextStep.UpdatedDate = DateTime.UtcNow;
+
+                // TODO: Gửi thông báo
+                await _unitOfWork.SaveChangesAsync();
+
+                return ResponseUtil.GetObject("Chuyển sang bước tiếp theo", ResponseMessages.CreatedSuccessfully,
+                    HttpStatusCode.OK, 1);
+            }
+        }
+        
+        var workflowFlow = await _unitOfWork.WorkflowFlowUOW
+            .FindWorkflowFlowByFlowIdAsync(currentFlow.FlowId); // Hoặc FlowId thôi nếu đủ
+
+        if (workflowFlow == null)
+            return ResponseUtil.Error("Không tìm thấy WorkflowFlow", ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
+
+        var workflowId = workflowFlow.WorkflowId;
+        
+        // Step hiện tại là cuối cùng của Flow — kiểm tra Flow kế tiếp
+        return await ActivateFirstTaskOfNextFlow(workflowId, currentFlow, documentId.Value);
+    }
+    
+   private async Task<ResponseDto> ActivateFirstTaskOfNextFlow(Guid workflowId, Flow currentFlow, Guid documentId)
+{
+    // Lấy tất cả WorkflowFlow của Workflow hiện tại, theo thứ tự
+    var workflowFlows = await _unitOfWork.WorkflowFlowUOW.FindWorkflowFlowByWorkflowIdAsync(workflowId);
+    var orderedWorkflowFlows = workflowFlows.OrderBy(wf => wf.FlowNumber).ToList();
+
+    var currentWorkflowFlowIndex = orderedWorkflowFlows.FindIndex(wf => wf.FlowId == currentFlow.FlowId);
+    if (currentWorkflowFlowIndex < orderedWorkflowFlows.Count - 1)
+    {
+        var nextWorkflowFlow = orderedWorkflowFlows[currentWorkflowFlowIndex + 1];
+        var nextFlow = nextWorkflowFlow.Flow;
+
+        var nextSteps = nextFlow.Steps.OrderBy(s => s.StepNumber).ToList();
+        var firstStep = nextSteps.FirstOrDefault();
+        if (firstStep != null)
+        {
+            var firstTask = (await _unitOfWork.TaskUOW.GetTasksByStepAndDocumentAsync(firstStep.StepId, documentId))
+                            .OrderBy(t => t.TaskNumber)
+                            .FirstOrDefault();
+            if (firstTask != null)
+            {
+                firstTask.TaskStatus = TasksStatus.InProgress;
+                firstTask.UpdatedDate = DateTime.UtcNow;
+
+                // TODO: Gửi thông báo
+                await _unitOfWork.SaveChangesAsync();
+
+                return ResponseUtil.GetObject("Chuyển sang Flow tiếp theo", ResponseMessages.CreatedSuccessfully,
+                    HttpStatusCode.OK, 1);
+            }
+        }
+    }
+
+    // Không còn Flow nào → đánh dấu document đã hoàn tất
+    var doc = await _unitOfWork.DocumentUOW.FindDocumentByIdAsync(documentId);
+    if (doc != null)
+    {
+        doc.ProcessingStatus = ProcessingStatus.Completed;
+        doc.UpdatedDate = DateTime.UtcNow;
+        await _unitOfWork.SaveChangesAsync();
+
+        // TODO: Gửi thông báo cho người tạo
+        return ResponseUtil.GetObject("Tài liệu đã duyệt xong", ResponseMessages.CreatedSuccessfully,
+            HttpStatusCode.OK, 1);
+    }
+
+    return ResponseUtil.Error("Không tìm thấy tài liệu", ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
+}
+    
+   
+   /*private async Task<ResponseDto> PromoteToNextStepOrFlow(Step currentStep, Guid documentId)
+    {
+    var flow = currentStep.Flow;
+    var allStepsInFlow = (await _unitOfWork.StepUOW.FindAllStepsInFlowAsync(flow.FlowId)).ToList();
+
+    var currentStepIndex = allStepsInFlow.FindIndex(s => s.StepId == currentStep.StepId);
+    if (currentStepIndex < allStepsInFlow.Count - 1)
+    {
+        var nextStep = allStepsInFlow[currentStepIndex + 1];
+
+        var nextTasks = await _unitOfWork.TaskUOW.GetTasksByStepAndDocumentAsync(nextStep.StepId, documentId);
 
         foreach (var t in nextTasks)
         {
             // TODO: Gửi thông báo cho t.UserId: "Đến lượt bạn duyệt"
         }
 
-        return;
+        return ResponseUtil.GetObject("Chuyển sang bước kế tiếp trong Flow", ResponseMessages.CreatedSuccessfully, HttpStatusCode.OK, 1);
     }
 
-    var workflowFlows = flow.WorkflowFlows.OrderBy(wf => wf.Order).ToList();
+    var workflowFlows = flow.WorkflowFlows.OrderBy(wf => wf.FlowNumber).ToList();
     var currentFlowIndex = workflowFlows.FindIndex(wf => wf.FlowId == flow.FlowId);
 
     if (currentFlowIndex < workflowFlows.Count - 1)
     {
         var nextFlow = workflowFlows[currentFlowIndex + 1].Flow;
 
-        var firstStepOfNextFlow = await _context.Steps
-            .Where(s => s.FlowId == nextFlow.FlowId)
-            .OrderBy(s => s.StepNumber)
-            .FirstOrDefaultAsync();
+        var firstStepOfNextFlow = await _unitOfWork.StepUOW.GetFirstStepOfFlowAsync(nextFlow.FlowId);
 
         if (firstStepOfNextFlow != null)
         {
-            var nextTasks = await _context.Tasks
-                .Where(t => t.StepId == firstStepOfNextFlow.StepId && t.DocumentId == documentId)
-                .ToListAsync();
+            var nextTasks = await _unitOfWork.TaskUOW.GetTasksByStepAndDocumentAsync(firstStepOfNextFlow.StepId, documentId);
 
             foreach (var t in nextTasks)
             {
@@ -402,26 +502,23 @@ public class TaskService : ITaskService
             }
         }
 
-        return;
+        return ResponseUtil.GetObject("Chuyển sang Flow kế tiếp", ResponseMessages.CreatedSuccessfully, HttpStatusCode.OK, 1);
     }
 
-    var document = await _context.Documents.FindAsync(documentId);
+    var document = await _unitOfWork.DocumentUOW.FindDocumentByIdAsync(documentId);
     if (document != null)
     {
-        document.Status = DocumentStatus.Completed;
-        document.UpdatedAt = DateTime.UtcNow;
-        await _context.SaveChangesAsync();
+        document.ProcessingStatus = ProcessingStatus.Completed;
+        document.UpdatedDate = DateTime.UtcNow;
+        await _unitOfWork.SaveChangesAsync();
 
         // TODO: Gửi thông báo cho người tạo tài liệu: "Tài liệu đã duyệt xong"
         return ResponseUtil.GetObject(ResponseMessages.DocumentCompleted, ResponseMessages.CreatedSuccessfully, HttpStatusCode.OK, 1);
     }
 
     return ResponseUtil.Error(ResponseMessages.DocumentNotFound, ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
-}
-*/
+    }*/
 
-    
-    
     
     
     

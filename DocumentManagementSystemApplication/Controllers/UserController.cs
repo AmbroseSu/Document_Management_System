@@ -53,9 +53,17 @@ public class UserController : ControllerBase
         return await _userService.AdminUpdateUserAsync(adminUpdateUserRequest);
     }
     
+
     [HttpPost("update-avatar")]
     public async Task<ResponseDto> UpdateAvatar([FromForm] IFormFile file)
     {
         return await _userService.UpdateAvatarAsync(file);
     }
+
+    /*[HttpPost("create-import-users-from-excel")]
+    public async Task<ResponseDto> CreateImportUsersFromExcel([FromForm] IFormFile file, [FromForm] Guid divisionId)
+    {
+        return await _userService.ImportUsersFromExcelAsync(file, divisionId);
+    }*/
+    
 }
