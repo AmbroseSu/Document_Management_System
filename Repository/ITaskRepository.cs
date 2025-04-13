@@ -10,4 +10,5 @@ public interface ITaskRepository
     Task<Tasks?> FindTaskByIdAsync(Guid? id);
     Task<IEnumerable<Tasks>> FindAllPendingTaskByDocumentIdAsync(Guid documentId);
     Task<IEnumerable<Tasks>> FindNextTasksInStepAsync(Guid documentId, Guid stepId);
+    Task<IEnumerable<Tasks>> GetTasksByStepAndDocumentAsync(Guid nextStepId, Guid documentId);
 }

@@ -28,6 +28,7 @@ public static class ResponseMessages
     public const string EmailNotMatch = "Email does not match";
     public const string SendEmailSuccessfully = "Send email successfully";
     public const string PasswordNotMatchConfirm = "New password and confirm password do not match";
+    public const string ImportSuccessfully = "Import successfully";
 
     //public const string UserDelete = "User is deleted";
     public const string UserNotFound = "User not found";
@@ -78,6 +79,7 @@ public static class ResponseMessages
     public const string DocumentNotFound = "Document not found";
     public const string DocumentRejected = "Document has been rejected";
     public const string InvalidAction = "Invalid action";
+    public const string DocumentCompleted = "Document has been completed";
     
     //DocumentType
     public const string DocumentTypeNameNotNull = "Document Type name cannot be null or empty";
