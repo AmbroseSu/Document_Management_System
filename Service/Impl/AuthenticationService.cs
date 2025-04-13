@@ -48,12 +48,15 @@ public class AuthenticationService : IAuthenticationService
             //await _UnitOfWork.UserUOW.(user);
             var userRoles = await _unitOfWork.UserRoleUOW.FindRolesByUserIdAsync(user.UserId);
             var roleNames = new List<string>();
+            var roles = new List<RoleDto>();
             var resources = new List<Resource>();
             foreach (var userRole in userRoles)
             {
                 var roleResources = await _unitOfWork.RoleResourceUOW.FindRoleResourcesByRoleIdAsync(userRole.RoleId);
                 var role = await _unitOfWork.RoleUOW.FindRoleByIdAsync(userRole.RoleId);
                 roleNames.Add(role.RoleName);
+                var roleDto = _mapper.Map<RoleDto>(role);
+                roles.Add(roleDto);
                 foreach (var roleResource in roleResources)
                 {
                     var resource = await _unitOfWork.ResourceUOW.FindResourceByIdAsync(roleResource.ResourceId);
@@ -69,6 +72,13 @@ public class AuthenticationService : IAuthenticationService
 
             var jwtAuthResponse = new JwtAuthenticationResponse();
             var userDto = _mapper.Map<UserDto>(user);
+            userDto.Roles = roles;
+            var division = await _unitOfWork.DivisionUOW.FindDivisionByIdAsync(user.DivisionId);
+            if (division != null)
+            {
+                var divisionDto = _mapper.Map<DivisionDto>(division);
+                userDto.DivisionDto = divisionDto;
+            }
 
             jwtAuthResponse.UserDto = userDto;
             jwtAuthResponse.Token = jwt;
@@ -105,10 +115,7 @@ public class AuthenticationService : IAuthenticationService
                 } */
                 verificationOtp.IsDeleted = true;
                 await _unitOfWork.VerificationOtpUOW.UpdateAsync(verificationOtp);
-                var saveChange = await _unitOfWork.SaveChangesAsync();
-                if (saveChange != 0)
-                    return ResponseUtil.Error(ResponseMessages.FailedToSaveData, ResponseMessages.OperationFailed,
-                        HttpStatusCode.InternalServerError);
+                await _unitOfWork.SaveChangesAsync();
             }
 
             var otpCode = GenerateOtp();

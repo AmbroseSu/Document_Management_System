@@ -1,4 +1,5 @@
 using BusinessObject;
+using BusinessObject.Enums;
 using DataAccess;
 using DataAccess.DAO;
 using Microsoft.EntityFrameworkCore;
@@ -37,7 +38,37 @@ public class TaskRepository : ITaskRepository
     public async Task<Tasks?> FindTaskByIdAsync(Guid? id)
     {
         if (id == null) throw new ArgumentNullException(nameof(id));
-        return await _taskDao.FindByAsync(u => u.TaskId == id);
+        return await _taskDao.FindByAsync(u => u.TaskId == id, t => t.Include(ta => ta.Step)
+            .ThenInclude(f => f.Flow)
+            .ThenInclude(wff => wff.WorkflowFlows)
+            .ThenInclude(w => w.Workflow));
+    }
+    
+    public async Task<IEnumerable<Tasks>> FindAllPendingTaskByDocumentIdAsync(Guid documentId)
+    {
+        if (documentId == Guid.Empty) throw new ArgumentNullException(nameof(documentId));
+        
+        return await _taskDao.FindAsync(
+            t => t.DocumentId == documentId && t.TaskStatus == TasksStatus.Pending,
+            q => q.Include(t => t.Step)
+                .ThenInclude(s => s.Flow)
+                .ThenInclude(f => f.WorkflowFlows)
+                .ThenInclude(wff => wff.Workflow)
+        );
+        
+    }
+    public async Task<IEnumerable<Tasks>> FindNextTasksInStepAsync(Guid documentId, Guid stepId)
+    {
+        if (documentId == Guid.Empty) throw new ArgumentNullException(nameof(documentId));
+        if (stepId == Guid.Empty) throw new ArgumentNullException(nameof(stepId));
+
+        return await _taskDao.FindAsync(
+            t => t.DocumentId == documentId && t.StepId == stepId,
+            q => q.Include(t => t.Step)
+                .ThenInclude(s => s.Flow)
+                .ThenInclude(f => f.WorkflowFlows)
+                .ThenInclude(wff => wff.Workflow)
+        );
     }
     
 }

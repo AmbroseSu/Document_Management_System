@@ -92,7 +92,10 @@ public class MappingProfile : Profile
         CreateMap<PlatformFee, PlatformFeeDTO>();
         CreateMap<Transaction, TransactionDTO>();*/
 
-        CreateMap<User, UserDto>();
+        CreateMap<User, UserDto>()
+            .ForMember(dest => dest.Roles, opt => opt.Ignore())
+            .ForMember(dest => dest.DivisionDto, opt => opt.Ignore())
+            .ForMember(dest => dest.DivisionId, opt => opt.MapFrom(src => src.DivisionId));
         CreateMap<UserDto, User>();
         CreateMap<User, UserRequest>()
             .ForMember(dest => dest.RoleId, opt => opt.Ignore());
@@ -117,5 +120,6 @@ public class MappingProfile : Profile
         CreateMap<StepDto, Step>();
         CreateMap<Task, TaskDto>();
         CreateMap<TaskDto, Task>();
+        
     }
 }

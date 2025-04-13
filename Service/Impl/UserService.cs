@@ -9,6 +9,8 @@ using Repository;
 using Service.Response;
 using Service.Utilities;
 using Task = System.Threading.Tasks.Task;
+using System.Linq.Dynamic.Core;
+
 
 namespace Service.Impl;
 
@@ -39,9 +41,9 @@ public class UserService : IUserService
                 return ResponseUtil.Error(ResponseMessages.EmailAlreadyExists, ResponseMessages.OperationFailed,
                     HttpStatusCode.BadRequest);
 
-            if (userExistEmail!.IsDeleted)
+            /*if (userExistEmail!.IsDeleted)
                 return ResponseUtil.Error(ResponseMessages.UserHasDeleted, ResponseMessages.OperationFailed,
-                    HttpStatusCode.BadRequest);
+                    HttpStatusCode.BadRequest);*/
             //var emailAttribute = new EmailAddressAttribute();
             /*if (IsValidEmail(userRequest.Email))
             {
@@ -52,9 +54,9 @@ public class UserService : IUserService
                 return ResponseUtil.Error(ResponseMessages.UserNameAlreadyExists, ResponseMessages.OperationFailed,
                     HttpStatusCode.BadRequest);
 
-            if (userExistUserName!.IsDeleted)
+            /*if (userExistUserName!.IsDeleted)
                 return ResponseUtil.Error(ResponseMessages.UserHasDeleted, ResponseMessages.OperationFailed,
-                    HttpStatusCode.BadRequest);
+                    HttpStatusCode.BadRequest);*/
 
             if (!IsValidEmail(userRequest.Email))
                 return ResponseUtil.Error(ResponseMessages.EmailFormatInvalid, ResponseMessages.OperationFailed,
@@ -75,6 +77,7 @@ public class UserService : IUserService
             user.DateOfBirth = userRequest.DateOfBirth;
             user.FullName = userRequest.FullName;
             user.Position = userRequest.Position;
+            user.IdentityCard = userRequest.IdentityCard;
             user.IsDeleted = false;
             user.IsEnable = false;
             user.CreatedAt = DateTime.Now;
@@ -154,7 +157,25 @@ public class UserService : IUserService
             if (user.IsDeleted)
                 return ResponseUtil.Error(ResponseMessages.UserHasDeleted, ResponseMessages.OperationFailed,
                     HttpStatusCode.BadRequest);
+            
+            var userRoles = await _unitOfWork.UserRoleUOW.FindRolesByUserIdAsync(user.UserId);
+            var roles = new List<RoleDto>();
+            foreach (var userRole in userRoles)
+            {
+                var roleResources = await _unitOfWork.RoleResourceUOW.FindRoleResourcesByRoleIdAsync(userRole.RoleId);
+                var role = await _unitOfWork.RoleUOW.FindRoleByIdAsync(userRole.RoleId);
+                var roleDto = _mapper.Map<RoleDto>(role);
+                roles.Add(roleDto);
+            }
+            
             var result = _mapper.Map<UserDto>(user);
+            result.Roles = roles;
+            var division = await _unitOfWork.DivisionUOW.FindDivisionByIdAsync(user.DivisionId);
+            if (division != null)
+            {
+                var divisionDto = _mapper.Map<DivisionDto>(division);
+                result.DivisionDto = divisionDto;
+            }
             return ResponseUtil.GetObject(result, ResponseMessages.GetSuccessfully, HttpStatusCode.OK, 1);
         }
         catch (Exception ex)
@@ -202,15 +223,12 @@ public class UserService : IUserService
                 query = query.Where(u => u.Position!.ToLower().Contains(userFilterRequest.Filters.Position.ToLower()));
             if (!string.IsNullOrEmpty(userFilterRequest.Filters.Role))
                 query = query.Where(u =>
-                    u.UserRoles!.Any(ur => ur.Role!.RoleName.Contains(userFilterRequest.Filters.Role)));
-            if (userFilterRequest.Sort != null)
+                    u.UserRoles!.Any(ur => ur.Role!.RoleName.ToLower().Contains(userFilterRequest.Filters.Role.ToLower())));
+            if (!string.IsNullOrEmpty(userFilterRequest.Sort?.Field))
             {
-                var isDescending = userFilterRequest.Sort.Order.ToLower() == "desc";
-
-                // Dùng Reflection để sort theo tên field
-                query = isDescending
-                    ? query.OrderByDescending(u => GetPropertyValue(u, userFilterRequest.Sort.Field))
-                    : query.OrderBy(u => GetPropertyValue(u, userFilterRequest.Sort.Field));
+                var sortField = userFilterRequest.Sort.Field;
+                var sortOrder = userFilterRequest.Sort.Order?.ToLower() == "desc" ? "descending" : "ascending";
+                query = query.OrderBy($"{sortField} {sortOrder}");
             }
             else
             {
@@ -224,7 +242,36 @@ public class UserService : IUserService
                 .Skip((userFilterRequest.Page - 1) * userFilterRequest.Limit)
                 .Take(userFilterRequest.Limit)
                 .ToList();
-            var result = _mapper.Map<IEnumerable<UserDto>>(userResults);
+            
+            
+            var userIds = userResults.Select(u => u.UserId).ToList();
+            var divisionIds = userResults.Where(u => u.DivisionId != null).Select(u => u.DivisionId!.Value).Distinct().ToList();
+
+            // 1. Lấy tất cả UserRoles
+            var userRoles = await _unitOfWork.UserRoleUOW.FindUserRolesByUserIdsAsync(userIds);
+
+            // 2. Lấy tất cả Roles
+            var roleIds = userRoles.Select(ur => ur.RoleId).Distinct().ToList();
+            var roles = await _unitOfWork.RoleUOW.FindRolesByIdsAsync(roleIds);
+            var roleMap = roles.ToDictionary(r => r.RoleId, r => _mapper.Map<RoleDto>(r));
+
+            // 3. Lấy tất cả Divisions
+            var divisions = await _unitOfWork.DivisionUOW.FindDivisionsByIdsAsync(divisionIds);
+            var divisionMap = divisions.ToDictionary(d => d.DivisionId, d => _mapper.Map<DivisionDto>(d));
+
+            // 4. Map vào kết quả
+            var result = _mapper.Map<List<UserDto>>(userResults);
+            foreach (var userDto in result)
+            {
+                var ur = userRoles.Where(ur => ur.UserId == userDto.UserId).ToList();
+                userDto.Roles = ur.Select(r => roleMap[r.RoleId]).ToList();
+
+                if (userDto.DivisionId.HasValue && divisionMap.TryGetValue(userDto.DivisionId.Value, out var divDto))
+                {
+                    userDto.DivisionDto = divDto;
+                }
+            }
+            
 
             return ResponseUtil.GetCollection(result, ResponseMessages.GetSuccessfully, HttpStatusCode.OK, totalRecords,
                 userFilterRequest.Page, userFilterRequest.Limit, totalPages);

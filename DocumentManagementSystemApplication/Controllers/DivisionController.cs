@@ -29,9 +29,9 @@ namespace DocumentManagementSystemApplication.Controllers
         }
         
         [HttpGet("view-all-division")]
-        public async Task<ResponseDto> ViewAllDivision([FromQuery] int page = 1,[FromQuery] int limit = 10)
+        public async Task<ResponseDto> ViewAllDivision([FromQuery] string? divisionName, [FromQuery] int page = 1,[FromQuery] int limit = 10)
         {
-            return await _divisionService.GetAllDivisionAsync(page, limit);
+            return await _divisionService.GetAllDivisionAsync(divisionName, page, limit);
         }
         
         [HttpPost("delete-division")]

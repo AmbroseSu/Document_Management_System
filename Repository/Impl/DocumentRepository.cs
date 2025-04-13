@@ -48,7 +48,7 @@ public class DocumentRepository : IDocumentRepository
     {
         if (userId == Guid.Empty) throw new ArgumentNullException(nameof(userId));
         return await _documentDao.FindAsync(
-            d => !d.IsDeleted && d.Tasks.Any(t => t.UserId == userId),
+            d => !d.IsDeleted && (d.UserId == userId || d.Tasks.Any(t => t.UserId == userId)),
             q => q.Include(d => d.Tasks).Include(d => d.DocumentVersions)
         );
     }

@@ -35,6 +35,6 @@ public class VerificationOtpRepository : IVerificationOtpRepository
     public async Task<VerificationOtp?> FindByUserIdAsync(Guid? userId)
     {
         if (userId == null) throw new ArgumentNullException(nameof(userId));
-        return await _verificationOtpDao.FindByAsync(u => u.UserId == userId && u.IsDeleted == false);
+        return await _verificationOtpDao.FindByAsync(u => u.UserId == userId && u.IsDeleted == false && u.IsTrue == true);
     }
 }
