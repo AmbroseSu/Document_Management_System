@@ -32,7 +32,7 @@ namespace DocumentManagementSystemApplication.Controllers
         [HttpGet("view-hello-document")]
         public async Task<string?> ViewHelloDocument()
         {
-            var id = User.FindFirst("userid")?.Value;
+            var id = User.FindFirst("userid")!.Value;
             return id;
         }
 
@@ -42,6 +42,20 @@ namespace DocumentManagementSystemApplication.Controllers
         {
             var id = User.FindFirst("userid")?.Value;
             var result = await _documentService.UploadDocument(file, id);
+            return result;
+        }
+        
+        [HttpGet("view-dowload-document-by-id")]
+        public async Task<IActionResult> DownloadDocumentById([FromQuery] Guid documentId)
+        {
+            var result = await _documentService.GetDocumentById(documentId);
+            return result;
+        }
+        
+        [HttpGet("view-download-document-by-name")]
+        public async Task<IActionResult> DownloadDocumentByName([FromQuery] string documentName)
+        {
+            var result = await _documentService.GetDocumentByName(documentName);
             return result;
         }
     }
