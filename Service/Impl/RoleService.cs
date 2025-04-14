@@ -74,4 +74,22 @@ public class RoleService : IRoleService
             return ResponseUtil.Error(ResponseMessages.FailedToSaveData, e.Message, HttpStatusCode.InternalServerError);
         }
     }
+    
+    public async Task<ResponseDto> ViewAllRoles()
+    {
+        try
+        {
+            var roles = await _unitOfWork.RoleUOW.GetAllAsync();
+            if (roles == null || !roles.Any())
+                return ResponseUtil.Error(ResponseMessages.NoRoleData, ResponseMessages.OperationFailed,
+                    HttpStatusCode.NotFound);
+
+            var result = _mapper.Map<List<RoleDto>>(roles);
+            return ResponseUtil.GetObject(result, ResponseMessages.GetSuccessfully, HttpStatusCode.OK, 1);
+        }
+        catch (Exception e)
+        {
+            return ResponseUtil.Error(e.Message, ResponseMessages.OperationFailed, HttpStatusCode.InternalServerError);
+        }
+    }
 }
