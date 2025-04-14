@@ -49,7 +49,7 @@ public class TaskRepository : ITaskRepository
         if (documentId == Guid.Empty) throw new ArgumentNullException(nameof(documentId));
         
         return await _taskDao.FindAsync(
-            t => t.DocumentId == documentId && t.TaskStatus == TasksStatus.Accepted,
+            t => t.DocumentId == documentId && t.TaskStatus == TasksStatus.InProgress,
             q => q.Include(t => t.Step)
                 .ThenInclude(s => s.Flow)
                 .ThenInclude(f => f.WorkflowFlows)

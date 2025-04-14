@@ -48,6 +48,6 @@ public class WorkflowFlowRepository : IWorkflowFlowRepository
     {
         if (workflowId == null) throw new ArgumentNullException(nameof(workflowId));
         if (flowId == null) throw new ArgumentNullException(nameof(flowId));
-        return await _workflowFlowDao.FindByAsync(wf => wf.WorkflowId == workflowId && wf.FlowId == flowId, wff => wff.Include(w => w.WorkflowId).Include(wf => wf.Flow).ThenInclude(f => f.Steps));
+        return await _workflowFlowDao.FindByAsync(wf => wf.WorkflowId == workflowId && wf.FlowId == flowId, wff => wff.Include(w => w.Workflow).Include(wf => wf.Flow).ThenInclude(f => f.Steps));
     }
 }

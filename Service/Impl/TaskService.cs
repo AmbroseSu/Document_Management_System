@@ -68,7 +68,7 @@ public class TaskService : ITaskService
 
             if (taskDto.StepId == firstStepInFlow!.StepId)
             {
-                taskDto.TaskStatus = TasksStatus.InProgress;
+                taskDto.TaskStatus = TasksStatus.Pending;
                 // if (taskDto.DocumentId == null)
                 // {
                 //     return ResponseUtil.Error(ResponseMessages.DocumentIdNull, ResponseMessages.OperationFailed,
@@ -195,61 +195,30 @@ public class TaskService : ITaskService
         {
             filteredDocuments = allDocuments
                 .Where(d => d.Tasks.Any(t => t.UserId == userId &&
-                                             t.TaskStatus == TasksStatus.Rejected))
+                                             t.TaskStatus == TasksStatus.Revised))
                 .ToList();
             break;
         }
             
 
-        /*case DocumentTab.Accepted:
-        {
-            filteredDocuments = allDocuments.Where(doc =>
-            {
-                // Tìm task của mình
-                var myTask = doc.Tasks.FirstOrDefault(t => t.UserId == userId);
-                if (myTask == null || myTask.TaskStatus != TasksStatus.Completed)
-                    return false;
-
-                // Tìm task kế tiếp (cùng flow)
-                var nextTask = doc.Tasks
-                    .Where(t =>
-                        t.Step!.FlowId == myTask.Step!.FlowId &&
-                        (t.Step.StepNumber > myTask.Step.StepNumber ||
-                         (t.Step.StepNumber == myTask.Step.StepNumber && t.TaskNumber > myTask.TaskNumber)))
-                    .OrderBy(t => t.Step.StepNumber)
-                    .ThenBy(t => t.TaskNumber)
-                    .FirstOrDefault();
-
-                // Nếu không có task kế tiếp => đây là task cuối -> coi như accepted
-                if (nextTask == null) return true;
-
-                // Nếu có task kế tiếp -> nó phải Completed thì mới coi là accepted
-                return nextTask.TaskStatus == TasksStatus.Completed;
-            }).ToList();
-            break;
-        }*/
-        
         case DocumentTab.Accepted:
         {
-            filteredDocuments = allDocuments.Where(doc =>
+            filteredDocuments = await allDocuments.WhereAsync(async doc =>
             {
-                var orderedTasks = GetOrderedTasks(doc.Tasks);
+                var orderedTasks = await GetOrderedTasks(doc.Tasks, doc.DocumentWorkflowStatuses.FirstOrDefault()?.WorkflowId ?? Guid.Empty);
 
-                for (int i = 0; i < orderedTasks.Count - 1; i++) // không cần xét task cuối vì không có task kế tiếp
+                for (int i = 0; i < orderedTasks.Count - 1; i++)
                 {
                     var currentTask = orderedTasks[i];
                     var nextTask = orderedTasks[i + 1];
 
-                    // Nếu task hiện tại là của user và đã completed
                     if (currentTask.UserId == userId && currentTask.TaskStatus == TasksStatus.Completed)
                     {
-                        // Và task kế tiếp phải là completed → mới tính là Accepted
                         if (nextTask.TaskStatus == TasksStatus.Completed)
                             return true;
                     }
                 }
 
-                // Trường hợp đặc biệt: task cuối cùng là của user và đã Completed → cũng được coi là Accepted
                 var lastTask = orderedTasks.LastOrDefault();
                 if (lastTask != null && lastTask.UserId == userId && lastTask.TaskStatus == TasksStatus.Completed)
                 {
@@ -257,7 +226,7 @@ public class TaskService : ITaskService
                 }
 
                 return false;
-            }).ToList();
+            });
 
             break;
         }
@@ -265,16 +234,16 @@ public class TaskService : ITaskService
 
         case DocumentTab.PendingApproval:
         {
-            filteredDocuments = allDocuments.Where(doc =>
+            filteredDocuments = await allDocuments.WhereAsync(async doc =>
             {
-                var orderedTasks = GetOrderedTasks(doc.Tasks);
+                var orderedTasks = await GetOrderedTasks(doc.Tasks, doc.DocumentWorkflowStatuses.FirstOrDefault()?.WorkflowId ?? Guid.Empty);
 
                 for (int i = 0; i < orderedTasks.Count; i++)
                 {
                     var currentTask = orderedTasks[i];
 
                     // Tìm task của user hiện tại có trạng thái Accepted
-                    if (currentTask.UserId == userId && currentTask.TaskStatus == TasksStatus.Accepted)
+                    if (currentTask.UserId == userId && currentTask.TaskStatus == TasksStatus.InProgress)
                     {
                         // Kiểm tra các task trước đó đều đã completed
                         bool previousTasksCompleted = orderedTasks.Take(i).All(t => t.TaskStatus == TasksStatus.Completed);
@@ -284,63 +253,37 @@ public class TaskService : ITaskService
                 }
 
                 return false;
-            }).ToList();
+            });
 
             break;
         }
-
-        /*case DocumentTab.Waiting: // đã xử lý, chờ người sau xử lý
+        
+        case DocumentTab.Waiting:
         {
-            filteredDocuments = allDocuments.Where(doc =>
+            filteredDocuments = await allDocuments.WhereAsync(async doc =>
             {
-                var myCompletedTasks = doc.Tasks
-                    .Where(t => t.UserId == userId && t.TaskStatus == TasksStatus.Completed)
-                    .ToList();
+                var orderedTasks = await GetOrderedTasks(doc.Tasks, doc.DocumentWorkflowStatuses.FirstOrDefault()?.WorkflowId ?? Guid.Empty);
 
-                foreach (var myTask in myCompletedTasks)
+                for (int i = 0; i < orderedTasks.Count - 1; i++)
                 {
-                    if (HasNextTaskPending(doc.Tasks, myTask).Result)
-                        return true;
+                    var currentTask = orderedTasks[i];
+                    var nextTask = orderedTasks[i + 1];
+
+                    if (currentTask.UserId == userId && currentTask.TaskStatus == TasksStatus.Completed)
+                    {
+                        // Nếu task kế tiếp chưa completed và không phải của user hiện tại
+                        if (nextTask.TaskStatus != TasksStatus.Completed && nextTask.UserId != userId)
+                        {
+                            return true;
+                        }
+                    }
                 }
 
                 return false;
-            }).ToList();
+            });
+
             break;
-        
-        }*/
-        
-case DocumentTab.Waiting:
-{
-    filteredDocuments = allDocuments.Where(doc =>
-    {
-        // Bước 1: Lấy tất cả task và sắp xếp theo thứ tự thực thi
-        var orderedTasks = doc.Tasks
-            .OrderBy(t => t.Step?.Flow?.WorkflowFlows?.FirstOrDefault()?.FlowNumber ?? int.MaxValue)
-            .ThenBy(t => t.Step?.StepNumber ?? int.MaxValue)
-            .ThenBy(t => t.TaskNumber)
-            .ToList();
-
-        // Bước 2: Duyệt qua từng task của user hiện tại đã hoàn thành
-        for (int i = 0; i < orderedTasks.Count - 1; i++)
-        {
-            var currentTask = orderedTasks[i];
-            var nextTask = orderedTasks[i + 1];
-
-            if (currentTask.UserId == userId && currentTask.TaskStatus == TasksStatus.Completed)
-            {
-                // Nếu task kế tiếp chưa completed và là của người khác
-                if (nextTask.TaskStatus != TasksStatus.Completed && nextTask.UserId != userId)
-                {
-                    return true;
-                }
-            }
         }
-
-        return false;
-    }).ToList();
-
-    break;
-}
     }
     
     totalRecords = filteredDocuments.Count();
@@ -362,136 +305,50 @@ case DocumentTab.Waiting:
     
     }
     
-    private List<Tasks> GetOrderedTasks(List<Tasks> tasks)
+    private async Task<List<Tasks>> GetOrderedTasks(List<Tasks> tasks, Guid workflowId)
     {
-        var workflowId = Guid.Parse("7dc95e1f-00c5-4791-9435-f7576d430712");
-        var orderedTasks = tasks
-            .OrderBy(t =>
+        var flowNumberMap = new Dictionary<(Guid workflowId, Guid flowId), int>();
+
+        async Task<int> GetFlowNumber(Guid workflowId, Guid flowId)
+        {
+            if (!flowNumberMap.TryGetValue((workflowId, flowId), out var number))
             {
-                var flow = t.Step?.Flow;
-                var workflowFlow = flow?.WorkflowFlows?.FirstOrDefault(wf => wf.WorkflowId == workflowId);
-                return workflowFlow?.FlowNumber ?? int.MaxValue;
-            })
-            .ThenBy(t => t.Step?.StepNumber ?? int.MaxValue)
-            .ThenBy(t => t.TaskNumber)
+                var wfFlow = await _unitOfWork.WorkflowFlowUOW.FindWorkflowFlowByWorkflowIdAndFlowIdAsync(workflowId, flowId);
+                number = wfFlow?.FlowNumber ?? int.MaxValue;
+                flowNumberMap[(workflowId, flowId)] = number;
+            }
+
+            return number;
+        }
+
+        var tasksWithFlowNumbers = new List<(Tasks Task, int FlowNumber, int StepNumber, int TaskNumber)>();
+
+        foreach (var t in tasks)
+        {
+            var flowId = t.Step?.Flow?.FlowId ?? Guid.Empty;
+            var flowNumber = await GetFlowNumber(workflowId, flowId);
+            var stepNumber = t.Step?.StepNumber ?? int.MaxValue;
+            var taskNumber = t.TaskNumber;
+
+            tasksWithFlowNumbers.Add((t, flowNumber, stepNumber, taskNumber));
+        }
+
+        var orderedTasks = tasksWithFlowNumbers
+            .OrderBy(x => x.FlowNumber)
+            .ThenBy(x => x.StepNumber)
+            .ThenBy(x => x.TaskNumber)
+            .Select(x => x.Task)
             .ToList();
 
-        foreach (var task in orderedTasks)
+        // Debug: show flow info
+        foreach (var x in orderedTasks)
         {
-            var flow = task.Step?.Flow;
-            var workflowFlow = flow?.WorkflowFlows?.FirstOrDefault(wf => wf.WorkflowId == workflowId);
-            var flowNumber = workflowFlow?.FlowNumber ?? int.MaxValue;
-
-            Console.WriteLine($"TaskId: {task.TaskId}, FlowNumber: {flowNumber}, StepNumber: {task.Step?.StepNumber}, TaskNumber: {task.TaskNumber}");
+            var flowNumber = x.Step?.Flow?.WorkflowFlows?.FirstOrDefault(wf => wf.WorkflowId == workflowId)?.FlowNumber;
+            Console.WriteLine($"TaskId: {x.TaskId}, FlowNumber: {flowNumber}, StepNumber: {x.Step?.StepNumber}, TaskNumber: {x.TaskNumber}");
         }
 
         return orderedTasks;
     }
-    
-    
-    private async Task<bool> IsPreviousTasksCompleted(IEnumerable<Tasks> allTasks, Tasks currentTask)
-    {
-        var currentStep = currentTask.Step;
-        var stepp = await _unitOfWork.StepUOW.FindStepByIdAsync(currentStep.StepId);
-        var currentFlow = await _unitOfWork.FlowUOW.FindFlowByIdAsync(stepp.FlowId);
-        var currentWorkflowFlow = currentFlow?.WorkflowFlows?.FirstOrDefault();
-
-        if (currentStep == null || currentFlow == null || currentWorkflowFlow == null)
-            return false;
-
-        return allTasks
-            .Where(t =>
-            {
-                var step = t.Step;
-                var flow = step?.Flow;
-                var wfFlow = flow?.WorkflowFlows?.FirstOrDefault();
-                if (step == null || flow == null || wfFlow == null)
-                    return false;
-
-                return CompareTaskOrder(wfFlow.FlowNumber, step.StepNumber, t.TaskNumber,
-                    currentWorkflowFlow.FlowNumber, currentStep.StepNumber, currentTask.TaskNumber) < 0;
-            })
-            .All(t => t.TaskStatus == TasksStatus.Completed);
-    }
-    
-    
-    private async Task<bool> HasNextTaskPending(IEnumerable<Tasks> allTasks, Tasks currentTask)
-    {
-        var currentStep = currentTask.Step;
-        var stepp = await _unitOfWork.StepUOW.FindStepByIdAsync(currentStep.StepId);
-        var currentFlow = await _unitOfWork.FlowUOW.FindFlowByIdAsync(stepp.FlowId);
-        var currentWorkflowFlow = currentFlow?.WorkflowFlows?.FirstOrDefault();
-
-        if (currentStep == null || currentFlow == null || currentWorkflowFlow == null)
-            return false;
-
-        return allTasks.Any(t =>
-        {
-            var step = t.Step;
-            var flow = step?.Flow;
-            var wfFlow = flow?.WorkflowFlows?.FirstOrDefault();
-            if (step == null || flow == null || wfFlow == null)
-                return false;
-
-            return CompareTaskOrder(wfFlow.FlowNumber, step.StepNumber, t.TaskNumber,
-                       currentWorkflowFlow.FlowNumber, currentStep.StepNumber, currentTask.TaskNumber) > 0
-                   && t.TaskStatus == TasksStatus.Accepted;
-        });
-    }
-    
-    
-    private int CompareTaskOrder(int flowA, int stepA, int taskA, int flowB, int stepB, int taskB)
-    {
-        if (flowA != flowB)
-            return flowA.CompareTo(flowB);
-        if (stepA != stepB)
-            return stepA.CompareTo(stepB);
-        return taskA.CompareTo(taskB);
-    }
-    
-    
-    
-    private Tasks? FindNextTaskAfter(Tasks currentTask, IEnumerable<Tasks> allTasks)
-    {
-        var currentStep = currentTask.Step;
-        var currentFlow = currentStep?.Flow;
-        var currentWfFlow = currentFlow?.WorkflowFlows?.FirstOrDefault();
-
-        if (currentStep == null || currentFlow == null || currentWfFlow == null)
-            return null;
-
-        return allTasks
-            .Where(t =>
-            {
-                var step = t.Step;
-                var flow = step?.Flow;
-                var wfFlow = flow?.WorkflowFlows?.FirstOrDefault();
-
-                if (step == null || flow == null || wfFlow == null)
-                    return false;
-
-                return CompareTaskOrder(
-                    wfFlow.FlowNumber, step.StepNumber, t.TaskNumber,
-                    currentWfFlow.FlowNumber, currentStep.StepNumber, currentTask.TaskNumber
-                ) > 0;
-            })
-            .OrderBy(t =>
-            {
-                var step = t.Step;
-                var flow = step?.Flow;
-                var wfFlow = flow?.WorkflowFlows?.FirstOrDefault();
-                return (
-                    wfFlow?.FlowNumber ?? int.MaxValue,
-                    step?.StepNumber ?? int.MaxValue,
-                    t.TaskNumber
-                );
-            })
-            .FirstOrDefault();
-    }
-
-    
-    
-    
     
     
     public async Task<ResponseDto> HandleTaskActionAsync(Guid taskId, Guid userId, TaskAction action)
@@ -506,7 +363,7 @@ case DocumentTab.Waiting:
     {
         case TaskAction.AcceptTask:
         {
-            task.TaskStatus = TasksStatus.Accepted;
+            task.TaskStatus = TasksStatus.InProgress;
             task.UpdatedDate = DateTime.UtcNow;
             await _unitOfWork.SaveChangesAsync();
             // Gửi thông báo cho người tạo: "Người A đã nhận xử lý"
@@ -516,7 +373,7 @@ case DocumentTab.Waiting:
 
         case TaskAction.RejectTask:
         {
-            task.TaskStatus = TasksStatus.Rejected;
+            task.TaskStatus = TasksStatus.Revised;
             task.UpdatedDate = DateTime.UtcNow;
             await _unitOfWork.SaveChangesAsync();
             // Gửi thông báo cho người tạo: "Người A từ chối xử lý"
@@ -526,7 +383,7 @@ case DocumentTab.Waiting:
 
         case TaskAction.ApproveDocument:
         {
-            if (task.TaskStatus != TasksStatus.Accepted)
+            if (task.TaskStatus != TasksStatus.InProgress)
                 return ResponseUtil.Error(ResponseMessages.TaskHadNotAccepted, ResponseMessages.OperationFailed,
                     HttpStatusCode.BadRequest);
 
@@ -559,11 +416,11 @@ case DocumentTab.Waiting:
         
         case TaskAction.RejectDocument:
         {
-            if (task.TaskStatus != TasksStatus.Accepted)
+            if (task.TaskStatus != TasksStatus.InProgress)
                 return ResponseUtil.Error(ResponseMessages.TaskHadNotAccepted, ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
 
             // 1. Cập nhật trạng thái task hiện tại
-            task.TaskStatus = TasksStatus.Rejected;
+            task.TaskStatus = TasksStatus.Revised;
             task.UpdatedDate = DateTime.UtcNow;
 
             // 2. Cập nhật trạng thái tài liệu
@@ -579,7 +436,7 @@ case DocumentTab.Waiting:
 
             foreach (var pendingTask in allPendingTasks)
             {
-                pendingTask.TaskStatus = TasksStatus.Rejected; // Hoặc đặt là Rejected nếu bạn muốn thể hiện bị từ chối
+                pendingTask.TaskStatus = TasksStatus.Revised; // Hoặc đặt là Rejected nếu bạn muốn thể hiện bị từ chối
                 pendingTask.UpdatedDate = DateTime.UtcNow;
             }
 
@@ -609,7 +466,7 @@ case DocumentTab.Waiting:
         var nextTask = tasksInStep.FirstOrDefault(t => t.TaskNumber > currentTask.TaskNumber);
         if (nextTask != null)
         {
-            nextTask.TaskStatus = TasksStatus.Accepted;
+            nextTask.TaskStatus = TasksStatus.InProgress;
             nextTask.UpdatedDate = DateTime.UtcNow;
 
             // TODO: Gửi thông báo đến nextTask.UserId
@@ -631,7 +488,7 @@ case DocumentTab.Waiting:
             var firstTaskInNextStep = nextStepTasks.FirstOrDefault();
             if (firstTaskInNextStep != null)
             {
-                firstTaskInNextStep.TaskStatus = TasksStatus.Accepted;
+                firstTaskInNextStep.TaskStatus = TasksStatus.InProgress;
                 firstTaskInNextStep.UpdatedDate = DateTime.UtcNow;
 
                 // TODO: Gửi thông báo
@@ -675,7 +532,7 @@ case DocumentTab.Waiting:
                             .FirstOrDefault();
             if (firstTask != null)
             {
-                firstTask.TaskStatus = TasksStatus.Accepted;
+                firstTask.TaskStatus = TasksStatus.InProgress;
                 firstTask.UpdatedDate = DateTime.UtcNow;
 
                 // TODO: Gửi thông báo
@@ -704,61 +561,6 @@ case DocumentTab.Waiting:
 }
     
    
-   /*private async Task<ResponseDto> PromoteToNextStepOrFlow(Step currentStep, Guid documentId)
-    {
-    var flow = currentStep.Flow;
-    var allStepsInFlow = (await _unitOfWork.StepUOW.FindAllStepsInFlowAsync(flow.FlowId)).ToList();
-
-    var currentStepIndex = allStepsInFlow.FindIndex(s => s.StepId == currentStep.StepId);
-    if (currentStepIndex < allStepsInFlow.Count - 1)
-    {
-        var nextStep = allStepsInFlow[currentStepIndex + 1];
-
-        var nextTasks = await _unitOfWork.TaskUOW.GetTasksByStepAndDocumentAsync(nextStep.StepId, documentId);
-
-        foreach (var t in nextTasks)
-        {
-            // TODO: Gửi thông báo cho t.UserId: "Đến lượt bạn duyệt"
-        }
-
-        return ResponseUtil.GetObject("Chuyển sang bước kế tiếp trong Flow", ResponseMessages.CreatedSuccessfully, HttpStatusCode.OK, 1);
-    }
-
-    var workflowFlows = flow.WorkflowFlows.OrderBy(wf => wf.FlowNumber).ToList();
-    var currentFlowIndex = workflowFlows.FindIndex(wf => wf.FlowId == flow.FlowId);
-
-    if (currentFlowIndex < workflowFlows.Count - 1)
-    {
-        var nextFlow = workflowFlows[currentFlowIndex + 1].Flow;
-
-        var firstStepOfNextFlow = await _unitOfWork.StepUOW.GetFirstStepOfFlowAsync(nextFlow.FlowId);
-
-        if (firstStepOfNextFlow != null)
-        {
-            var nextTasks = await _unitOfWork.TaskUOW.GetTasksByStepAndDocumentAsync(firstStepOfNextFlow.StepId, documentId);
-
-            foreach (var t in nextTasks)
-            {
-                // TODO: Gửi thông báo cho t.UserId: "Đến lượt bạn duyệt"
-            }
-        }
-
-        return ResponseUtil.GetObject("Chuyển sang Flow kế tiếp", ResponseMessages.CreatedSuccessfully, HttpStatusCode.OK, 1);
-    }
-
-    var document = await _unitOfWork.DocumentUOW.FindDocumentByIdAsync(documentId);
-    if (document != null)
-    {
-        document.ProcessingStatus = ProcessingStatus.Completed;
-        document.UpdatedDate = DateTime.UtcNow;
-        await _unitOfWork.SaveChangesAsync();
-
-        // TODO: Gửi thông báo cho người tạo tài liệu: "Tài liệu đã duyệt xong"
-        return ResponseUtil.GetObject(ResponseMessages.DocumentCompleted, ResponseMessages.CreatedSuccessfully, HttpStatusCode.OK, 1);
-    }
-
-    return ResponseUtil.Error(ResponseMessages.DocumentNotFound, ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
-    }*/
 
    public async Task<ResponseDto> FindAllTasksAsync(Guid userId, int page, int limit)
    {
