@@ -473,7 +473,7 @@ public class TaskService : ITaskService
             // TODO: Gửi thông báo đến nextTask.UserId
             await _unitOfWork.SaveChangesAsync();
 
-            return ResponseUtil.GetObject("Đến lượt duyệt tiếp theo", ResponseMessages.CreatedSuccessfully,
+            return ResponseUtil.GetObject($"Đến lượt duyệt tiếp theo:{nextTask.User.FullName}", ResponseMessages.CreatedSuccessfully,
                 HttpStatusCode.OK, 1);
         }
 
@@ -495,7 +495,7 @@ public class TaskService : ITaskService
                 // TODO: Gửi thông báo
                 await _unitOfWork.SaveChangesAsync();
 
-                return ResponseUtil.GetObject("Chuyển sang bước tiếp theo", ResponseMessages.CreatedSuccessfully,
+                return ResponseUtil.GetObject($"Chuyển sang bước tiếp theo: {nextTask.User.FullName}", ResponseMessages.CreatedSuccessfully,
                     HttpStatusCode.OK, 1);
             }
         }
@@ -539,7 +539,7 @@ public class TaskService : ITaskService
                 // TODO: Gửi thông báo
                 await _unitOfWork.SaveChangesAsync();
 
-                return ResponseUtil.GetObject("Chuyển sang Flow tiếp theo", ResponseMessages.CreatedSuccessfully,
+                return ResponseUtil.GetObject($"Chuyển sang Flow tiếp theo: {firstTask.User.FullName}", ResponseMessages.CreatedSuccessfully,
                     HttpStatusCode.OK, 1);
             }
         }
