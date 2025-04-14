@@ -59,6 +59,7 @@ public static class ResponseMessages
     //Role
     public const string RoleAlreadyExists = "Role already exists";
     public const string RoleNotExists = "Role not found with ID";
+    public const string NoRoleData = "No role data found";
 
     //RoleResource
     public const string RoleWithResourceCannotBeNull = "RoleResourceRequests cannot be null or empty";
