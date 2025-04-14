@@ -1,11 +1,16 @@
+using BusinessObject.Option;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 
 namespace Service.Impl;
 
 public class FileService : IFileService
 {
     private readonly string _storagePath = Path.Combine(Directory.GetCurrentDirectory(), "data", "storage");
+
+
+
     public async Task<string> SaveUploadFile(IFormFile file)
     {
         
@@ -41,9 +46,34 @@ public class FileService : IFileService
         
     }
 
-    public Task<string> GetFile(Guid id)
+    public async Task<IActionResult> GetPdfFile(Guid id)
     {
-        throw new NotImplementedException();
+        var filePath = Path.Combine(_storagePath, "document", "UploadedFiles", id+".pdf");;
+
+        if (!File.Exists(filePath))
+        {
+            throw new FileNotFoundException("File not found", filePath);
+        }
+
+        const string contentType = "application/pdf";
+        var bytes = await File.ReadAllBytesAsync(filePath);
+
+        return new FileContentResult(bytes, contentType);
+    }
+    
+    public async Task<IActionResult> GetPdfFile(string fileName)
+    {
+        var filePath = Path.Combine(_storagePath, "document", "UploadedFiles", fileName);;
+
+        if (!File.Exists(filePath))
+        {
+            throw new FileNotFoundException("File not found", filePath);
+        }
+
+        const string contentType = "application/pdf";
+        var bytes = await File.ReadAllBytesAsync(filePath);
+
+        return new FileContentResult(bytes, contentType);
     }
     
     public async Task<IActionResult> GetAvatar(string fileName)

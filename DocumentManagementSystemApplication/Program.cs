@@ -25,8 +25,8 @@ builder.Services.AddControllers()
     .AddJsonOptions(options => { options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()); });
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.Configure<AiScanApiOptions>(
-    builder.Configuration.GetSection("AiScanApi")
+builder.Services.Configure<AppsetingOptions>(
+    builder.Configuration.GetSection("ApiConfig")
 );
 builder.Services.AddSwaggerGen(options =>
 {
