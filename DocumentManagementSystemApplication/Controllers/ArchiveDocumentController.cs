@@ -1,5 +1,7 @@
 using DataAccess.DTO;
 using DataAccess.DTO.Request;
+using DocumentManagementSystemApplication.Middleware;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -12,6 +14,7 @@ namespace DocumentManagementSystemApplication.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class ArchiveDocumentController : ControllerBase
     {
         private readonly IArchiveDocumentService _archiveDocumentService;
@@ -45,6 +48,17 @@ namespace DocumentManagementSystemApplication.Controllers
         {
             await _hubContext.Clients.All.SendAsync("ReceiveMessage", message);
             return Ok(new { message = "Notification sent" });
+        }
+        
+        [HttpPost("create-send-to-user")]
+        [AuthorizeResource("[Archivedocument] Create Send To User")]
+        public async Task<IActionResult> SendToUser([FromQuery] string userId, [FromQuery] string message)
+        {
+            // Gửi đến userId cụ thể
+            await _hubContext.Clients.User(userId)
+                .SendAsync("ReceiveMessage", message);
+
+            return Ok(new { message = $"Notification sent to user {userId}" });
         }
     }
 }
