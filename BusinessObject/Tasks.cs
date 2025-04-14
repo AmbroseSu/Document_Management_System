@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 using BusinessObject.Enums;
 
 namespace BusinessObject;
@@ -52,7 +53,9 @@ public class Tasks
     public Guid StepId { get; set; }
     public Guid? DocumentId { get; set; }
     public Guid UserId { get; set; }
+    [JsonIgnore]
     public Step? Step { get; set; }
+    [JsonIgnore]
     public Document? Document { get; set; }
     public User? User { get; set; }
     public List<Comment>? Comments { get; set; }

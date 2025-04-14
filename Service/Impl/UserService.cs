@@ -12,6 +12,7 @@ using Service.Utilities;
 using Task = System.Threading.Tasks.Task;
 using System.Linq.Dynamic.Core;
 using BusinessObject.Enums;
+using ClosedXML.Excel;
 using Microsoft.AspNetCore.Http;
 
 
@@ -479,9 +480,12 @@ public class UserService : IUserService
     }
     
     
-    /*public async Task<ResponseDto> ImportUsersFromExcelAsync(IFormFile file, Guid divisionId)
+    public async Task<ResponseDto> ImportUsersFromExcelAsync(IFormFile file, Guid divisionId)
     {
-        var users = new List<UserRequest>();
+        using var transaction = await _unitOfWork.BeginTransactionAsync();
+        try
+        {
+            var users = new List<UserRequest>();
 
         //OfficeOpenXml.ExcelPackage.LicenseContext = OfficeOpenXml.LicenseContext.NonCommercial;
 
@@ -489,24 +493,30 @@ public class UserService : IUserService
         await file.CopyToAsync(stream);
         stream.Position = 0;
 
-        //using var package = new ExcelPackage(stream);
-        //var worksheet = package.Workbook.Worksheets[0];
-        int rowCount = worksheet.Dimension.Rows;
+        using var workbook = new XLWorkbook(stream);
+        var worksheet = workbook.Worksheet(1); // Sheet đầu tiên
+        var rows = worksheet.RangeUsed().RowsUsed().Skip(1); // Bỏ qua dòng tiêu đề
 
-        for (int row = 2; row <= rowCount; row++)
+        int rowIndex = 2;
+
+        foreach (var row in rows)
         {
-            var fullName = worksheet.Cells[row, 2].Text.Trim();
-            var userName = worksheet.Cells[row, 3].Text.Trim();
-            var email = worksheet.Cells[row, 4].Text.Trim();
-            var phone = worksheet.Cells[row, 5].Text.Trim();
-            var idCard = worksheet.Cells[row, 6].Text.Trim();
-            var dobRaw = worksheet.Cells[row, 7].Text.Trim();
-            var address = worksheet.Cells[row, 8].Text.Trim();
-            var genderRaw = worksheet.Cells[row, 9].Text.Trim().ToLower();
-            var position = worksheet.Cells[row, 10].Text.Trim();
-            var roleName = worksheet.Cells[row, 11].Text.Trim();
+            var fullName = row.Cell(2).GetValue<string>().Trim();
+            var userName = row.Cell(3).GetValue<string>().Trim();
+            var email = row.Cell(4).GetValue<string>().Trim();
+            var phone = row.Cell(5).GetValue<string>().Trim();
+            var idCard = row.Cell(6).GetValue<string>().Trim();
+            var dobRaw = row.Cell(7).GetValue<string>().Trim();
+            var address = row.Cell(8).GetValue<string>().Trim();
+            var genderRaw = row.Cell(9).GetValue<string>().Trim().ToLower();
+            var position = row.Cell(10).GetValue<string>().Trim();
+            var roleName = row.Cell(11).GetValue<string>().Trim();
 
-            if (string.IsNullOrWhiteSpace(fullName)) continue;
+            if (string.IsNullOrWhiteSpace(fullName))
+            {
+                rowIndex++;
+                continue;
+            }
 
             if (!DateTime.TryParse(dobRaw, new CultureInfo("vi-VN"), DateTimeStyles.None, out DateTime dob))
             {
@@ -539,16 +549,24 @@ public class UserService : IUserService
             var result = await CreateUserByForm(userRequest);
             if (result.StatusCode != (int)HttpStatusCode.Created)
             {
+                await transaction.RollbackAsync();
                 return ResponseUtil.Error($"Dòng {row}: {result.Message}", ResponseMessages.OperationFailed,
                     HttpStatusCode.BadRequest);
-                //throw new Exception($"Dòng {row}: {result.Message}");
             }
         }
         
-
+        await transaction.CommitAsync();
         return ResponseUtil.GetObject(ResponseMessages.ImportSuccessfully, ResponseMessages.CreatedSuccessfully,
             HttpStatusCode.OK, 1);
-    }*/
+        }
+        catch (Exception e)
+        {
+            await transaction.RollbackAsync();
+            return ResponseUtil.Error(e.Message, ResponseMessages.OperationFailed,
+                HttpStatusCode.BadRequest);
+        }
+        
+    }
     
     
     

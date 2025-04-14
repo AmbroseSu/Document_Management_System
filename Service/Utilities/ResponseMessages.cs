@@ -114,7 +114,7 @@ public static class ResponseMessages
     public const string TaskHadNotAccepted = "You have not accepted to process this task.";
     public const string TaskHadRejected = "Task has been rejected";
     public const string TaskHadNotCompleted = "It's not your turn to approve yet.";
-    public const string TaskApproved = "Task approved";
+    public const string TaskIdInvalid = "Invalid task id";
     
     //Step
     public const string StepIdNull = "Step id cannot be null";
