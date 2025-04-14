@@ -3,6 +3,7 @@ using AutoMapper;
 using BusinessObject;
 using BusinessObject.Enums;
 using DataAccess.DTO;
+using DataAccess.DTO.Response;
 using Microsoft.AspNetCore.SignalR;
 using Repository;
 using Service.Response;
@@ -598,7 +599,12 @@ public class TaskService : ITaskService
                return ResponseUtil.Error(ResponseMessages.TaskNotFound, ResponseMessages.OperationFailed,
                    HttpStatusCode.NotFound);
            
-           var result = _mapper.Map<TaskDto>(task);
+           var taskDto = _mapper.Map<TaskDto>(task);
+           var result = new TaskDetail();
+           result.TaskDto = taskDto;
+           result.Scope = task.Document.DocumentWorkflowStatuses.FirstOrDefault().Workflow.Scope;
+           result.WorkflowName = task.Document.DocumentWorkflowStatuses.FirstOrDefault().Workflow.WorkflowName;
+           result.StepAction = task.Step.Action;
            return ResponseUtil.GetObject(result, ResponseMessages.GetSuccessfully, HttpStatusCode.OK, 1);
        }
        catch (Exception e)

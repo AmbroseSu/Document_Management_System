@@ -4,6 +4,7 @@ using BusinessObject.Option;
 using DataAccess;
 using DotNetEnv;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Repository;
@@ -135,10 +136,12 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowFrontend", policy =>
     {
         policy
-            .AllowAnyOrigin() // địa chỉ chạy file HTML
+            .WithOrigins(
+                "http://127.0.0.1:5500"
+            ) // địa chỉ chạy file HTML
             .AllowAnyHeader()
-            .AllowAnyMethod();
-        //.AllowCredentials(); // rất quan trọng cho SignalR
+            .AllowAnyMethod() 
+            .AllowCredentials(); // rất quan trọng cho SignalR
     });
 });
 
@@ -189,6 +192,7 @@ builder.Services.AddScoped<IArchiveDocumentService, ArchiveDocumentService>();
 builder.Services.AddScoped<IArchiveDocumentSignatureRepository, ArchiveDocumentSignatureRepository>();
 builder.Services.AddScoped<IDocumentService, DocumentService>();
 builder.Services.AddScoped<IFileService, FileService>();
+builder.Services.AddSingleton<IUserIdProvider, NameIdentifierUserIdProvider>();
 
 builder.WebHost.UseKestrel();
 
@@ -244,7 +248,7 @@ app.UseMiddleware<ApiLoggingMiddleware>(); // ✅ Ghi log API request/response
 //app.UseHttpsRedirection();
 app.UseCors("AllowFrontend");
 
-app.MapHub<NotificationHub>("/notificationHub"); 
+app.MapHub<NotificationHub>("/notificationHub");
 
 app.UseAuthentication();
 app.UseAuthorization();
