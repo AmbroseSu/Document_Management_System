@@ -14,15 +14,15 @@ public class ExternalApiService : IExternalApiService
     private readonly HttpClient _httpClient;
     private readonly string _aiScanUrl;
 
-    public ExternalApiService(HttpClient httpClient, IOptions<AiScanApiOptions> options)
+    public ExternalApiService(HttpClient httpClient, IOptions<AppsetingOptions> options)
     {
         _httpClient = httpClient;
-        _aiScanUrl = options.Value.Url;
+        _aiScanUrl = options.Value.AiApiUrl;
     }
 
     public async Task<DocumentAiResponse> ScanPdfAsync(string filePath)
     {
-        using var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read);
+        await using var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read);
         using var content = new MultipartFormDataContent();
 
         // Đọc nội dung file và gắn header cho file

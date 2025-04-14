@@ -13,8 +13,10 @@ using Task = System.Threading.Tasks.Task;
 using System.Linq.Dynamic.Core;
 
 using BusinessObject.Enums;
+using BusinessObject.Option;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 
 
 namespace Service.Impl;
@@ -26,15 +28,17 @@ public class UserService : IUserService
     private readonly IMapper _mapper;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IUserRepository _userRepository;
-
+    private readonly string _host;
     public UserService(IUserRepository userRepository, IMapper mapper, IUnitOfWork unitOfWork,
-        IEmailService emailService, IFileService fileService)
+        IEmailService emailService, IFileService fileService,
+        IOptions<AppsetingOptions> options)
     {
         _userRepository = userRepository;
         _mapper = mapper;
         _unitOfWork = unitOfWork;
         _emailService = emailService;
         _fileService = fileService;
+        _host = options.Value.Host;
     }
 
     public async Task<ResponseDto> CreateUserByForm(UserRequest userRequest)
@@ -569,13 +573,13 @@ public class UserService : IUserService
 
     public async Task<ResponseDto> UpdateAvatarAsync(IFormFile file,string id)
     {
-        var url = "http://nghetrenghetre.xyz:5290/api/User/view-avatar/"+ await _fileService.SaveAvatar(file, id);
-        
+        var url = _host+"/api/User/view-avatar/"+ await _fileService.SaveAvatar(file, Guid.NewGuid().ToString());
         return ResponseUtil.GetObject(url,"ok",HttpStatusCode.OK,1);
     }
 
     public async Task<IActionResult> GetAvatar(string userId)
     {
+        // var urlImg = (await _unitOfWork.UserUOW.FindUserByIdAsync(Guid.Parse(userId))).Avatar.Split("/")[^1];
         return await _fileService.GetAvatar(userId);
     }
 
