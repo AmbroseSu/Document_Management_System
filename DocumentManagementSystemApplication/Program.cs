@@ -82,20 +82,20 @@ builder.Services.AddAuthentication(options =>
             //RoleClaimType = ClaimTypes.Role,
             ClockSkew = TimeSpan.Zero // Giảm độ trễ token xuống 0 để token hết hạn đúng thời điểm
         };
-        // options.Events = new JwtBearerEvents
-        // {
-        //     OnMessageReceived = context =>
-        //     {
-        //         // Cho phép lấy access token qua query (dành cho SignalR)
-        //         var accessToken = context.Request.Query["access_token"];
-        //         var path = context.HttpContext.Request.Path;
-        //         if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/notificationHub"))
-        //         {
-        //             context.Token = accessToken;
-        //         }
-        //         return Task.CompletedTask;
-        //     }
-        // };
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                // Cho phép lấy access token qua query (dành cho SignalR)
+                var accessToken = context.Request.Query["access_token"];
+                var path = context.HttpContext.Request.Path;
+                if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/notificationHub"))
+                {
+                    context.Token = accessToken;
+                }
+                return Task.CompletedTask;
+            }
+        };
     });
 builder.Services.AddAuthorization(options =>
 {

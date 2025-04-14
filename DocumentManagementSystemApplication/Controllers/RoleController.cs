@@ -8,7 +8,7 @@ namespace DocumentManagementSystemApplication.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-[Authorize]
+
 public class RoleController : ControllerBase
 {
     private readonly IRoleService _roleService;
@@ -23,5 +23,10 @@ public class RoleController : ControllerBase
     public async Task<ResponseDto> CreateRole([FromBody] RoleDto roleDto)
     {
         return await _roleService.CreateRole(roleDto);
+    }
+    [HttpGet("view-all-roles")]
+    public async Task<ResponseDto> ViewAllRoles()
+    {
+        return await _roleService.ViewAllRoles();
     }
 }

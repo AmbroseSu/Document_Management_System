@@ -24,6 +24,7 @@ public class DocumentVersion
     public bool IsFinalVersion { get; set; }
 
     public Guid DocumentId { get; set; }
+    [JsonIgnore]
     public Document? Document { get; set; }
     public List<DocumentSignature>? DocumentSignatures { get; set; }
 }
