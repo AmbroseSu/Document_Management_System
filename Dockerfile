@@ -51,7 +51,7 @@ COPY https/aspnetapp.pfx /https/aspnetapp.pfx
 RUN chmod 644 /https/aspnetapp.pfx
 
 # Thiết lập biến môi trường
-ENV ASPNETCORE_ENVIRONMENT="Development"
+ENV ASPNETCORE_ENVIRONMENT="Production"
 ENV ASPNETCORE_URLS="http://+:8080;https://+:8443"
 ENV ASPNETCORE_Kestrel__Certificates__Default__Path="/https/aspnetapp.pfx"
 ENV ASPNETCORE_Kestrel__Certificates__Default__Password="ambrosezen"
