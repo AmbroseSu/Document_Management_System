@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace BusinessObject;
 
@@ -17,6 +18,7 @@ public class Step
 
     public Guid FlowId { get; set; }
     public Guid RoleId { get; set; }
+    [JsonIgnore]
     public Flow? Flow { get; set; }
     public Role? Role { get; set; }
 

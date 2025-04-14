@@ -53,7 +53,13 @@ public class UserController : ControllerBase
         return await _userService.AdminUpdateUserAsync(adminUpdateUserRequest);
     }
     
-
+    [HttpPost("create-import-users-from-excel")]
+    public async Task<ResponseDto> CreateImportUsersFromExcel([FromForm] IFormFile file, [FromForm] Guid divisionId)
+    {
+        return await _userService.ImportUsersFromExcelAsync(file, divisionId);
+    }
+    
+    
     [HttpPost("update-avatar/{userId}")]
     public async Task<ResponseDto> UpdateAvatar([FromForm] IFormFile file,string userId)
     {
@@ -68,10 +74,7 @@ public class UserController : ControllerBase
         return await _userService.GetAvatar(fileName);
     }
 
-    /*[HttpPost("create-import-users-from-excel")]
-    public async Task<ResponseDto> CreateImportUsersFromExcel([FromForm] IFormFile file, [FromForm] Guid divisionId)
-    {
-        return await _userService.ImportUsersFromExcelAsync(file, divisionId);
-    }*/
+
+
     
 }

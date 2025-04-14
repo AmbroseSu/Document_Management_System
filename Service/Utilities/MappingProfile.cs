@@ -3,6 +3,7 @@ using BusinessObject;
 using DataAccess.DTO;
 using DataAccess.DTO.Request;
 
+
 namespace Service.Response;
 
 public class MappingProfile : Profile
@@ -118,8 +119,12 @@ public class MappingProfile : Profile
         CreateMap<WorkflowDto, Workflow>();
         CreateMap<Step, StepDto>();
         CreateMap<StepDto, Step>();
-        CreateMap<Task, TaskDto>();
-        CreateMap<TaskDto, Task>();
-        
+        CreateMap<Tasks, TaskDto>();
+        CreateMap<TaskDto, Tasks>();
+        CreateMap<Document, DocumentDto>();
+            //.ForMember(dest => dest.Tasks, opt => opt.Ignore());
+
+            CreateMap<DocumentDto, Document>();
+            //.ForMember(dest => dest.Tasks, opt => opt.Ignore());
     }
 }
