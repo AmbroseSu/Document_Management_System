@@ -174,4 +174,28 @@ public class DocumentTypeService : IDocumentTypeService
         }
     }
     
+    public async Task<ResponseDto> GetAllDocumentTypeNameByWorkflowIdAsync(Guid workflowId)
+    {
+        try
+        {
+            if (workflowId == Guid.Empty)
+                return ResponseUtil.Error(ResponseMessages.WorkflowIdInvalid, ResponseMessages.OperationFailed,
+                    HttpStatusCode.BadRequest);
+
+            var documentTypeWorkflows = await _unitOfWork.DocumentTypeWorkflowUOW.FindAllDocumentTypeNameByWorkflowIdAsync(workflowId);
+            var documentTypeName = new List<String>();
+            foreach (var documentTypeWorkflow in documentTypeWorkflows)
+            {
+                    documentTypeName.Add(documentTypeWorkflow.DocumentType.DocumentTypeName);
+            }
+
+
+            return ResponseUtil.GetCollection(documentTypeName, ResponseMessages.GetSuccessfully, HttpStatusCode.OK, 1, 1, 1, 1);
+        }
+        catch (Exception e)
+        {
+            return ResponseUtil.Error(e.Message, ResponseMessages.OperationFailed, HttpStatusCode.InternalServerError);
+        }
+    }
+    
 }

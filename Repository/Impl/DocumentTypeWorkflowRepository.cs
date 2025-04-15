@@ -1,6 +1,7 @@
 using BusinessObject;
 using DataAccess;
 using DataAccess.DAO;
+using Microsoft.EntityFrameworkCore;
 
 namespace Repository.Impl;
 
@@ -32,5 +33,12 @@ public class DocumentTypeWorkflowRepository : IDocumentTypeWorkflowRepository
         await _documentTypeWorkflowDao.AddRangeAsync(documentTypeWorkflow);
     }
     
+    public async Task<IEnumerable<DocumentTypeWorkflow>> FindAllDocumentTypeNameByWorkflowIdAsync(Guid? workflowId)
+    {
+        if (workflowId == null) throw new ArgumentNullException(nameof(workflowId));
+        return await _documentTypeWorkflowDao.FindAsync(u => u.WorkflowId == workflowId,
+            u => u.Include(d => d.Workflow)
+                .Include(d => d.DocumentType));
+    }
     
 }
