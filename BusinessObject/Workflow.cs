@@ -13,11 +13,11 @@ public class Workflow
     public string? WorkflowName { get; set; }
     public Scope Scope { get; set; }
     public string RequiredRolesJson { get; set; }
-    private DateTime _createAt;
-    public DateTime CreateAt
+    private DateTime? _createAt;
+    public DateTime? CreateAt
     {
-        get => _createAt.ToLocalTime();
-        set => _createAt = value.ToUniversalTime();
+        get => _createAt?.ToLocalTime();
+        set => _createAt = value?.ToUniversalTime();
     }
     public Guid? CreateBy { get; set; }
     public bool IsAllocate { get; set; }
