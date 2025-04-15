@@ -46,6 +46,11 @@ namespace DocumentManagementSystemApplication.Controllers
         {
             return await _documentTypeService.GetDocumentTypeDetails(documentTypeId);
         }
-        
+
+        [HttpGet("view-document-type-name-by-workflow-id")]
+        public async Task<ResponseDto> ViewDocumentTypeNameByWorkflowId([FromQuery] Guid workflowId)
+        {
+            return await _documentTypeService.GetAllDocumentTypeNameByWorkflowIdAsync(workflowId);
+        }
     }
 }

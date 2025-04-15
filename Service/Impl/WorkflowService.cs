@@ -538,6 +538,7 @@ public class WorkflowService : IWorkflowService
             {
                 WorkflowId = workflow.WorkflowId,
                 WorkflowName = workflow.WorkflowName,
+                RequiredRolesJson = workflow.RequiredRolesJson,
                 Scope = workflow.Scope,
                 IsAllocate = workflow.IsAllocate,
                 CreateBy = workflow.CreateBy ?? Guid.Empty,
