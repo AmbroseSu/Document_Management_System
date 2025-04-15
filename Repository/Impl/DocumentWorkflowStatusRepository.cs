@@ -36,4 +36,20 @@ public class DocumentWorkflowStatusRepository : IDocumentWorkflowStatusRepositor
     {
         return await _documentWorkflowStatusDao.FindAsync(u => true);
     }
+    
+    
+    public async Task<DocumentWorkflowStatus?> FindDocumentWorkflowStatusByWorkflowIdWorkflowFlowIdDocIdAsync(Guid? workflowId, Guid? workflowFlowId, Guid? documentId)
+    {
+        if (workflowId == null) throw new ArgumentNullException(nameof(workflowId));
+        if (workflowFlowId == null) throw new ArgumentNullException(nameof(workflowFlowId));
+        if (documentId == null) throw new ArgumentNullException(nameof(documentId));
+        return await _documentWorkflowStatusDao.FindByAsync(u => u.WorkflowId == workflowId 
+                                                                 && u.CurrentWorkflowFlowId == workflowFlowId 
+                                                                 && u.DocumentId == documentId, 
+            dwffs => dwffs.Include(d => d.Document)
+                .Include(d => d.Workflow)
+                .Include(d => d.CurrentWorkflowFlow));
+    }
+
+    
 }
