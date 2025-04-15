@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace BusinessObject;
 
@@ -13,6 +14,7 @@ public class DocumentTypeWorkflow
     public DocumentType? DocumentType { get; set; }
 
     public Guid WorkflowId { get; set; }
+    [JsonIgnore]
     public Workflow? Workflow { get; set; }
     
 }
