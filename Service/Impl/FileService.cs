@@ -8,7 +8,12 @@ namespace Service.Impl;
 public class FileService : IFileService
 {
     private readonly string _storagePath = Path.Combine(Directory.GetCurrentDirectory(), "data", "storage");
+    private readonly string _host;
 
+    public FileService(IOptions<AppsetingOptions> options)
+    {
+        _host = options.Value.Host;
+    }
 
 
     public async Task<string> SaveUploadFile(IFormFile file)
@@ -45,33 +50,76 @@ public class FileService : IFileService
         return fileName;
         
     }
-
-    public async Task<IActionResult> GetPdfFile(Guid id)
+    
+    public string CreateAVersionFromUpload(string fileName, Guid versionId, Guid documentId,string versionName)
     {
-        var filePath = Path.Combine(_storagePath, "document", "UploadedFiles", id+".pdf");;
+        var path = Path.Combine(_storagePath, "document", "UploadedFiles", fileName);
+        
+        var targetDirectory = Path.Combine(_storagePath, "document", documentId.ToString(), versionId.ToString());
 
-        if (!File.Exists(filePath))
+        // Tạo thư mục nếu chưa tồn tại
+        if (!Directory.Exists(targetDirectory))
         {
-            throw new FileNotFoundException("File not found", filePath);
+            Directory.CreateDirectory(targetDirectory);
         }
 
-        const string contentType = "application/pdf";
-        var bytes = await File.ReadAllBytesAsync(filePath);
+        // Tạo đường dẫn đích
+        var targetPath = Path.Combine(targetDirectory, versionName+".pdf");
 
-        return new FileContentResult(bytes, contentType);
+        // Di chuyển file
+        File.Move(path, targetPath);
+        var url = _host+"/api/Document/view-file/"+documentId+"?version=1&isArchive=false";
+        // Trả về đường dẫn mới của file (hoặc bạn có thể trả về tên file tùy mục đích)
+        return url;
+
     }
     
-    public async Task<IActionResult> GetPdfFile(string fileName)
+    public string ArchiveDocument(string fileName, Guid documentId, Guid versionId,Guid archiveId)
     {
-        var filePath = Path.Combine(_storagePath, "document", "UploadedFiles", fileName);;
+        fileName += ".pdf";
+        var path = Path.Combine(_storagePath, "document", documentId.ToString(), versionId.ToString(), fileName);
+        
+        var targetDirectory = Path.Combine(_storagePath, "archive_document", archiveId.ToString());
 
-        if (!File.Exists(filePath))
+        if (!Directory.Exists(targetDirectory))
         {
-            throw new FileNotFoundException("File not found", filePath);
+            Directory.CreateDirectory(targetDirectory);
+        }
+
+        var targetPath = Path.Combine(targetDirectory, fileName);
+
+        File.Copy(path, targetPath);
+        var url = _host+"/api/Document/view-file/"+archiveId+"?version=1&isArchive=true";
+        return url;
+
+    }
+
+    // public async Task<IActionResult> GetPdfFile(Guid id)
+    // {
+    //     var filePath = Path.Combine(_storagePath, "document", "UploadedFiles", id+".pdf");;
+    //
+    //     if (!File.Exists(filePath))
+    //     {
+    //         throw new FileNotFoundException("File not found", filePath);
+    //     }
+    //
+    //     const string contentType = "application/pdf";
+    //     var bytes = await File.ReadAllBytesAsync(filePath);
+    //
+    //     return new FileContentResult(bytes, contentType);
+    // }
+    
+    public async Task<IActionResult> GetPdfFile(string filePath)
+    {
+        var path = Path.Combine(_storagePath, filePath);;
+
+        if (!File.Exists(path))
+        {
+            throw new FileNotFoundException("File not found", path);
         }
 
         const string contentType = "application/pdf";
-        var bytes = await File.ReadAllBytesAsync(filePath);
+        var bytes = await File.ReadAllBytesAsync(path);
 
         return new FileContentResult(bytes, contentType);
     }

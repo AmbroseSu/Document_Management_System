@@ -120,6 +120,9 @@ public class MappingProfile : Profile
         CreateMap<StepDto, Step>();
         CreateMap<Task, TaskDto>();
         CreateMap<TaskDto, Task>();
-        
+        CreateMap<DocumentDto, Document>();
+        CreateMap<Document, DocumentDto>();
+        CreateMap<DocumentVersion, DocumentVersionDto>();
+        CreateMap<DocumentVersionDto, DocumentVersion>();
     }
 }

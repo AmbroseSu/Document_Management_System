@@ -24,4 +24,5 @@ public class DocumentDto
     public List<Guid>? TaskIds { get; set; }
     public List<Guid>? UserDocumentIds { get; set; }
     public List<Guid>? AttachmentDocumentIds { get; set; }
+    public DocumentVersionDto? DocumentVersion { get; set; }
 }
