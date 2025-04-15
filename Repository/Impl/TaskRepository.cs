@@ -49,7 +49,8 @@ public class TaskRepository : ITaskRepository
     {
         if (id == null) throw new ArgumentNullException(nameof(id));
         return await _taskDao.FindByAsync(u => u.TaskId == id, 
-            t => t.Include(d => d.Document)
+            t => t.Include(d => d.Document).ThenInclude(dt => dt.DocumentType)
+                .Include(d => d.Document)
                 .ThenInclude(dws => dws.DocumentWorkflowStatuses)
             .ThenInclude(dwws => dwws.Workflow)
             .Include(ta => ta.Step)
@@ -100,7 +101,8 @@ public class TaskRepository : ITaskRepository
     {
        return await _taskDao.FindAsync(
             t => t.UserId == userId && t.IsDeleted == false,
-            q => q.Include(d => d.Document)
+            q => q.Include(d => d.Document).ThenInclude(dt => dt.DocumentType)
+                .Include(d => d.Document)
                 .ThenInclude(dws => dws.DocumentWorkflowStatuses)
                 .ThenInclude(dwws => dwws.Workflow)
                 .Include(ta => ta.Step)
