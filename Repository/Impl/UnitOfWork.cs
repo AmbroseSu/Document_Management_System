@@ -13,7 +13,7 @@ public class UnitOfWork : IUnitOfWork
         IResourceRepository resourceUow, IPermissionRepository permissionUow, IRoleRepository roleUow,
         IRoleResourceRepository roleResourceUow, IUserRoleRepository userRoleUow,
         IVerificationOtpRepository verificationOtpUow, IDigitalCertificateRepository digitalCertificateUow,
-        IDivisionRepository divisionUow, IDocumentTypeRepository documentTypeUow, IWorkflowRepository workflowUow, IStepRepository stepUow, IFlowRepository flowUow, IWorkflowFlowTransitionRepository workflowFlowTransitionUow, IWorkflowFlowRepository workflowFlowUow, ITaskRepository taskUow, IArchivedDocumentRepository archivedDocumentUow, IArchiveDocumentSignatureRepository archiveDocumentSignatureUow, IDocumentRepository documentUow, IDocumentSignatureRepository documentSignatureUow, IDocumentWorkflowStatusRepository documentWorkflowStatusUow)
+        IDivisionRepository divisionUow, IDocumentTypeRepository documentTypeUow, IWorkflowRepository workflowUow, IStepRepository stepUow, IFlowRepository flowUow, IWorkflowFlowTransitionRepository workflowFlowTransitionUow, IWorkflowFlowRepository workflowFlowUow, ITaskRepository taskUow, IArchivedDocumentRepository archivedDocumentUow, IArchiveDocumentSignatureRepository archiveDocumentSignatureUow, IDocumentRepository documentUow, IDocumentSignatureRepository documentSignatureUow, IDocumentWorkflowStatusRepository documentWorkflowStatusUow, IDocumentTypeWorkflowRepository documentTypeWorkflowUow)
     {
         UserUOW = userUow ?? throw new ArgumentNullException(nameof(userUow));
         _disposed = false;
@@ -39,6 +39,7 @@ public class UnitOfWork : IUnitOfWork
         DocumentUOW = documentUow;
         DocumentSignatureUOW = documentSignatureUow;
         DocumentWorkflowStatusUOW = documentWorkflowStatusUow;
+        DocumentTypeWorkflowUOW = documentTypeWorkflowUow;
     }
 
     public IUserRepository UserUOW { get; }
@@ -62,6 +63,9 @@ public class UnitOfWork : IUnitOfWork
     public IArchiveDocumentSignatureRepository ArchiveDocumentSignatureUOW { get; }
     public IDocumentSignatureRepository DocumentSignatureUOW { get; }
     public IDocumentWorkflowStatusRepository DocumentWorkflowStatusUOW { get; }
+    
+    public IDocumentTypeWorkflowRepository DocumentTypeWorkflowUOW { get; set; }
+    
     public async Task<int> SaveChangesAsync()
     {
         //using var context = new DocumentManagementSystemDbContext();

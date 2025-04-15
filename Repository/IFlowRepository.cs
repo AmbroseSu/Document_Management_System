@@ -11,4 +11,5 @@ public interface IFlowRepository
     Task UpdateRangeAsync(List<Flow> flows);
     Task<Flow?> FindFlowByIdAsync(Guid? id);
     Task<IEnumerable<Flow>> FindByIdsAsync(List<Guid> flowIds);
+    Task<IEnumerable<Flow>> FindAllFlowAsync();
 }
