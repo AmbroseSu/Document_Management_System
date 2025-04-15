@@ -6,6 +6,7 @@ public class WorkflowRequest
 {
     public Guid? WorkflowId { get; set; }
     public string? WorkflowName { get; set; }
+    public string? RequiredRolesJson { get; set; }
     public Scope Scope { get; set; }
     public bool IsAllocate { get; set; }
     public Guid CreateBy { get; set; }
