@@ -22,10 +22,17 @@ public class DocumentDto
     
     public Guid? UserId { get; set; }
     public Guid? DocumentTypeId { get; set; }
+    public Guid? DeadlineId { get; set; }
+    public Guid? DocumentFileExtensionId { get; set; }
+    public List<Guid>? TaskIds { get; set; }
+    public List<Guid>? UserDocumentIds { get; set; }
+    public List<Guid>? AttachmentDocumentIds { get; set; }
     public Guid? TemplateArchiveDocumentId { get; set; }
     public Guid? FinalArchiveDocumentId { get; set; }
     public List<Tasks>? Tasks { get; set; }
     public List<AttachmentDocument>? AttachmentDocuments { get; set; }
     public List<DocumentVersion>? DocumentVersions { get; set; }
     public List<DocumentWorkflowStatus>? DocumentWorkflowStatuses { get; set; }
+    public DocumentVersionDto? DocumentVersion { get; set; }
+
 }

@@ -1,4 +1,5 @@
 using System.Net;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using AutoMapper;
 using BusinessObject;
@@ -19,14 +20,14 @@ namespace Service.Impl;
 
 public partial class DocumentService : IDocumentService
 {
-    private readonly IUnitOfWork _unitOfWork;
-    private readonly IMapper _mapper;
-    private readonly IFileService _fileService;
-    private readonly ILogger<DocumentService> _logger;
-    private readonly IExternalApiService _externalApiService;
     private readonly IDigitalCertificateService _digitalCertificateService;
     private readonly IDocumentSignatureService _documentSignatureService;
+    private readonly IExternalApiService _externalApiService;
+    private readonly IFileService _fileService;
     private readonly string _host;
+    private readonly ILogger<DocumentService> _logger;
+    private readonly IMapper _mapper;
+    private readonly IUnitOfWork _unitOfWork;
 
 
     public DocumentService(IUnitOfWork unitOfWork, IMapper mapper, IFileService fileService,
@@ -43,98 +44,39 @@ public partial class DocumentService : IDocumentService
         _documentSignatureService = documentSignatureService;
         _host = options.Value.Host;
     }
-    
-    public async Task<ResponseDto> CreateDoc(DocumentUploadDto documentUploadDto,Guid userId)
+
+
+    public async Task<ResponseDto> CreateIncomingDoc(DocumentUploadDto documentUploadDto, Guid userId)
     {
-        
-        var name = documentUploadDto.CanChange.TryGetValue("Name", out var value) 
-            ? (string?)value 
-            : null;
-
-        var sender = documentUploadDto.CanChange.TryGetValue("Sender", out var value1) 
-            ? (string?)value1 
-            : null;
-
-        var numberOfDocument = documentUploadDto.CanChange.TryGetValue("NumberOfDocument", out var value2) 
-            ? (string?)value2 
-            : null;
-
-        var documentContent = documentUploadDto.CanChange.TryGetValue("DocumentContent", out var value3) 
-            ? (string?)value3 
-            : null;
-
-        var receiver = documentUploadDto.CanChange.TryGetValue("Receiver", out var value4) 
-            ? (string?)value4 
-            : null;
-
-        var dateReceived = documentUploadDto.CanChange.TryGetValue("DateReceived", out var value5) 
-            ? (DateTime?)value5 
-            : null;
-
-        var documentTypeId = documentUploadDto.CanChange.TryGetValue("DocumentTypeId", out var value6) 
-            ? (Guid?)value6 
-            : null;
-
-        var workflowId = documentUploadDto.CanChange.TryGetValue("WorkflowId", out var value7) 
-            ? (Guid?)value7 
-            : null;
-
-        var deadline = documentUploadDto.CanChange.TryGetValue("Deadline", out var value8) 
-            ? (DateTime)value8 
-            : DateTime.Now;
-
-        var newSignerName = documentUploadDto.CanChange.TryGetValue("NewSignerName", out var value9) 
-            ? (string?)value9 
-            : null;
-        
-        
-        var signatureNames = documentUploadDto.CannotChange.TryGetValue("SignatureName", out var value10) 
-            ? value10 as List<string> 
-            : null;
-
-        var issuers = documentUploadDto.CannotChange.TryGetValue("Issuer", out var value11) 
-            ? value11 as List<string> 
-            : null;
-
-        var signerNames = documentUploadDto.CannotChange.TryGetValue("SignerName", out var value12) 
-            ? value12 as List<string> 
-            : null;
-
-        var singingDates = documentUploadDto.CannotChange.TryGetValue("SingingDate", out var value13) 
-            ? value13 as List<DateTime> 
-            : null;
-
-        var reasons = documentUploadDto.CannotChange.TryGetValue("Reason", out var value14) 
-            ? value14 as List<string> 
-            : null;
-
-        var locations = documentUploadDto.CannotChange.TryGetValue("Location", out var value15) 
-            ? value15 as List<string> 
-            : null;
-
-        var isValid = documentUploadDto.CannotChange.TryGetValue("IsValid", out var value16) 
-            ? value16 as List<bool> 
-            : null;
-
-        var serialNumbers = documentUploadDto.CannotChange.TryGetValue("SerialNumber", out var value17) 
-            ? value17 as List<string> 
-            : null;
-
-        var validFroms = documentUploadDto.CannotChange.TryGetValue("ValidFrom", out var value18) 
-            ? value18 as List<DateTime> 
-            : null;
-
-        var expirationDates = documentUploadDto.CannotChange.TryGetValue("ExpirationDate", out var value19) 
-            ? value19 as List<DateTime> 
-            : null;
-
-        var algorithms = documentUploadDto.CannotChange.TryGetValue("Algorithm", out var value20) 
-            ? value20 as List<string> 
-            : null;
-
-        var document = new Document()
+        string? GetString(object? obj)
         {
-            //TODO missing DateIssued
+            return obj is JsonElement e ? e.GetString() : obj as string;
+        }
+
+        DateTime? GetDateTime(object? obj)
+        {
+            return obj is JsonElement e && DateTime.TryParse(e.GetString(), out var dt) ? dt : null;
+        }
+
+        Guid? GetGuid(object? obj)
+        {
+            return obj is JsonElement e && Guid.TryParse(e.GetString(), out var guid) ? guid : null;
+        }
+
+        var name = GetString(documentUploadDto.CanChange.GetValueOrDefault("Name"));
+        var sender = GetString(documentUploadDto.CanChange.GetValueOrDefault("Sender"));
+        var numberOfDocument = GetString(documentUploadDto.CanChange.GetValueOrDefault("NumberOfDocument"));
+        var documentContent = GetString(documentUploadDto.CanChange.GetValueOrDefault("DocumentContent"));
+        var dateReceived = GetDateTime(documentUploadDto.CanChange.GetValueOrDefault("DateReceived"));
+        var documentTypeId = GetGuid(documentUploadDto.CanChange.GetValueOrDefault("DocumentTypeId"));
+        var workflowId = GetGuid(documentUploadDto.CanChange.GetValueOrDefault("WorkflowId"));
+        var deadline = GetDateTime(documentUploadDto.CanChange.GetValueOrDefault("Deadline")) ?? DateTime.Now;
+
+        var workflowO = await _unitOfWork.WorkflowUOW.FindWorkflowByIdAsync(workflowId);
+        var workflowFlow = workflowO.WorkflowFlows.Select(x => x).First(x => x.FlowNumber == 1);
+
+        var document = new Document
+        {
             DocumentName = name,
             DocumentContent = documentContent,
             NumberOfDocument = numberOfDocument,
@@ -145,68 +87,123 @@ public partial class DocumentService : IDocumentService
             Sender = sender,
             DateReceived = dateReceived,
             Deadline = deadline,
-            UserId = userId
+            UserId = userId,
+            DocumentVersions = [],
+            DocumentWorkflowStatuses =
+            [
+                new DocumentWorkflowStatus
+                {
+                    WorkflowId = (Guid)workflowId!,
+                    StatusDoc = StatusDoc.Pending,
+                    StatusDocWorkflow = StatusDocWorkflow.Pending,
+                    CurrentWorkflowFlow = workflowFlow,
+                    UpdatedAt = DateTime.Now
+                }
+            ]
         };
-        var version = new DocumentVersion()
+
+        var version = new DocumentVersion
         {
-            //TODO missing docUrl
             VersionNumber = "1",
             CreateDate = DateTime.Now,
-            IsFinalVersion = true,
+            IsFinalVersion = true
         };
+        document.DocumentVersions.Add(version);
+        await _unitOfWork.DocumentUOW.AddAsync(document);
+        await _unitOfWork.SaveChangesAsync();
 
-        var index = 0;
-        if (singingDates != null)
+        var url = _fileService.CreateAVersionFromUpload(documentUploadDto.CannotChange["fileName"]?.ToString(),
+            version.DocumentVersionId, document.DocumentId, name);
+        version.DocumentVersionUrl = url;
+
+        document.DateIssued = DateTime.Today.ToString("yyyy-MM-dd");
+        await _unitOfWork.DocumentUOW.UpdateAsync(document);
+        await _unitOfWork.SaveChangesAsync();
+
+        if (workflowId == Guid.Empty)
+            return ResponseUtil.Error("Invalid Workflow ID", "Operation Failed", HttpStatusCode.BadRequest);
+
+        var workflow = await _unitOfWork.WorkflowUOW.FindWorkflowByIdAsync(workflowId);
+        if (workflow == null)
+            return ResponseUtil.Error("Workflow Not Found", "Operation Failed", HttpStatusCode.NotFound);
+
+        var result = _mapper.Map<WorkflowDto>(workflow);
+        var doc = _mapper.Map<DocumentDto>(document);
+        doc.DocumentVersion = _mapper.Map<DocumentVersionDto>(version);
+
+        return ResponseUtil.GetCollection(new List<object> { result, doc }, "Success", HttpStatusCode.OK, 2, 1, 2, 2);
+    }
+
+    public async Task<IActionResult> GetDocumentById(Guid documentId, string version)
+    {
+        var document = await _unitOfWork.DocumentUOW.FindDocumentByIdAsync(documentId);
+        var versionId = document.DocumentVersions.FirstOrDefault(x => x.VersionNumber == version)?.DocumentVersionId;
+        return await _fileService.GetPdfFile(Path.Combine("document", documentId.ToString(), versionId.ToString(),
+            document.DocumentName + ".pdf"));
+    }
+
+    public async Task<ResponseDto> UpdateConfirmTaskWithDocument(Guid documentId)
+    {
+        var document = await _unitOfWork.DocumentUOW.FindDocumentByIdAsync(documentId);
+        var version = document.DocumentVersions.FirstOrDefault(x => x.IsFinalVersion);
+        switch (document.DocumentWorkflowStatuses.FirstOrDefault().Workflow.Scope)
         {
-            
-            var signatures = singingDates.Select(si =>
+            case Scope.InComing:
+                var archiveId = Guid.NewGuid();
+                //TODO Send notification
+                var archiveDocument = new ArchivedDocument
                 {
-                    if (validFroms != null && expirationDates != null )
-                            return new DocumentSignature()
-                            {
-                                SignedAt = si,
-                                DigitalCertificate = new DigitalCertificate()
-                                {
-                                    Subject = signerNames?[index],
-                                    SerialNumber = serialNumbers?[index],
-                                    ValidTo = expirationDates[index],
-                                    Issuer = issuers?[index],
-                                    ValidFrom = validFroms[index]
-                                },
-                                OrderIndex = index++
-                            };
+                    ArchivedDocumentId = archiveId,
+                    ArchivedDocumentName = document.DocumentName,
+                    ArchivedDocumentContent = document.DocumentContent,
+                    NumberOfDocument = document.NumberOfDocument,
+                    CreatedDate = DateTime.Now,
+                    Sender = document.Sender,
+                    CreatedBy = document.User.UserName,
+                    ExternalPartner = document.Sender,
+                    ArchivedDocumentStatus = ArchivedDocumentStatus.Completed,
+                    DateIssued = DateTime.Parse(document.DateIssued),
+                    DateReceived = document.DateReceived,
+                    DateSented = document.DateReceived,
+                    DocumentRevokeId = null,
+                    DocumentReplaceId = null,
+                    Scope = document.DocumentWorkflowStatuses.FirstOrDefault().Workflow.Scope,
+                    IsTemplate = false,
+                    DocumentType = document.DocumentType,
+                    FinalDocumentId = document.DocumentId,
+                    ArchivedDocumentUrl = _fileService.ArchiveDocument(document.DocumentName, documentId,
+                        version.DocumentVersionId, archiveId)
+                };
+                var listSignature = version.DocumentSignatures.Select(signature => new ArchiveDocumentSignature
+                {
+                    SignedAt = signature.SignedAt, OrderIndex = signature.OrderIndex,
+                    DigitalCertificate = signature.DigitalCertificate
+                }).ToList();
+                archiveDocument.ArchiveDocumentSignatures = listSignature;
+                document.ProcessingStatus = ProcessingStatus.Archived;
+                await _unitOfWork.DocumentUOW.UpdateAsync(document);
+                await _unitOfWork.ArchivedDocumentUOW.AddAsync(archiveDocument);
+                await _unitOfWork.SaveChangesAsync();
 
-                    return null;
-                })
-                .ToList();
-            version.DocumentSignatures = signatures;
-            if (document.DocumentVersions != null) document.DocumentVersions.Add(version);
-            else
-            {
-                document.DocumentVersions =
-                [
-                    version
-                ];
-            }
-            await _unitOfWork.DocumentUOW.AddAsync(document);
+                break;
+            case Scope.OutGoing:
+                break;
+            case Scope.Division:
+                break;
+            case Scope.School:
+                break;
+            default:
+                return ResponseUtil.Error("Invalid Workflow Scope", "Operation Failed", HttpStatusCode.BadRequest);
         }
-        else
-        {
-            return ResponseUtil.Error("singingDates null", "singingDates null", HttpStatusCode.BadRequest);
-        }
-        
 
-        return ResponseUtil.GetObject(document, "oke", HttpStatusCode.OK, 0);
-    }
-    
-    public Task<IActionResult> GetDocumentById(Guid documentId)
-    {
-        return _fileService.GetPdfFile(documentId);
+        return ResponseUtil.GetObject("oke", "Success", HttpStatusCode.OK, 1);
     }
 
-    public Task<IActionResult> GetDocumentByName(string documentName)
+    public async Task<IActionResult> GetArchiveDocumentById(Guid documentId, string? version)
     {
-        return _fileService.GetPdfFile(documentName);
+        var document = await _unitOfWork.ArchivedDocumentUOW.FindArchivedDocumentByIdAsync(documentId);
+        return await _fileService.GetPdfFile(Path.Combine("archive_document", documentId.ToString(),
+            document.ArchivedDocumentName + ".pdf"));
     }
 
     public async Task<ResponseDto> UploadDocument(IFormFile file, string userId)
@@ -215,107 +212,55 @@ public partial class DocumentService : IDocumentService
         var fileName = Path.GetFileName(url);
         var metaData = CheckMetaDataFile(url);
         var user = await _unitOfWork.UserUOW.FindUserByIdAsync(Guid.Parse(userId));
+
         if (metaData?.Any(meta => !meta.IsValid) == true)
             return ResponseUtil.Error("null", "Signature is not valid", HttpStatusCode.BadRequest);
 
         var aiResponse = await _externalApiService.ScanPdfAsync(url);
-        
-        var canChange = new Dictionary<string, object?>();
-        var cannotChange = new Dictionary<string, object?>();
-        
-        canChange.Add("Name", aiResponse.DocumentName);
-        canChange.Add("NumberOfDocument", aiResponse.NumberOfDocument);
-        canChange.Add("DocumentContent",aiResponse.DocumentContent);
-        canChange.Add("Sender",null);
-        canChange.Add("Receiver",user?.UserName);
-        canChange.Add("DateReceived", null);
-        canChange.Add("DocumentTypeId",null);
-        canChange.Add("WorkflowId",null);
-        canChange.Add("Deadline",null);
-        canChange.Add("NewSignerName",null);
-        
-        cannotChange.Add("SignatureName",metaData?.Select(x => x.SignatureName).ToList());
-        cannotChange.Add("Issuer",metaData?.Select(x => x.Issuer).ToList());
-        cannotChange.Add("SignerName",metaData?.Select(x => x.SignerName).ToList());
-        cannotChange.Add("SingingDate",metaData?.Select(x => x.SingingDate).ToList());
-        cannotChange.Add("Reason",metaData?.Select(x => x.Reason).ToList());
-        cannotChange.Add("Location",metaData?.Select(x => x.Location).ToList());
-        cannotChange.Add("IsValid",metaData?.Select(x => x.IsValid).ToList());
-        cannotChange.Add("SerialNumber",metaData?.Select(x => x.SerialNumber).ToList());
-        cannotChange.Add("ValidFrom",metaData?.Select(x => x.ValidFrom).ToList());
-        cannotChange.Add("ExpirationDate",metaData?.Select(x => x.ExpirationDate).ToList());
-        cannotChange.Add("Algorithm",metaData?.Select(x => x.Algorithm).ToList());
-        cannotChange.Add("Valid",metaData?.Select(x => x.ValidFrom).ToList());
-        cannotChange.Add("fileName",fileName);
+
+        var canChange = new Dictionary<string, object?>
+        {
+            { "Name", aiResponse.DocumentName },
+            { "NumberOfDocument", aiResponse.NumberOfDocument },
+            { "DocumentContent", aiResponse.DocumentContent },
+            { "Sender", null },
+            { "Receiver", user?.UserName },
+            { "DateReceived", null },
+            { "DocumentTypeId", null },
+            { "WorkflowId", null },
+            { "Deadline", null },
+            { "NewSignerName", null }
+        };
+
+        var cannotChange = new Dictionary<string, object?>
+        {
+            { "SignatureName", metaData?.Select(x => x.SignatureName).ToList() },
+            { "Issuer", metaData?.Select(x => x.Issuer).ToList() },
+            { "SignerName", metaData?.Select(x => x.SignerName).ToList() },
+            { "SingingDate", metaData?.Select(x => x.SingingDate).ToList() },
+            { "Reason", metaData?.Select(x => x.Reason).ToList() },
+            { "Location", metaData?.Select(x => x.Location).ToList() },
+            { "IsValid", metaData?.Select(x => x.IsValid).ToList() },
+            { "SerialNumber", metaData?.Select(x => x.SerialNumber).ToList() },
+            { "ValidFrom", metaData?.Select(x => x.ValidFrom).ToList() },
+            { "ExpirationDate", metaData?.Select(x => x.ExpirationDate).ToList() },
+            { "Algorithm", metaData?.Select(x => x.Algorithm).ToList() },
+            { "Valid", metaData?.Select(x => x.ValidFrom).ToList() },
+            { "fileName", fileName }
+        };
 
         var docDto = new DocumentUploadDto
         {
             CanChange = canChange,
             CannotChange = cannotChange
         };
-        
-        // var listSignature = metaData?.Select((signature, index) => new DocumentSignature
-        // {
-        //     SignedAt = signature.SingingDate,
-        //     OrderIndex = index + 1,
-        //     DigitalCertificate = new DigitalCertificate
-        //     {
-        //         Subject = signature.SignerName,
-        //         SerialNumber = signature.SerialNumber,
-        //         ValidFrom = signature.ValidFrom,
-        //         Issuer = signature.Issuer,
-        //         ValidTo = signature.ExpirationDate
-        //     }
-        // }).ToList() ?? [];
-
-        // var document = new Document
-        // {
-        //     ProcessingStatus = ProcessingStatus.InProgress,
-        //     DocumentName = aiResponse.DocumentName,
-        //     DocumentContent = aiResponse.DocumentContent,
-        //     DateIssued = aiResponse.DateIssued,
-        //     NumberOfDocument = aiResponse.NumberOfDocument,
-        //     CreatedDate = DateTime.UtcNow,
-        //     UserId = Guid.Parse(userId),
-        //     IsDeleted = false,
-        //     DocumentType = docType,
-        //     DocumentVersions = new List<DocumentVersion>
-        //     {
-        //         new DocumentVersion
-        //         {
-        //             VersionNumber = "1",
-        //             DocumentVersionUrl = url,
-        //             CreateDate = DateTime.Now,
-        //             IsFinalVersion = true,
-        //             DocumentSignatures = listSignature
-        //         }
-        //     }
-        // };
-        //
-        // await SaveDocumentAsync(document);
-
-        // if (metaData != null)
-        //     await ProcessMetaDataAsync(metaData, document, Guid.Parse(userId));
-
-        // var signBy = ExtractSigners(document.DocumentVersions
-        //     .OrderByDescending(v => int.Parse(v.VersionNumber!))
-        //     .FirstOrDefault()?.DocumentSignatures ?? new List<DocumentSignature>());
-
-        // var docDto = new DocumentUploadDto
-        // {
-        //     url = _host+"/api/Document/view-download-document-by-name?documentName="+fileName,
-        //     DocumentId = document.DocumentId,
-        //     Name = document.DocumentName,
-        //     Sender = document.Sender,
-        //     DateReceived = document.DateReceived,
-        //     NumberOfDocument = document.NumberOfDocument,
-        //     DocumentTypeName = document.DocumentType?.DocumentTypeName,
-        //     WorkflowName = document.DocumentWorkflowStatuses?.FirstOrDefault()?.Workflow?.WorkflowName,
-        //     SignByName = signBy,
-        //     DocumentContent = document.DocumentContent
-        // };
 
         return ResponseUtil.GetObject(docDto, "oke", HttpStatusCode.OK, 1);
+    }
+
+    public Task<IActionResult> GetDocumentByName(string documentName)
+    {
+        return _fileService.GetPdfFile(documentName);
     }
 
     private async Task SaveDocumentAsync(Document document)
@@ -328,7 +273,8 @@ public partial class DocumentService : IDocumentService
     {
         foreach (var (meta, index) in metaData.Select((meta, index) => (meta, index)))
         {
-            var certificate = (DigitalCertificate)(await _digitalCertificateService.CreateCertificate(meta, userId)).Content;
+            var certificate =
+                (DigitalCertificate)(await _digitalCertificateService.CreateCertificate(meta, userId)).Content;
             await _documentSignatureService.CreateSignature(document, certificate, meta, userId, index);
         }
     }

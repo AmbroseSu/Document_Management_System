@@ -31,7 +31,10 @@ public class WorkflowRepository : IWorkflowRepository
     public async Task<Workflow?> FindWorkflowByIdAsync(Guid? id)
     {
         if (id == null) throw new ArgumentNullException(nameof(id));
-        return await _workflowDao.FindByAsync(u => u.WorkflowId == id);
+        return await _workflowDao.FindByAsync(u => u.WorkflowId == id,
+            u => u
+                .Include(d => d.WorkflowFlows)
+                );
     }
     
     public async Task<Workflow?> FindWorkflowByNameAsync(string? name)

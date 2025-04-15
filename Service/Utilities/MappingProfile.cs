@@ -119,12 +119,11 @@ public class MappingProfile : Profile
         CreateMap<WorkflowDto, Workflow>();
         CreateMap<Step, StepDto>();
         CreateMap<StepDto, Step>();
-        CreateMap<Tasks, TaskDto>();
-        CreateMap<TaskDto, Tasks>();
+        CreateMap<Task, TaskDto>();
+        CreateMap<TaskDto, Task>();
+        CreateMap<DocumentDto, Document>();
         CreateMap<Document, DocumentDto>();
-            //.ForMember(dest => dest.Tasks, opt => opt.Ignore());
-
-            CreateMap<DocumentDto, Document>();
-            //.ForMember(dest => dest.Tasks, opt => opt.Ignore());
+        CreateMap<DocumentVersion, DocumentVersionDto>();
+        CreateMap<DocumentVersionDto, DocumentVersion>();
     }
 }
