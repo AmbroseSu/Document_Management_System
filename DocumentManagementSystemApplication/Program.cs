@@ -147,6 +147,7 @@ builder.Services.AddCors(options =>
 });
 
 /*builder.Services.AddScoped(typeof(IBaseRepository<>), typeof(BaseRepository<>));*/
+builder.Services.AddSingleton<MongoDbService>();
 builder.Services.AddScoped<IExternalApiService, ExternalApiService>();
 builder.Services.AddScoped<IRedisCacheRepository, RedisCacheRepository>();
 builder.Services.AddHostedService<StartupTaskService>();
@@ -194,6 +195,7 @@ builder.Services.AddScoped<IArchiveDocumentSignatureRepository, ArchiveDocumentS
 builder.Services.AddScoped<IDocumentService, DocumentService>();
 builder.Services.AddScoped<IFileService, FileService>();
 builder.Services.AddSingleton<IUserIdProvider, NameIdentifierUserIdProvider>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
 
 builder.WebHost.UseKestrel();
 

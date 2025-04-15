@@ -1,4 +1,3 @@
-/*
 using BusinessObject;
 using Microsoft.Extensions.Configuration;
 using MongoDB.Driver;
@@ -17,12 +16,14 @@ public class MongoDbService
         _database = client.GetDatabase(config["MongoSettings:DatabaseName"]);
         _notifications = _database.GetCollection<Notification>("Notifications");
     }
+    
+    public IMongoCollection<Notification> Notifications => _notifications;
 
     public async Task CreateNotificationAsync(Notification notification)
     {
         await _notifications.InsertOneAsync(notification);
     }
 
+
 }
-*/
 

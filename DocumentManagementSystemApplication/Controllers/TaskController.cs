@@ -1,6 +1,7 @@
 using BusinessObject;
 using BusinessObject.Enums;
 using DataAccess.DTO;
+using DocumentManagementSystemApplication.Middleware;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
@@ -41,6 +42,7 @@ namespace DocumentManagementSystemApplication.Controllers
         }
 
         [HttpPost("create-handle-task-action")]
+        [AuthorizeResource("[Task] Create Handle Task Action")]
         public async Task<ResponseDto> HandleTaskAction([FromQuery] Guid taskId, [FromQuery] Guid userId,
             [FromQuery] TaskAction action)
         {
