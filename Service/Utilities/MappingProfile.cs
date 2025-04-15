@@ -119,8 +119,8 @@ public class MappingProfile : Profile
         CreateMap<WorkflowDto, Workflow>();
         CreateMap<Step, StepDto>();
         CreateMap<StepDto, Step>();
-        CreateMap<Task, TaskDto>();
-        CreateMap<TaskDto, Task>();
+        CreateMap<Tasks, TaskDto>();
+        CreateMap<TaskDto, Tasks>();
         CreateMap<DocumentDto, Document>();
         CreateMap<Document, DocumentDto>();
         CreateMap<DocumentVersion, DocumentVersionDto>();
