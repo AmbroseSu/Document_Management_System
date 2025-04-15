@@ -50,7 +50,7 @@ namespace DocumentManagementSystemApplication.Controllers
             return Ok(new { message = "Notification sent" });
         }
         
-        [HttpPost("create-send-to-user")]
+        /*[HttpPost("create-send-to-user")]
         [AuthorizeResource("[Archivedocument] Create Send To User")]
         public async Task<IActionResult> SendToUser([FromQuery] string userId, [FromQuery] string message)
         {
@@ -59,6 +59,6 @@ namespace DocumentManagementSystemApplication.Controllers
                 .SendAsync("ReceiveMessage", message);
 
             return Ok(new { message = $"Notification sent to user {userId}" });
-        }
+        }*/
     }
 }

@@ -2,9 +2,11 @@ using System.Net;
 using AutoMapper;
 using BusinessObject;
 using BusinessObject.Enums;
+using DataAccess;
 using DataAccess.DTO;
 using DataAccess.DTO.Response;
 using Microsoft.AspNetCore.SignalR;
+using MongoDB.Driver;
 using Repository;
 using Service.Response;
 using Service.SignalRHub;
@@ -16,13 +18,17 @@ public class TaskService : ITaskService
 {
     private readonly IMapper _mapper;
     private readonly IUnitOfWork _unitOfWork;
-    //private readonly IHubContext<NotificationHub> _hubContext;
+    private readonly INotificationService _notificationService;
+    private readonly MongoDbService _notificationCollection;
+    private readonly IHubContext<NotificationHub> _hubContext;
 
-    public TaskService(IMapper mapper, IUnitOfWork unitOfWork/*, IHubContext<NotificationHub> hubContext*/)
+    public TaskService(IMapper mapper, IUnitOfWork unitOfWork, INotificationService notificationService, MongoDbService notificationCollection , IHubContext<NotificationHub> hubContext)
     {
         _mapper = mapper;
         _unitOfWork = unitOfWork;
-        //_hubContext = hubContext;
+        _notificationService = notificationService;
+        _notificationCollection = notificationCollection;
+        _hubContext = hubContext;
     }
     
     public async Task<ResponseDto> CreateTask(TaskDto taskDto)
@@ -437,6 +443,7 @@ public class TaskService : ITaskService
     
     public async Task<ResponseDto> HandleTaskActionAsync(Guid taskId, Guid userId, TaskAction action)
     {
+        using var transaction = await _unitOfWork.BeginTransactionAsync();
         try
         {
             var task = await _unitOfWork.TaskUOW.FindTaskByIdAsync(taskId);
@@ -452,6 +459,7 @@ public class TaskService : ITaskService
             task.TaskStatus = TasksStatus.InProgress;
             task.UpdatedDate = DateTime.UtcNow;
             await _unitOfWork.SaveChangesAsync();
+            await transaction.CommitAsync();
             // Gửi thông báo cho người tạo: "Người A đã nhận xử lý"
             return ResponseUtil.GetObject(ResponseMessages.TaskHadAccepted, ResponseMessages.CreatedSuccessfully,
                 HttpStatusCode.OK, 1);
@@ -462,6 +470,7 @@ public class TaskService : ITaskService
             task.TaskStatus = TasksStatus.Revised;
             task.UpdatedDate = DateTime.UtcNow;
             await _unitOfWork.SaveChangesAsync();
+            await transaction.CommitAsync();
             // Gửi thông báo cho người tạo: "Người A từ chối xử lý"
             return ResponseUtil.GetObject(ResponseMessages.TaskHadRejected, ResponseMessages.CreatedSuccessfully,
                 HttpStatusCode.OK, 1);
@@ -497,7 +506,9 @@ public class TaskService : ITaskService
             // return await PromoteToNextStepOrFlow(task.Step, task.DocumentId!.Value);
             //return ResponseUtil.GetObject(ResponseMessages.TaskApproved, ResponseMessages.CreatedSuccessfully,
                 //HttpStatusCode.OK, 1);
-                return await ActivateNextTask(task);
+                var result = await ActivateNextTask(task);
+                await transaction.CommitAsync();
+                return result;
         }
         
         case TaskAction.RejectDocument:
@@ -530,7 +541,7 @@ public class TaskService : ITaskService
 
             // 4. Gửi thông báo
             // TODO: Gửi thông báo cho người tạo tài liệu + người liên quan: "Tài liệu đã bị từ chối ở bước XYZ bởi User A"
-
+            await transaction.CommitAsync();
             return ResponseUtil.GetObject(ResponseMessages.DocumentRejected, ResponseMessages.OperationFailed, HttpStatusCode.BadRequest, 1);
         }
 
@@ -540,6 +551,7 @@ public class TaskService : ITaskService
         }
         catch (Exception e)
         {
+            await transaction.RollbackAsync();
             return ResponseUtil.Error(e.Message, ResponseMessages.OperationFailed,
                 HttpStatusCode.BadRequest);
         }
@@ -562,6 +574,11 @@ public class TaskService : ITaskService
             nextTask.UpdatedDate = DateTime.UtcNow;
 
             // TODO: Gửi thông báo đến nextTask.UserId
+            
+            var notification = _notificationService.CreateNextUserDoTaskNotification(nextTask, nextTask.UserId);
+            await _notificationCollection.CreateNotificationAsync(notification);
+            await _hubContext.Clients.User(notification.UserId.ToString()).SendAsync("ReceiveMessage", notification);
+
             await _unitOfWork.SaveChangesAsync();
 
             return ResponseUtil.GetObject($"Đến lượt duyệt tiếp theo:{nextTask.UserId}", ResponseMessages.CreatedSuccessfully,
@@ -584,6 +601,9 @@ public class TaskService : ITaskService
                 firstTaskInNextStep.UpdatedDate = DateTime.UtcNow;
 
                 // TODO: Gửi thông báo
+                var notification = _notificationService.CreateNextUserDoTaskNotification(firstTaskInNextStep, firstTaskInNextStep.UserId);
+                await _notificationCollection.CreateNotificationAsync(notification);
+                await _hubContext.Clients.User(notification.UserId.ToString()).SendAsync("ReceiveMessage", notification);
                 await _unitOfWork.SaveChangesAsync();
 
                 return ResponseUtil.GetObject($"Chuyển sang bước tiếp theo: {firstTaskInNextStep.UserId}", ResponseMessages.CreatedSuccessfully,
@@ -653,7 +673,9 @@ public class TaskService : ITaskService
                     await _unitOfWork.DocumentWorkflowStatusUOW.AddAsync(nextDocumentWorkflowflowStatus);
                     await _unitOfWork.SaveChangesAsync();
                 }
-                
+                var notification = _notificationService.CreateNextUserDoTaskNotification(firstTask, firstTask.UserId);
+                await _notificationCollection.CreateNotificationAsync(notification);
+                await _hubContext.Clients.User(notification.UserId.ToString()).SendAsync("ReceiveMessage", notification);
                 
                 return ResponseUtil.GetObject($"Chuyển sang Flow tiếp theo: {firstTask.UserId}", ResponseMessages.CreatedSuccessfully,
                     HttpStatusCode.OK, 1);
