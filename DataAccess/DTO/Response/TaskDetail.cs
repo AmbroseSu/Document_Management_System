@@ -8,4 +8,5 @@ public class TaskDetail
     public Scope Scope { get; set; }
     public string WorkflowName { get; set; }
     public string StepAction { get; set; }
+    public string DocumentTypeName { get; set; }
 }
