@@ -174,6 +174,7 @@ public class TaskService : ITaskService
                taskDetail.Scope = task.Document.DocumentWorkflowStatuses.FirstOrDefault().Workflow.Scope;
                taskDetail.WorkflowName = task.Document.DocumentWorkflowStatuses.FirstOrDefault().Workflow.WorkflowName;
                taskDetail.StepAction = task.Step.Action;
+               taskDetail.DocumentTypeName = task.Document.DocumentType.DocumentTypeName;
                taskDetails.Add(taskDetail);
            }
            
@@ -214,6 +215,7 @@ public class TaskService : ITaskService
            result.Scope = task.Document.DocumentWorkflowStatuses.FirstOrDefault().Workflow.Scope;
            result.WorkflowName = task.Document.DocumentWorkflowStatuses.FirstOrDefault().Workflow.WorkflowName;
            result.StepAction = task.Step.Action;
+           result.DocumentTypeName = task.Document.DocumentType.DocumentTypeName;
            return ResponseUtil.GetObject(result, ResponseMessages.GetSuccessfully, HttpStatusCode.OK, 1);
        }
        catch (Exception e)
