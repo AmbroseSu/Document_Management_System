@@ -94,8 +94,17 @@ public class RoleResourceService : IRoleResourceService
 
                         if (existingRoleResource != null)
                         {
-                            existingRoleResource.IsDeleted = false;
-                            await _unitOfWork.RoleResourceUOW.UpdateAsync(existingRoleResource);
+                            if (existingRoleResource.IsDeleted)
+                            {
+                                existingRoleResource.IsDeleted = false;
+                                await _unitOfWork.RoleResourceUOW.UpdateAsync(existingRoleResource);
+                            }
+                            else
+                            {
+                                existingRoleResource.IsDeleted = true;
+                                await _unitOfWork.RoleResourceUOW.UpdateAsync(existingRoleResource);
+                            }
+                            
                         }
                         else
                         {

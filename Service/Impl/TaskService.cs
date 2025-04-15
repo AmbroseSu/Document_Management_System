@@ -49,7 +49,7 @@ public class TaskService : ITaskService
             if (taskDto.EndDate <= taskDto.StartDate)
                 return ResponseUtil.Error(ResponseMessages.TaskEndDayFailed, ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
             
-            var existingTasks = await _unitOfWork.TaskUOW.FindTaskByStepIdAsync(taskDto.StepId);
+            var existingTasks = await _unitOfWork.TaskUOW.FindTaskByStepIdDocIdAsync(taskDto.StepId, taskDto.DocumentId);
             var nextTaskNumber = existingTasks.Count() + 1;
             
 
@@ -152,6 +152,70 @@ public class TaskService : ITaskService
         }
     }
     
+    public async Task<ResponseDto> FindAllTasksAsync(Guid userId, int page, int limit)
+   {
+       try
+       {
+           var tasks = await _unitOfWork.TaskUOW.FindAllTaskAsync(userId);
+
+           var taskDetails = new List<TaskDetail>();
+           
+           foreach (var task in tasks)
+           {
+               var taskDto = _mapper.Map<TaskDto>(task);
+               var taskDetail = new TaskDetail();
+               taskDetail.TaskDto = taskDto;
+               taskDetail.Scope = task.Document.DocumentWorkflowStatuses.FirstOrDefault().Workflow.Scope;
+               taskDetail.WorkflowName = task.Document.DocumentWorkflowStatuses.FirstOrDefault().Workflow.WorkflowName;
+               taskDetail.StepAction = task.Step.Action;
+               taskDetails.Add(taskDetail);
+           }
+           
+           
+           var totalRecords = tasks.Count();
+           var totalPages = (int)Math.Ceiling((double)totalRecords / limit);
+
+           IEnumerable<TaskDetail> tasksResults = taskDetails
+               .Skip((page - 1) * limit)
+               .Take(limit)
+               .ToList();
+           
+           // var result = _mapper.Map<IEnumerable<TaskDto>>(tasksResults);
+           return ResponseUtil.GetCollection(tasksResults, ResponseMessages.GetSuccessfully, HttpStatusCode.OK, tasks.Count(), 1, 10, totalPages);
+       }
+       catch (Exception e)
+       {
+           return ResponseUtil.Error(e.Message, ResponseMessages.OperationFailed, HttpStatusCode.InternalServerError);
+       }
+   }
+    
+   public async Task<ResponseDto> FindTaskByIdAsync(Guid id)
+   {
+       try
+       {
+           if (id == Guid.Empty)
+               return ResponseUtil.Error(ResponseMessages.TaskIdInvalid, ResponseMessages.OperationFailed,
+                   HttpStatusCode.BadRequest);
+           
+           var task = await _unitOfWork.TaskUOW.FindTaskByIdAsync(id);
+           if (task == null)
+               return ResponseUtil.Error(ResponseMessages.TaskNotFound, ResponseMessages.OperationFailed,
+                   HttpStatusCode.NotFound);
+           
+           var taskDto = _mapper.Map<TaskDto>(task);
+           var result = new TaskDetail();
+           result.TaskDto = taskDto;
+           result.Scope = task.Document.DocumentWorkflowStatuses.FirstOrDefault().Workflow.Scope;
+           result.WorkflowName = task.Document.DocumentWorkflowStatuses.FirstOrDefault().Workflow.WorkflowName;
+           result.StepAction = task.Step.Action;
+           return ResponseUtil.GetObject(result, ResponseMessages.GetSuccessfully, HttpStatusCode.OK, 1);
+       }
+       catch (Exception e)
+       {
+           return ResponseUtil.Error(e.Message, ResponseMessages.OperationFailed, HttpStatusCode.InternalServerError);
+       }
+   }
+    
     
     public async Task<ResponseDto> GetDocumentsByTabForUser(Guid userId, DocumentTab tab, int page, int limit)
     {
@@ -204,9 +268,14 @@ public class TaskService : ITaskService
 
         case DocumentTab.Accepted:
         {
-            filteredDocuments = await allDocuments.WhereAsync(async doc =>
+            var acceptedDocuments = new List<Document>();
+
+            foreach (var doc in allDocuments)
             {
-                var orderedTasks = await GetOrderedTasks(doc.Tasks, doc.DocumentWorkflowStatuses.FirstOrDefault()?.WorkflowId ?? Guid.Empty);
+                var orderedTasks = await GetOrderedTasks(
+                    doc.Tasks,
+                    doc.DocumentWorkflowStatuses.FirstOrDefault()?.WorkflowId ?? Guid.Empty
+                );
 
                 for (int i = 0; i < orderedTasks.Count - 1; i++)
                 {
@@ -216,52 +285,67 @@ public class TaskService : ITaskService
                     if (currentTask.UserId == userId && currentTask.TaskStatus == TasksStatus.Completed)
                     {
                         if (nextTask.TaskStatus == TasksStatus.Completed)
-                            return true;
+                        {
+                            acceptedDocuments.Add(doc);
+                            break;
+                        }
                     }
                 }
 
                 var lastTask = orderedTasks.LastOrDefault();
-                if (lastTask != null && lastTask.UserId == userId && lastTask.TaskStatus == TasksStatus.Completed)
+                if (lastTask != null &&
+                    lastTask.UserId == userId &&
+                    lastTask.TaskStatus == TasksStatus.Completed &&
+                    !acceptedDocuments.Contains(doc)) // tránh thêm trùng nếu đã thêm ở trên
                 {
-                    return true;
+                    acceptedDocuments.Add(doc);
                 }
+            }
 
-                return false;
-            });
-
+            filteredDocuments = acceptedDocuments;
             break;
         }
 
 
         case DocumentTab.PendingApproval:
         {
-            filteredDocuments = await allDocuments.WhereAsync(async doc =>
+            var pendingApprovalDocuments = new List<Document>();
+
+            foreach (var doc in allDocuments)
             {
-                var orderedTasks = await GetOrderedTasks(doc.Tasks, doc.DocumentWorkflowStatuses.FirstOrDefault()?.WorkflowId ?? Guid.Empty);
+                var orderedTasks = await GetOrderedTasks(
+                    doc.Tasks,
+                    doc.DocumentWorkflowStatuses.FirstOrDefault()?.WorkflowId ?? Guid.Empty
+                );
 
                 for (int i = 0; i < orderedTasks.Count; i++)
                 {
                     var currentTask = orderedTasks[i];
 
-                    // Tìm task của user hiện tại có trạng thái Accepted
                     if (currentTask.UserId == userId && currentTask.TaskStatus == TasksStatus.InProgress)
                     {
-                        // Kiểm tra các task trước đó đều đã completed
-                        bool previousTasksCompleted = orderedTasks.Take(i).All(t => t.TaskStatus == TasksStatus.Completed);
+                        bool previousTasksCompleted = orderedTasks
+                            .Take(i)
+                            .All(t => t.TaskStatus == TasksStatus.Completed);
+
                         if (previousTasksCompleted)
-                            return true;
+                        {
+                            pendingApprovalDocuments.Add(doc);
+                            break;
+                        }
                     }
                 }
+            }
 
-                return false;
-            });
-
+            filteredDocuments = pendingApprovalDocuments;
             break;
         }
         
         case DocumentTab.Waiting:
         {
-            filteredDocuments = await allDocuments.WhereAsync(async doc =>
+            var waitingDocuments = new List<Document>();
+
+            foreach (var doc in allDocuments)
             {
                 var orderedTasks = await GetOrderedTasks(doc.Tasks, doc.DocumentWorkflowStatuses.FirstOrDefault()?.WorkflowId ?? Guid.Empty);
 
@@ -272,17 +356,16 @@ public class TaskService : ITaskService
 
                     if (currentTask.UserId == userId && currentTask.TaskStatus == TasksStatus.Completed)
                     {
-                        // Nếu task kế tiếp chưa completed và không phải của user hiện tại
                         if (nextTask.TaskStatus != TasksStatus.Completed && nextTask.UserId != userId)
                         {
-                            return true;
+                            waitingDocuments.Add(doc);
+                            break; // Thỏa điều kiện => thêm document và thoát vòng lặp
                         }
                     }
                 }
+            }
 
-                return false;
-            });
-
+            filteredDocuments = waitingDocuments;
             break;
         }
     }
@@ -354,7 +437,9 @@ public class TaskService : ITaskService
     
     public async Task<ResponseDto> HandleTaskActionAsync(Guid taskId, Guid userId, TaskAction action)
     {
-        var task = await _unitOfWork.TaskUOW.FindTaskByIdAsync(taskId);
+        try
+        {
+            var task = await _unitOfWork.TaskUOW.FindTaskByIdAsync(taskId);
 
     if (task == null || task.UserId != userId)
         return ResponseUtil.Error(ResponseMessages.TaskNotExists, ResponseMessages.OperationFailed,
@@ -452,6 +537,12 @@ public class TaskService : ITaskService
     }
         return ResponseUtil.Error(ResponseMessages.InvalidAction, ResponseMessages.OperationFailed,
             HttpStatusCode.BadRequest);
+        }
+        catch (Exception e)
+        {
+            return ResponseUtil.Error(e.Message, ResponseMessages.OperationFailed,
+                HttpStatusCode.BadRequest);
+        }
     }
     
     
@@ -473,7 +564,7 @@ public class TaskService : ITaskService
             // TODO: Gửi thông báo đến nextTask.UserId
             await _unitOfWork.SaveChangesAsync();
 
-            return ResponseUtil.GetObject($"Đến lượt duyệt tiếp theo:{nextTask.User.FullName}", ResponseMessages.CreatedSuccessfully,
+            return ResponseUtil.GetObject($"Đến lượt duyệt tiếp theo:{nextTask.UserId}", ResponseMessages.CreatedSuccessfully,
                 HttpStatusCode.OK, 1);
         }
 
@@ -495,7 +586,7 @@ public class TaskService : ITaskService
                 // TODO: Gửi thông báo
                 await _unitOfWork.SaveChangesAsync();
 
-                return ResponseUtil.GetObject($"Chuyển sang bước tiếp theo: {nextTask.User.FullName}", ResponseMessages.CreatedSuccessfully,
+                return ResponseUtil.GetObject($"Chuyển sang bước tiếp theo: {firstTaskInNextStep.UserId}", ResponseMessages.CreatedSuccessfully,
                     HttpStatusCode.OK, 1);
             }
         }
@@ -517,8 +608,9 @@ public class TaskService : ITaskService
     // Lấy tất cả WorkflowFlow của Workflow hiện tại, theo thứ tự
     var workflowFlows = await _unitOfWork.WorkflowFlowUOW.FindWorkflowFlowByWorkflowIdAsync(workflowId);
     var orderedWorkflowFlows = workflowFlows.OrderBy(wf => wf.FlowNumber).ToList();
-
+    
     var currentWorkflowFlowIndex = orderedWorkflowFlows.FindIndex(wf => wf.FlowId == currentFlow.FlowId);
+    var currentWorkflowFlow = orderedWorkflowFlows.Where(wf => wf.FlowId == currentFlow.FlowId ).FirstOrDefault();
     if (currentWorkflowFlowIndex < orderedWorkflowFlows.Count - 1)
     {
         var nextWorkflowFlow = orderedWorkflowFlows[currentWorkflowFlowIndex + 1];
@@ -539,7 +631,12 @@ public class TaskService : ITaskService
                 // TODO: Gửi thông báo
                 await _unitOfWork.SaveChangesAsync();
 
-                return ResponseUtil.GetObject($"Chuyển sang Flow tiếp theo: {firstTask.User.FullName}", ResponseMessages.CreatedSuccessfully,
+                var documentWorkflowflowStatus =
+                    await _unitOfWork.DocumentWorkflowStatusUOW
+                        .FindDocumentWorkflowStatusByWorkflowIdWorkflowFlowIdDocIdAsync(workflowId,
+                            currentWorkflowFlow!.WorkflowFlowId, documentId);
+                
+                return ResponseUtil.GetObject($"Chuyển sang Flow tiếp theo: {firstTask.UserId}", ResponseMessages.CreatedSuccessfully,
                     HttpStatusCode.OK, 1);
             }
         }
@@ -560,58 +657,13 @@ public class TaskService : ITaskService
 
     return ResponseUtil.Error("Không tìm thấy tài liệu", ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
 }
+   
+   
+   
     
    
 
-   public async Task<ResponseDto> FindAllTasksAsync(Guid userId, int page, int limit)
-   {
-       try
-       {
-           var tasks = await _unitOfWork.TaskUOW.FindAllTaskAsync(userId);
-           
-           var totalRecords = tasks.Count();
-           var totalPages = (int)Math.Ceiling((double)totalRecords / limit);
-
-           IEnumerable<Tasks> tasksResults = tasks
-               .Skip((page - 1) * limit)
-               .Take(limit)
-               .ToList();
-           
-           var result = _mapper.Map<IEnumerable<TaskDto>>(tasksResults);
-           return ResponseUtil.GetCollection(result, ResponseMessages.GetSuccessfully, HttpStatusCode.OK, tasks.Count(), 1, 10, 1);
-       }
-       catch (Exception e)
-       {
-           return ResponseUtil.Error(e.Message, ResponseMessages.OperationFailed, HttpStatusCode.InternalServerError);
-       }
-   }
-    
-   public async Task<ResponseDto> FindTaskByIdAsync(Guid id)
-   {
-       try
-       {
-           if (id == Guid.Empty)
-               return ResponseUtil.Error(ResponseMessages.TaskIdInvalid, ResponseMessages.OperationFailed,
-                   HttpStatusCode.BadRequest);
-           
-           var task = await _unitOfWork.TaskUOW.FindTaskByIdAsync(id);
-           if (task == null)
-               return ResponseUtil.Error(ResponseMessages.TaskNotFound, ResponseMessages.OperationFailed,
-                   HttpStatusCode.NotFound);
-           
-           var taskDto = _mapper.Map<TaskDto>(task);
-           var result = new TaskDetail();
-           result.TaskDto = taskDto;
-           result.Scope = task.Document.DocumentWorkflowStatuses.FirstOrDefault().Workflow.Scope;
-           result.WorkflowName = task.Document.DocumentWorkflowStatuses.FirstOrDefault().Workflow.WorkflowName;
-           result.StepAction = task.Step.Action;
-           return ResponseUtil.GetObject(result, ResponseMessages.GetSuccessfully, HttpStatusCode.OK, 1);
-       }
-       catch (Exception e)
-       {
-           return ResponseUtil.Error(e.Message, ResponseMessages.OperationFailed, HttpStatusCode.InternalServerError);
-       }
-   }
+   
     
     
 }

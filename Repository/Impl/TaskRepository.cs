@@ -28,17 +28,29 @@ public class TaskRepository : ITaskRepository
         await _taskDao.UpdateAsync(entity);
     }
     
+    public async Task<IEnumerable<Tasks>> FindTaskByStepIdDocIdAsync(Guid? stepId, Guid? documentId)
+    {
+        if (stepId == null) throw new ArgumentNullException(nameof(stepId));
+        if (documentId == null) throw new ArgumentNullException(nameof(documentId));
+        return await _taskDao.FindAsync(u => u.StepId == stepId && u.DocumentId == documentId && u.IsDeleted == false,
+            u => u.Include(s => s.Step).Include(d => d.Document));
+    }
+    
     public async Task<IEnumerable<Tasks>> FindTaskByStepIdAsync(Guid? id)
     {
         if (id == null) throw new ArgumentNullException(nameof(id));
-        return await _taskDao.FindAsync(u => u.StepId == id && u.IsDeleted == false,
-            u => u.Include(d => d.Document));
+        return await _taskDao.FindAsync(u => u.StepId == id  && u.IsDeleted == false,
+            u => u.Include(s => s.Step).Include(d => d.Document));
     }
+    
+    
     
     public async Task<Tasks?> FindTaskByIdAsync(Guid? id)
     {
         if (id == null) throw new ArgumentNullException(nameof(id));
-        return await _taskDao.FindByAsync(u => u.TaskId == id, t => t.Include(d => d.Document).ThenInclude(dws => dws.DocumentWorkflowStatuses)
+        return await _taskDao.FindByAsync(u => u.TaskId == id, 
+            t => t.Include(d => d.Document)
+                .ThenInclude(dws => dws.DocumentWorkflowStatuses)
             .ThenInclude(dwws => dwws.Workflow)
             .Include(ta => ta.Step)
             .ThenInclude(f => f.Flow)
@@ -88,11 +100,13 @@ public class TaskRepository : ITaskRepository
     {
        return await _taskDao.FindAsync(
             t => t.UserId == userId && t.IsDeleted == false,
-            q => q.Include(t => t.Document)
-                .Include(t => t.Step)
-                .ThenInclude(s => s.Flow)
-                .ThenInclude(f => f.WorkflowFlows)
-                .ThenInclude(wff => wff.Workflow)
+            q => q.Include(d => d.Document)
+                .ThenInclude(dws => dws.DocumentWorkflowStatuses)
+                .ThenInclude(dwws => dwws.Workflow)
+                .Include(ta => ta.Step)
+                .ThenInclude(f => f.Flow)
+                .ThenInclude(wff => wff.WorkflowFlows)
+                .ThenInclude(w => w.Workflow)
             );
        
     }

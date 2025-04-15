@@ -9,4 +9,7 @@ public interface IDocumentWorkflowStatusRepository
     Task<DocumentWorkflowStatus?> FindDocumentWorkflowStatusByIdAsync(Guid? id);
     // Task<DocumentWorkflowStatus?> FindDocumentWorkflowStatusByNameAsync(string? name);
     Task<IEnumerable<DocumentWorkflowStatus>> FindAllDocumentWorkflowStatusAsync();
+
+    Task<DocumentWorkflowStatus?> FindDocumentWorkflowStatusByWorkflowIdWorkflowFlowIdDocIdAsync(Guid? workflowId,
+        Guid? workflowFlowId, Guid? documentId);
 }
