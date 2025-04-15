@@ -13,11 +13,13 @@ public class RoleService : IRoleService
 {
     private readonly IMapper _mapper;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IRoleResourceService _roleResourceService;
 
-    public RoleService(IUnitOfWork unitOfWork, IMapper mapper)
+    public RoleService(IUnitOfWork unitOfWork, IMapper mapper, IRoleResourceService roleResourceService)
     {
         _unitOfWork = unitOfWork;
         _mapper = mapper;
+        _roleResourceService = roleResourceService;
     }
 
 
@@ -66,6 +68,7 @@ public class RoleService : IRoleService
             roleNew.CreatedDate = DateTime.Now;
             await _unitOfWork.RoleUOW.AddAsync(roleNew);
             await _unitOfWork.SaveChangesAsync();
+            await _roleResourceService.ScanAndSaveRoleResourcesAsync();
             var result = _mapper.Map<RoleDto>(roleNew);
             return ResponseUtil.GetObject(result, ResponseMessages.CreatedSuccessfully, HttpStatusCode.Created, 1);
         }
