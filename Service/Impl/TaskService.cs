@@ -168,6 +168,11 @@ public class TaskService : ITaskService
            
            foreach (var task in tasks)
            {
+               var document = await _unitOfWork.DocumentUOW.FindDocumentByIdAsync(task.DocumentId!.Value);
+               if (document == null)
+                   return ResponseUtil.Error(ResponseMessages.DocumentNotFound, ResponseMessages.OperationFailed,
+                       HttpStatusCode.NotFound);
+               var orderedTasks = await GetOrderedTasks(document.Tasks, document.DocumentWorkflowStatuses.FirstOrDefault()?.WorkflowId ?? Guid.Empty);
                var taskDto = _mapper.Map<TaskDto>(task);
                var taskDetail = new TaskDetail();
                taskDetail.TaskDto = taskDto;
@@ -175,6 +180,8 @@ public class TaskService : ITaskService
                taskDetail.WorkflowName = task.Document.DocumentWorkflowStatuses.FirstOrDefault().Workflow.WorkflowName;
                taskDetail.StepAction = task.Step.Action;
                taskDetail.DocumentTypeName = task.Document.DocumentType.DocumentTypeName;
+               var user = await _unitOfWork.UserUOW.FindUserByIdAsync(orderedTasks.First().UserId);
+                taskDetail.UserNameCreateTask = user.FullName;
                taskDetails.Add(taskDetail);
            }
            
@@ -208,7 +215,12 @@ public class TaskService : ITaskService
            if (task == null)
                return ResponseUtil.Error(ResponseMessages.TaskNotFound, ResponseMessages.OperationFailed,
                    HttpStatusCode.NotFound);
-           
+           var document = await _unitOfWork.DocumentUOW.FindDocumentByIdAsync(task.DocumentId!.Value);
+              if (document == null)
+                return ResponseUtil.Error(ResponseMessages.DocumentNotFound, ResponseMessages.OperationFailed,
+                     HttpStatusCode.NotFound);
+              var orderedTasks = await GetOrderedTasks(document.Tasks, document.DocumentWorkflowStatuses.FirstOrDefault()?.WorkflowId ?? Guid.Empty);
+              
            var taskDto = _mapper.Map<TaskDto>(task);
            var result = new TaskDetail();
            result.TaskDto = taskDto;
@@ -216,6 +228,8 @@ public class TaskService : ITaskService
            result.WorkflowName = task.Document.DocumentWorkflowStatuses.FirstOrDefault().Workflow.WorkflowName;
            result.StepAction = task.Step.Action;
            result.DocumentTypeName = task.Document.DocumentType.DocumentTypeName;
+           var user = await _unitOfWork.UserUOW.FindUserByIdAsync(orderedTasks.First().UserId);
+           result.UserNameCreateTask = user.FullName;
            return ResponseUtil.GetObject(result, ResponseMessages.GetSuccessfully, HttpStatusCode.OK, 1);
        }
        catch (Exception e)
