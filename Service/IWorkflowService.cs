@@ -10,4 +10,5 @@ public interface IWorkflowService
     Task<ResponseDto> UpdateWorkflowActiveOrDeleteAsync(Guid divisionId);
     Task<ResponseDto> GetWorkflowDetails(Guid divisionId);
     Task<ResponseDto> GetWorkflowDetailsWithFlowAndStep(Guid workflowId);
+    Task<ResponseDto> CreateWorkflowAsync(CreateWorkFlowRequest workflowRequest);
 }

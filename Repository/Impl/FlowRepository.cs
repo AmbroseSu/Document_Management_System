@@ -52,4 +52,11 @@ public class FlowRepository : IFlowRepository
         //     .Where(f => flowIds.Contains(f.FlowId))
         //     .ToListAsync();
     }
+    
+    public async Task<IEnumerable<Flow>> FindAllFlowAsync()
+    {
+        return await _flowDao.FindAsync(u => true,
+            u => u.Include(d => d.Steps));
+    }
+    
 }

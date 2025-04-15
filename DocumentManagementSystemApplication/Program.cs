@@ -197,6 +197,8 @@ builder.Services.AddScoped<IDocumentService, DocumentService>();
 builder.Services.AddScoped<IFileService, FileService>();
 builder.Services.AddSingleton<IUserIdProvider, NameIdentifierUserIdProvider>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddScoped<IDocumentTypeWorkflowRepository, DocumentTypeWorkflowRepository>();
+builder.Services.AddScoped<IFlowService, FlowService>();
 
 builder.WebHost.UseKestrel();
 

@@ -18,9 +18,9 @@ namespace DocumentManagementSystemApplication.Controllers
         }
         
         [HttpPost("create-workflow")]
-        public async Task<ResponseDto> CreateWorkflow([FromBody] WorkflowRequest workflowRequest)
+        public async Task<ResponseDto> CreateWorkflow([FromBody] CreateWorkFlowRequest workflowRequest)
         {
-            return await _workflowService.AddWorkflowAsync(workflowRequest);    
+            return await _workflowService.CreateWorkflowAsync(workflowRequest);    
         }
         
         [HttpGet("view-all-workflow")]
