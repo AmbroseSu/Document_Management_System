@@ -2,8 +2,8 @@ namespace BusinessObject.Enums;
 
 public enum ProcessingStatus
 {
-    Draft,
+    Archived,
     InProgress,
     Completed,
-    Rejected
+    Rejected,
 }

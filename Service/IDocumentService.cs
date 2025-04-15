@@ -7,7 +7,9 @@ namespace Service;
 public interface IDocumentService
 { 
     Task<ResponseDto> UploadDocument(IFormFile file, string? userId);
-    Task<ResponseDto> CreateDoc(DocumentUploadDto documentUploadDto, Guid userId);
-    Task<IActionResult> GetDocumentById(Guid documentId);
-    Task<IActionResult> GetDocumentByName(string documentName);
+    Task<ResponseDto> CreateIncomingDoc(DocumentUploadDto documentUploadDto, Guid userId);
+    Task<IActionResult> GetDocumentById(Guid documentId,string version);
+    // Task<IActionResult> GetDocumentByName(string documentName);
+    Task<ResponseDto> UpdateConfirmTaskWithDocument(Guid documentId);
+    Task<IActionResult> GetArchiveDocumentById(Guid documentId, string? version);
 }

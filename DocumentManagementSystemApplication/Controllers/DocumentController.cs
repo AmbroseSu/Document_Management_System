@@ -19,23 +19,6 @@ namespace DocumentManagementSystemApplication.Controllers
         {
             _documentService = documentService;
         }
-
-        // [HttpPost("view-metadata-document")]
-        // public async Task<string> ReadMetadataDocument([FromForm] IFormFile file)
-        // {
-        //     await _documentService.UploadDocument(file, Guid.Empty);
-        //     return "ok";
-        //
-        // }
-        
-        
-        [HttpGet("view-hello-document")]
-        public async Task<string?> ViewHelloDocument()
-        {
-            var id = User.FindFirst("userid")!.Value;
-            return id;
-        }
-
         
         [HttpPost("create-upload-document")]
         public async Task<ResponseDto> UploadDocument([FromForm] IFormFile file)
@@ -45,17 +28,29 @@ namespace DocumentManagementSystemApplication.Controllers
             return result;
         }
         
-        [HttpGet("view-dowload-document-by-id")]
-        public async Task<IActionResult> DownloadDocumentById([FromQuery] Guid documentId)
+        [HttpPost("create-incoming-document")]
+        public async Task<ResponseDto> CreateIncomingDocument([FromBody] DocumentUploadDto documentUploadDto)
         {
-            var result = await _documentService.GetDocumentById(documentId);
+            var id = User.FindFirst("userid")?.Value;
+            var result = await _documentService.CreateIncomingDoc(documentUploadDto, Guid.Parse(id));
             return result;
         }
         
-        [HttpGet("view-download-document-by-name")]
-        public async Task<IActionResult> DownloadDocumentByName([FromQuery] string documentName)
+        
+        [HttpGet("view-file/{documentId}")]
+        public async Task<IActionResult> DownloadDocumentByName([FromRoute] Guid documentId,[FromQuery] string? version,[FromQuery] bool isArchive)
         {
-            var result = await _documentService.GetDocumentByName(documentName);
+            if(!isArchive)
+                return  await _documentService.GetDocumentById(documentId,version);
+            else
+                return  await _documentService.GetArchiveDocumentById(documentId, version);
+        }
+        
+        [HttpPost("update-confirm-task-with-document")]
+        public async Task<ResponseDto> UpdateConfirmTaskWithDocument([FromQuery]Guid documentId)
+        {
+            // var id = User.FindFirst("userid")?.Value;
+            var result = await _documentService.UpdateConfirmTaskWithDocument(documentId);
             return result;
         }
     }
