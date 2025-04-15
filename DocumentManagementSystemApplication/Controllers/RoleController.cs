@@ -19,7 +19,7 @@ public class RoleController : ControllerBase
     }
 
     [HttpPost("create-role")]
-    [AuthorizeResource("[Role] Create Role")]
+    //[AuthorizeResource("[Role] Create Role")]
     public async Task<ResponseDto> CreateRole([FromBody] RoleDto roleDto)
     {
         return await _roleService.CreateRole(roleDto);

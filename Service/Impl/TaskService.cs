@@ -635,6 +635,25 @@ public class TaskService : ITaskService
                     await _unitOfWork.DocumentWorkflowStatusUOW
                         .FindDocumentWorkflowStatusByWorkflowIdWorkflowFlowIdDocIdAsync(workflowId,
                             currentWorkflowFlow!.WorkflowFlowId, documentId);
+                if (documentWorkflowflowStatus != null)
+                {
+                    documentWorkflowflowStatus.StatusDocWorkflow = StatusDocWorkflow.Approval;
+                    documentWorkflowflowStatus.StatusDoc = StatusDoc.Approval;
+                    documentWorkflowflowStatus.UpdatedAt = DateTime.UtcNow;
+                    await _unitOfWork.DocumentWorkflowStatusUOW.UpdateAsync(documentWorkflowflowStatus);
+                    
+                    var nextDocumentWorkflowflowStatus = new DocumentWorkflowStatus{ 
+                        StatusDocWorkflow = StatusDocWorkflow.Pending,
+                        StatusDoc = StatusDoc.Pending,
+                        UpdatedAt = DateTime.UtcNow,
+                        DocumentId = documentId,
+                        WorkflowId = workflowId,
+                        CurrentWorkflowFlowId = nextWorkflowFlow.WorkflowFlowId
+                    };
+                    await _unitOfWork.DocumentWorkflowStatusUOW.AddAsync(nextDocumentWorkflowflowStatus);
+                    await _unitOfWork.SaveChangesAsync();
+                }
+                
                 
                 return ResponseUtil.GetObject($"Chuyển sang Flow tiếp theo: {firstTask.UserId}", ResponseMessages.CreatedSuccessfully,
                     HttpStatusCode.OK, 1);
