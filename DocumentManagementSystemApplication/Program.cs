@@ -139,7 +139,7 @@ builder.Services.AddCors(options =>
             .WithOrigins(
                 "http://127.0.0.1:5500",
                 "http://localhost:3000",
-                "http://120.72.85.88:8084/"
+                "http://120.72.85.88:8084"
             ) // địa chỉ chạy file HTML
             .AllowAnyHeader()
             .AllowAnyMethod() 
