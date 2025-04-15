@@ -1,3 +1,4 @@
+using BusinessObject;
 using Microsoft.AspNetCore.SignalR;
 
 namespace Service.SignalRHub;
@@ -10,9 +11,12 @@ public class NotificationHub : Hub {
     }
 
     // Gửi thông báo đến client cụ thể
-    public async Task SendToUser(string userId, string message)
+    /*public async Task SendToUser(string userId, string message)
     {
         await Clients.User(userId).SendAsync("ReceiveMessage", message);
+    }*/
+    public async Task SendToUser(string userId, Notification notification)
+    {
+        await Clients.User(userId).SendAsync("ReceiveMessage", notification);
     }
-    
 }
