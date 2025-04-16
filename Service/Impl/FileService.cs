@@ -1,3 +1,4 @@
+using System.Globalization;
 using BusinessObject.Option;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -91,6 +92,24 @@ public class FileService : IFileService
         File.Copy(path, targetPath);
         var url = _host+"/api/Document/view-file/"+archiveId+"?version=1&isArchive=true";
         return url;
+
+    }
+
+    public string? GetFileSize(Guid documentId, Guid versionId, string fileName)
+    {
+        fileName += ".pdf";
+        var path = Path.Combine(_storagePath, "document", documentId.ToString(), versionId.ToString(), fileName);
+        var info = new FileInfo(path);
+        if (!info.Exists) return null;
+        var size = info.Length;
+        var sizeInKB = Math.Round(size / 1024.0,2); // Chuyển đổi sang KB
+        var sizeInMB = Math.Round(sizeInKB / 1024.0,2); // Chuyển đổi sang MB
+        var sizeInGB = Math.Round(sizeInMB / 1024.0,2); // Chuyển đổi sang GB
+        if(sizeInMB > 1024)
+            return sizeInGB.ToString(CultureInfo.InvariantCulture)+" GB";
+        if(sizeInKB > 1024)
+            return sizeInMB.ToString(CultureInfo.InvariantCulture) + " Mb";
+        return sizeInKB.ToString(CultureInfo.InvariantCulture) + " KB";
 
     }
 

@@ -42,6 +42,26 @@ public class WorkflowRepository : IWorkflowRepository
         if (name == null) throw new ArgumentNullException(nameof(name));
         return await _workflowDao.FindByAsync(u => u.WorkflowName!.ToLower().Equals(name.ToLower()));
     }
+    public  async Task<IEnumerable<Workflow>> FindWorkflowByUserId(Guid userId)
+    {
+        return await _workflowDao.FindAsync(u => true,
+            u => u
+                .Include(d => d.DocumentTypeWorkflows)
+                    .ThenInclude(dtw => dtw.DocumentType)
+                        .ThenInclude(dt => dt.Documents)
+                            .ThenInclude(d => d.DocumentVersions)
+                                .ThenInclude(d => d.DocumentSignatures)
+                                    .ThenInclude(d => d.DigitalCertificate)
+                .Include(d => d.DocumentTypeWorkflows)
+                    .ThenInclude(dtw => dtw.DocumentType)
+                        .ThenInclude(dt => dt.Documents)
+                            .ThenInclude(d => d.User)
+                .Include(d => d.DocumentTypeWorkflows)
+                .ThenInclude(dtw => dtw.DocumentType)
+                .ThenInclude(dt => dt.Documents)
+                .ThenInclude(d => d.Tasks)
+                .ThenInclude(d => d.User));
+    }
     
     public async Task<Workflow?> FindWorkflowByScopeAsync(Scope? scope)
     {

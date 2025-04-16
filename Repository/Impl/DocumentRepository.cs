@@ -45,7 +45,26 @@ public class DocumentRepository : IDocumentRepository
         if (name == null) throw new ArgumentNullException(nameof(name));
         return await _documentDao.FindByAsync(u => u.DocumentName!.ToLower().Equals(name.ToLower()));
     }
-
+    
+    public async Task<IEnumerable<Document>> FindDocumentByUserIdAsync(Guid userId)
+    {
+        if (userId == Guid.Empty) throw new ArgumentNullException(nameof(userId));
+        return await _documentDao.FindAsync(u => u.Tasks.Any(t => t.UserId == userId)||u.UserId==userId,
+            q => q
+                    
+                .Include(d => d.DocumentWorkflowStatuses)
+                .ThenInclude(dws => dws.Workflow)
+                .ThenInclude(w => w.DocumentTypeWorkflows)
+                .ThenInclude(w => w.DocumentType)
+                .Include(d => d.DocumentVersions)
+                .ThenInclude(v => v.DocumentSignatures)
+                .ThenInclude(s => s.DigitalCertificate)
+                .ThenInclude(c => c.User)
+                .Include(d => d.Tasks).ThenInclude(t => t.User).ThenInclude(u => u.Division)
+                
+        );
+    }
+    
     public async Task<IEnumerable<Document>> FindAllDocumentAsync()
     {
         return await _documentDao.FindAsync(u => true);

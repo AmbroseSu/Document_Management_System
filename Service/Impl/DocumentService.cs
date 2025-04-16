@@ -1,3 +1,4 @@
+using System.Linq.Dynamic;
 using System.Net;
 using System.Text.Json;
 using System.Text.RegularExpressions;
@@ -14,6 +15,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Repository;
+using Service.Response;
 using Service.Utilities;
 
 namespace Service.Impl;
@@ -45,6 +47,69 @@ public partial class DocumentService : IDocumentService
         _host = options.Value.Host;
     }
 
+    
+    public async Task<ResponseDto> GetAllTypeDocumentsMobile(Guid userId)
+    {
+        var workflow = await _unitOfWork.WorkflowUOW.FindWorkflowByUserId(userId);
+        if (workflow == null)
+            return ResponseUtil.Error("Workflow Not Found", "Operation Failed", HttpStatusCode.NotFound);
+        var result = workflow.Select(x => new AllDocumentResponseMobile()
+        {
+            WorkFlowId = x.WorkflowId,
+            WorkFlowName = x.WorkflowName,
+            DocumentTypes = x.DocumentTypeWorkflows.Select(y => y.DocumentType)
+                .Select(y => new DocumentTypeResponseMobile()
+                {
+                    DocumentTypeId = y.DocumentTypeId,
+                    DocumentTypeName = y.DocumentTypeName,
+                    DocumentResponseMobiles = y.Documents.Select(d => new DocumentResponseMobile()
+                    {
+                        Id = d.DocumentId,
+                        DocumentName = d.DocumentName,
+                        CreatedDate = d.CreatedDate,
+                        Size = _fileService.GetFileSize(d.DocumentId, d.DocumentVersions.FirstOrDefault(t => t.IsFinalVersion).DocumentVersionId, d.DocumentName)
+                    }).ToList()
+                }).ToList()
+        }).ToList();
+
+        // var docTaskUser = (await _unitOfWork.DocumentUOW.FindDocumentByUserIdAsync(userId)).ToList();
+        // var workflows = docTaskUser.Select(d => d.DocumentWorkflowStatuses.FirstOrDefault())
+        //     .ToList().Select(dw => dw.Workflow).ToList();
+        // var result = workflows.Select(w => new AllDocumentResponseMobile()
+        // {
+        //     WorkFlowId = w.WorkflowId,
+        //     WorkFlowName = w.WorkflowName,
+        //     DocumentTypes = w.DocumentTypeWorkflows.Select(x => x.DocumentType)
+        //         .ToList()
+        //         .Select(dt => new DocumentTypeResponseMobile()
+        //         {
+        //             DocumentTypeId = dt.DocumentTypeId,
+        //             DocumentTypeName = dt.DocumentTypeName,
+        //             DocumentResponseMobiles = docTaskUser
+        //                 .Where(d => d.DocumentTypeId == dt.DocumentTypeId)
+        //                 .Select(d => new DocumentResponseMobile()
+        //                 {
+        //                     Id = d.DocumentId,
+        //                     DocumentName = d.DocumentName,
+        //                     CreatedDate = d.CreatedDate,
+        //                     Size = _fileService.GetFileSize(d.DocumentId,d.DocumentVersions.FirstOrDefault(t => t.IsFinalVersion).DocumentVersionId,d.DocumentName)
+        //                 }).ToList()
+        //         }).ToList(),
+        // }).ToList();
+        //     // var documentTypes = docTaskUser.Select(d => d.DocumentType).ToList();
+        
+        return ResponseUtil.GetObject(result,ResponseMessages.GetSuccessfully,HttpStatusCode.OK,1);
+    }
+
+    public Task<ResponseDto> GetAllDocumentsMobile(Guid workFlowId, Guid documentTypeId, Guid userId)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<ResponseDto> GetDocumentDetailById(Guid documentId, Guid userId)
+    {
+        throw new NotImplementedException();
+    }
 
     public async Task<ResponseDto> CreateIncomingDoc(DocumentUploadDto documentUploadDto, Guid userId)
     {
@@ -205,6 +270,7 @@ public partial class DocumentService : IDocumentService
         return await _fileService.GetPdfFile(Path.Combine("archive_document", documentId.ToString(),
             document.ArchivedDocumentName + ".pdf"));
     }
+    
 
     public async Task<ResponseDto> UploadDocument(IFormFile file, string userId)
     {
