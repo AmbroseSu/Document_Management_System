@@ -77,5 +77,13 @@ namespace DocumentManagementSystemApplication.Controllers
             var result = await _documentService.GetDocumentDetailById(documentId, Guid.Parse(id));
             return result;
         }
+        
+        [HttpGet("update-clear-cache-document-mobile")]
+        public async Task<ResponseDto> UpdateClearCacheDocumentMobile()
+        {
+            var id = User.FindFirst("userid")?.Value;
+            var result = await _documentService.ClearCacheDocumentMobile(Guid.Parse(id));
+            return result;
+        }
     }
 }

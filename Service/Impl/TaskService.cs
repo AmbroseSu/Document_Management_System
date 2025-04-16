@@ -73,6 +73,32 @@ public class TaskService : ITaskService
             var stepAllOfFlow = await _unitOfWork.StepUOW.FindStepByFlowIdAsync(firstFlowInWorkflow!.FlowId);
             var firstStepInFlow = stepAllOfFlow!.OrderBy(s => s.StepNumber).FirstOrDefault();
 
+            var user = await _unitOfWork.UserUOW.FindUserByIdAsync(taskDto.UserId.Value);
+            var userRoles = user.UserRoles
+                .Select(ur => ur.Role.RoleName)
+                .ToList();
+            var primaryRoles = userRoles
+                .Select(name =>
+                {
+                    // Nếu role có chứa "_", lấy phần cuối sau dấu "_"
+                    if (name.Contains("_"))
+                    {
+                        var parts = name.Split('_');
+                        return parts[^1].Trim().ToLower(); // phần cuối cùng
+                    }
+                    return name.Trim().ToLower();
+                })
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+            
+            var matchedRoles = primaryRoles.Where(role => role.Equals(currentStep.Role.RoleName.ToLower())).ToList();
+            if (!matchedRoles.Any())
+            {
+                return ResponseUtil.Error(ResponseMessages.UserNotRoleWithStep, ResponseMessages.OperationFailed,
+                    HttpStatusCode.BadRequest);
+            }
+            
+            
             if (taskDto.StepId == firstStepInFlow!.StepId)
             {
                 taskDto.TaskStatus = TasksStatus.Pending;
@@ -468,6 +494,14 @@ public class TaskService : ITaskService
         return ResponseUtil.Error(ResponseMessages.TaskNotExists, ResponseMessages.OperationFailed,
             HttpStatusCode.NotFound);
 
+    var document = task.Document;
+    if (document == null)
+        return ResponseUtil.Error(ResponseMessages.DocumentNotFound, ResponseMessages.OperationFailed,
+            HttpStatusCode.NotFound);
+    var orderedTasks = await GetOrderedTasks(document.Tasks, document.DocumentWorkflowStatuses.FirstOrDefault()?.WorkflowId ?? Guid.Empty);
+    var user = await _unitOfWork.UserUOW.FindUserByIdAsync(orderedTasks.First().UserId);
+    
+    
     switch (action)
     {
         case TaskAction.AcceptTask:
@@ -475,6 +509,11 @@ public class TaskService : ITaskService
             task.TaskStatus = TasksStatus.InProgress;
             task.UpdatedDate = DateTime.UtcNow;
             await _unitOfWork.SaveChangesAsync();
+            
+            var notification = _notificationService.CreateTaskAcceptedNotification(task, user.UserId);
+            await _notificationCollection.CreateNotificationAsync(notification);
+            await _hubContext.Clients.User(notification.UserId.ToString()).SendAsync("ReceiveMessage", notification);
+            
             await transaction.CommitAsync();
             // Gửi thông báo cho người tạo: "Người A đã nhận xử lý"
             return ResponseUtil.GetObject(ResponseMessages.TaskHadAccepted, ResponseMessages.CreatedSuccessfully,
@@ -486,6 +525,11 @@ public class TaskService : ITaskService
             task.TaskStatus = TasksStatus.Revised;
             task.UpdatedDate = DateTime.UtcNow;
             await _unitOfWork.SaveChangesAsync();
+            
+            var notification = _notificationService.CreateTaskRejectedNotification(task, user.UserId);
+            await _notificationCollection.CreateNotificationAsync(notification);
+            await _hubContext.Clients.User(notification.UserId.ToString()).SendAsync("ReceiveMessage", notification);
+
             await transaction.CommitAsync();
             // Gửi thông báo cho người tạo: "Người A từ chối xử lý"
             return ResponseUtil.GetObject(ResponseMessages.TaskHadRejected, ResponseMessages.CreatedSuccessfully,
@@ -537,7 +581,7 @@ public class TaskService : ITaskService
             task.UpdatedDate = DateTime.UtcNow;
 
             // 2. Cập nhật trạng thái tài liệu
-            var document = task.Document;
+            //var document = task.Document;
             if (document == null)
                 return ResponseUtil.Error(ResponseMessages.DocumentNotFound, ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
 
@@ -553,8 +597,15 @@ public class TaskService : ITaskService
                 pendingTask.UpdatedDate = DateTime.UtcNow;
             }
 
-            await _unitOfWork.SaveChangesAsync();
+            foreach (var orderedTask in orderedTasks)
+            {
+                var notification = _notificationService.CreateTaskRejectedNotification(task, user.UserId);
+                await _notificationCollection.CreateNotificationAsync(notification);
+                await _hubContext.Clients.User(orderedTask.UserId.ToString()).SendAsync("ReceiveMessage", notification);
 
+            }
+
+            await _unitOfWork.SaveChangesAsync();
             // 4. Gửi thông báo
             // TODO: Gửi thông báo cho người tạo tài liệu + người liên quan: "Tài liệu đã bị từ chối ở bước XYZ bởi User A"
             await transaction.CommitAsync();
@@ -644,7 +695,7 @@ public class TaskService : ITaskService
     // Lấy tất cả WorkflowFlow của Workflow hiện tại, theo thứ tự
     var workflowFlows = await _unitOfWork.WorkflowFlowUOW.FindWorkflowFlowByWorkflowIdAsync(workflowId);
     var orderedWorkflowFlows = workflowFlows.OrderBy(wf => wf.FlowNumber).ToList();
-    
+    var task = new Tasks();
     var currentWorkflowFlowIndex = orderedWorkflowFlows.FindIndex(wf => wf.FlowId == currentFlow.FlowId);
     var currentWorkflowFlow = orderedWorkflowFlows.Where(wf => wf.FlowId == currentFlow.FlowId ).FirstOrDefault();
     if (currentWorkflowFlowIndex < orderedWorkflowFlows.Count - 1)
@@ -659,6 +710,7 @@ public class TaskService : ITaskService
             var firstTask = (await _unitOfWork.TaskUOW.GetTasksByStepAndDocumentAsync(firstStep.StepId, documentId))
                             .OrderBy(t => t.TaskNumber)
                             .FirstOrDefault();
+            task = firstTask;
             if (firstTask != null)
             {
                 firstTask.TaskStatus = TasksStatus.InProgress;
@@ -701,10 +753,24 @@ public class TaskService : ITaskService
 
     // Không còn Flow nào → đánh dấu document đã hoàn tất
     var doc = await _unitOfWork.DocumentUOW.FindDocumentByIdAsync(documentId);
+    
+    
+    
     if (doc != null)
     {
         doc.ProcessingStatus = ProcessingStatus.Completed;
         doc.UpdatedDate = DateTime.UtcNow;
+        
+        var orderedTasks = await GetOrderedTasks(doc.Tasks, doc.DocumentWorkflowStatuses.FirstOrDefault()?.WorkflowId ?? Guid.Empty);
+
+        foreach (var orderedTask in orderedTasks)
+        {
+            var notification = _notificationService.CreateTaskRejectedNotification(task, task.UserId);
+            await _notificationCollection.CreateNotificationAsync(notification);
+            await _hubContext.Clients.User(orderedTask.UserId.ToString()).SendAsync("ReceiveMessage", notification);
+
+        }
+        
         await _unitOfWork.SaveChangesAsync();
 
         // TODO: Gửi thông báo cho người tạo

@@ -1,6 +1,7 @@
 using DataAccess;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
+using Repository.Caching;
 
 namespace Repository.Impl;
 
@@ -13,7 +14,7 @@ public class UnitOfWork : IUnitOfWork
         IResourceRepository resourceUow, IPermissionRepository permissionUow, IRoleRepository roleUow,
         IRoleResourceRepository roleResourceUow, IUserRoleRepository userRoleUow,
         IVerificationOtpRepository verificationOtpUow, IDigitalCertificateRepository digitalCertificateUow,
-        IDivisionRepository divisionUow, IDocumentTypeRepository documentTypeUow, IWorkflowRepository workflowUow, IStepRepository stepUow, IFlowRepository flowUow, IWorkflowFlowTransitionRepository workflowFlowTransitionUow, IWorkflowFlowRepository workflowFlowUow, ITaskRepository taskUow, IArchivedDocumentRepository archivedDocumentUow, IArchiveDocumentSignatureRepository archiveDocumentSignatureUow, IDocumentRepository documentUow, IDocumentSignatureRepository documentSignatureUow, IDocumentWorkflowStatusRepository documentWorkflowStatusUow, IDocumentTypeWorkflowRepository documentTypeWorkflowUow)
+        IDivisionRepository divisionUow, IDocumentTypeRepository documentTypeUow, IWorkflowRepository workflowUow, IStepRepository stepUow, IFlowRepository flowUow, IWorkflowFlowTransitionRepository workflowFlowTransitionUow, IWorkflowFlowRepository workflowFlowUow, ITaskRepository taskUow, IArchivedDocumentRepository archivedDocumentUow, IArchiveDocumentSignatureRepository archiveDocumentSignatureUow, IDocumentRepository documentUow, IDocumentSignatureRepository documentSignatureUow, IDocumentWorkflowStatusRepository documentWorkflowStatusUow, IDocumentTypeWorkflowRepository documentTypeWorkflowUow, IRedisCacheRepository redisCacheUow)
     {
         UserUOW = userUow ?? throw new ArgumentNullException(nameof(userUow));
         _disposed = false;
@@ -40,6 +41,7 @@ public class UnitOfWork : IUnitOfWork
         DocumentSignatureUOW = documentSignatureUow;
         DocumentWorkflowStatusUOW = documentWorkflowStatusUow;
         DocumentTypeWorkflowUOW = documentTypeWorkflowUow;
+        RedisCacheUOW = redisCacheUow;
     }
 
     public IUserRepository UserUOW { get; }
@@ -65,7 +67,8 @@ public class UnitOfWork : IUnitOfWork
     public IDocumentWorkflowStatusRepository DocumentWorkflowStatusUOW { get; }
     
     public IDocumentTypeWorkflowRepository DocumentTypeWorkflowUOW { get; set; }
-    
+    public IRedisCacheRepository RedisCacheUOW { get; }
+
     public async Task<int> SaveChangesAsync()
     {
         //using var context = new DocumentManagementSystemDbContext();

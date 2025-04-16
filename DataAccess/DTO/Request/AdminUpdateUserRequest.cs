@@ -14,4 +14,5 @@ public class AdminUpdateUserRequest
     public string? Position { get; set; }
     public Guid? DivisionId { get; set; }
     public string? Avatar { get; set; }
+    public Guid? SubRoleId { get; set; }
 }

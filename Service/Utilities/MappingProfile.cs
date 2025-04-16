@@ -121,10 +121,9 @@ public class MappingProfile : Profile
         CreateMap<StepDto, Step>();
         CreateMap<Tasks, TaskDto>();
         CreateMap<TaskDto, Tasks>();
+        CreateMap<DocumentDto, Document>();
         CreateMap<Document, DocumentDto>();
-            //.ForMember(dest => dest.Tasks, opt => opt.Ignore());
-
-            CreateMap<DocumentDto, Document>();
-            //.ForMember(dest => dest.Tasks, opt => opt.Ignore());
+        CreateMap<DocumentVersion, DocumentVersionDto>();
+        CreateMap<DocumentVersionDto, DocumentVersion>();
     }
 }

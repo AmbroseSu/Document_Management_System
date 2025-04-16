@@ -55,4 +55,11 @@ public class DivisionRepository : IDivisionRepository
             d => divisionIds.Contains(d.DivisionId)
         );
     }
+
+    public async Task<IEnumerable<Division>> GetDivisionByDocumentId(Guid documentId)
+    {
+        return await _divisionDao.FindAsync(
+            d => true
+        );
+    }
 }
