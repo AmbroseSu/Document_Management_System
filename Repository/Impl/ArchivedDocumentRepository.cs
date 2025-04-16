@@ -1,6 +1,7 @@
 using BusinessObject;
 using DataAccess;
 using DataAccess.DAO;
+using Microsoft.EntityFrameworkCore;
 
 namespace Repository.Impl;
 
@@ -40,6 +41,17 @@ public class ArchivedDocumentRepository : IArchivedDocumentRepository
     public async Task<IEnumerable<ArchivedDocument>> FindAllArchivedDocumentAsync()
     {
         return await _archivedDocumentDao.FindAsync(u => true);
+    }
+    
+    public async Task<IEnumerable<ArchivedDocument>> FindArchivedDocumentByUserIdAsync(Guid userId)
+    {
+        if (userId == Guid.Empty) throw new ArgumentNullException(nameof(userId));
+        return await _archivedDocumentDao.FindAsync(u => u.UserDocumentPermissions.Any(t => t.UserId == userId),
+            q => q
+                .Include(d => d.UserDocumentPermissions)
+                .ThenInclude(up => up.User)
+                .ThenInclude(u => u.Division)
+                .Include(d => d.DocumentType));
     }
     
     public async Task<IEnumerable<ArchivedDocument>> FindArchivedDocumentsByIdsAsync(List<Guid> archivedDocumentIds)

@@ -4,7 +4,7 @@ namespace DataAccess.DTO.Response;
 
 public class AllDocumentResponseMobile
 {
-    public Guid WorkFlowId { get; set; }
+    public Guid? WorkFlowId { get; set; }
     public string? WorkFlowName { get; set; }
     public List<DocumentTypeResponseMobile>? DocumentTypes { get; set; }
 }
@@ -20,6 +20,7 @@ public  class DocumentResponseMobile
     public Guid Id { get; set; }
     public string? DocumentName { get; set; }
     public DateTime? CreatedDate { get; set; }
+    public bool IsArchived { get; set; } = false;
     public string? Size { get; set; }
 }
 
@@ -40,7 +41,7 @@ public class DocumentDetailResponse
     public string? DocumentUrl { get; set; }
 }
 
-public abstract class UserResponseMobile
+public class UserResponseMobile
 {
     public Guid? UserId { get; set; }
     public string? FullName { get; set; }

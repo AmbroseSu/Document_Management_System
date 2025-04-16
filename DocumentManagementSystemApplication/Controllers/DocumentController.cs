@@ -54,27 +54,35 @@ namespace DocumentManagementSystemApplication.Controllers
             return result;
         }
 
-        [HttpGet("view-all-type-documents-mobile")]
-        public async Task<ResponseDto> ViewAllTypeDocumentsMobile()
+        [HttpGet("view-all-type-documents-by-workflow-mobile")]
+        public async Task<ResponseDto> ViewAllTypeDocumentsByWorkFlowMobile()
         {
             var id = User.FindFirst("userid")?.Value;
             var result = await _documentService.GetAllTypeDocumentsMobile(Guid.Parse(id));
             return result;
         }
         
-        [HttpGet("view-all-documents-mobile")]
-        public async Task<ResponseDto> ViewAllDocumentsMobile([FromQuery] Guid workFlowId,[FromQuery] Guid documentTypeId)
+        [HttpGet("view-all-type-documents-mobile")]
+        public async Task<ResponseDto> ViewAllTypeDocumentsMobile()
         {
             var id = User.FindFirst("userid")?.Value;
-            var result = await _documentService.GetAllDocumentsMobile(workFlowId, documentTypeId, Guid.Parse(id));
+            var result = await _documentService.GetAllTypeDocMobile(Guid.Parse(id));
+            return result;
+        }
+        
+        [HttpGet("view-all-documents-mobile")]
+        public async Task<ResponseDto> ViewAllDocumentsMobile([FromQuery] Guid? workFlowId,[FromQuery] Guid documentTypeId,[FromQuery] bool isArchive)
+        {
+            var id = User.FindFirst("userid")?.Value;
+            var result = await _documentService.GetAllDocumentsMobile(workFlowId, documentTypeId,isArchive, Guid.Parse(id));
             return result;
         }
 
         [HttpGet("view-detail-documents-mobile")]
-        public async Task<ResponseDto> ViewAllDocumentsMobile([FromQuery] Guid documentId)
+        public async Task<ResponseDto> ViewAllDocumentsMobile([FromQuery] Guid documentId,[FromQuery] bool isArchive)
         {
             var id = User.FindFirst("userid")?.Value;
-            var result = await _documentService.GetDocumentDetailById(documentId, Guid.Parse(id));
+            var result = await _documentService.GetDocumentDetailById(documentId, Guid.Parse(id),isArchive);
             return result;
         }
         

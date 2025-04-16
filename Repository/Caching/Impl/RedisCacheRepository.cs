@@ -3,7 +3,7 @@ using Microsoft.Extensions.Caching.Distributed;
 
 namespace Repository.Caching.Impl;
 
-public class RedisCacheRepository:IRedisCacheRepository
+public class RedisCacheRepository : IRedisCacheRepository
 {
     private readonly IDistributedCache _cache;
 
@@ -28,9 +28,20 @@ public class RedisCacheRepository:IRedisCacheRepository
         {
             expiry = TimeSpan.FromDays(1);
         }
+
+        if (expiry.Value <= TimeSpan.Zero)
+        {
+            throw new ArgumentOutOfRangeException(nameof(expiry), "Expiry must be a positive timespan.");
+        }
+
         _cache.SetString(key, JsonSerializer.Serialize(data), new DistributedCacheEntryOptions
         {
             AbsoluteExpirationRelativeToNow = expiry
         });
+    }
+
+    public void RemoveData(string key)
+    {
+        _cache.Remove(key);
     }
 }
