@@ -31,6 +31,10 @@ public class Notification
     [BsonElement("taskId")]
     [BsonIgnoreIfNull]
     public string? TaskId { get; set; }
+    
+    [BsonElement("documentId")]
+    [BsonIgnoreIfNull]
+    public string? DocumentId { get; set; }
 
     [BsonElement("workflowId")]
     [BsonIgnoreIfNull]

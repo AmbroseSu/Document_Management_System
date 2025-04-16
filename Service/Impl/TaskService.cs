@@ -854,6 +854,18 @@ public class TaskService : ITaskService
         var firstStep = nextSteps.FirstOrDefault();
         var finalSteps = currentWorkflowFlow.Flow.Steps.OrderByDescending(s => s.StepNumber).ToList();
         var finalStep = finalSteps.FirstOrDefault();
+        if (finalStep != null)
+        {
+            var finalTask = (await _unitOfWork.TaskUOW.GetTasksByStepAndDocumentAsync(finalStep.StepId, documentId))
+                .OrderByDescending(t => t.TaskNumber)
+                .FirstOrDefault();
+            if (finalTask != null)
+            {
+                var notification = _notificationService.CreateDocAcceptedNotification(finalTask, finalTask.UserId);
+                await _notificationCollection.CreateNotificationAsync(notification);
+                await _hubContext.Clients.User(notification.UserId.ToString()).SendAsync("ReceiveMessage", notification);
+            }
+        }
         
         if (firstStep != null)
         {
