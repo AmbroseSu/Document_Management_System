@@ -11,4 +11,5 @@ public interface IDivisionRepository
     Task<Division?> FindDivisionByNameAsync(string? name);
     Task<IEnumerable<Division>> FindAllDivisionAsync();
     Task<IEnumerable<Division>> FindDivisionsByIdsAsync(List<Guid> divisionIds);
+    Task<IEnumerable<Division>> GetDivisionByDocumentId(Guid documentId);
 }

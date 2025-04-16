@@ -12,6 +12,7 @@ public class DocumentTypeResponseMobile
 {
     public Guid DocumentTypeId { get; set; }
     public string? DocumentTypeName { get; set; }
+    public float? Percent { get; set; }
     public List<DocumentResponseMobile>? DocumentResponseMobiles { get; set; }
 }
 public  class DocumentResponseMobile

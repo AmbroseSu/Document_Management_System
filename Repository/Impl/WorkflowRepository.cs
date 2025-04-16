@@ -60,7 +60,11 @@ public class WorkflowRepository : IWorkflowRepository
                 .ThenInclude(dtw => dtw.DocumentType)
                 .ThenInclude(dt => dt.Documents)
                 .ThenInclude(d => d.Tasks)
-                .ThenInclude(d => d.User));
+                .ThenInclude(d => d.User)
+                .Include(d => d.DocumentTypeWorkflows)
+                    .ThenInclude(dtw => dtw.DocumentType)
+                    .ThenInclude(dt => dt.Documents)
+                    .ThenInclude(dt => dt.DocumentWorkflowStatuses));
     }
     
     public async Task<Workflow?> FindWorkflowByScopeAsync(Scope? scope)
