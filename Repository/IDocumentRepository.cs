@@ -11,4 +11,5 @@ public interface IDocumentRepository
     Task<Document?> FindDocumentByNameAsync(string? name);
     Task<IEnumerable<Document>> FindAllDocumentAsync();
     Task<IEnumerable<Document>> FindAllDocumentForTaskAsync(Guid userId);
+    Task<IEnumerable<Document>> FindDocumentByUserIdAsync(Guid userId);
 }

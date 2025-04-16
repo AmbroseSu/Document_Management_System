@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore.Storage;
+using Repository.Caching;
 
 namespace Repository;
 
@@ -26,6 +27,7 @@ public interface IUnitOfWork : IDisposable
     IArchiveDocumentSignatureRepository ArchiveDocumentSignatureUOW { get; }
     IDocumentWorkflowStatusRepository DocumentWorkflowStatusUOW { get; }
     IDocumentTypeWorkflowRepository DocumentTypeWorkflowUOW { get; }
+    IRedisCacheRepository RedisCacheUOW { get; }
     Task<int> SaveChangesAsync();
     
     Task<IDbContextTransaction> BeginTransactionAsync();

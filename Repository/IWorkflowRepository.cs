@@ -12,4 +12,5 @@ public interface IWorkflowRepository
     Task<Workflow?> FindWorkflowByNameAsync(string? name);
     Task<Workflow?> FindWorkflowByScopeAsync(Scope? scope);
     Task<IEnumerable<Workflow>> FindAllWorkflowAsync();
+    Task<IEnumerable<Workflow>> FindWorkflowByUserId(Guid userId);
 }

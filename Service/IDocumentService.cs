@@ -12,4 +12,8 @@ public interface IDocumentService
     // Task<IActionResult> GetDocumentByName(string documentName);
     Task<ResponseDto> UpdateConfirmTaskWithDocument(Guid documentId);
     Task<IActionResult> GetArchiveDocumentById(Guid documentId, string? version);
+    Task<ResponseDto> GetAllTypeDocumentsMobile(Guid userId);
+    Task<ResponseDto> GetAllDocumentsMobile(Guid workFlowId, Guid documentTypeId, Guid userId);
+    Task<ResponseDto> GetDocumentDetailById(Guid documentId, Guid userId);
+    Task<ResponseDto> ClearCacheDocumentMobile(Guid userId);
 }

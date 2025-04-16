@@ -53,5 +53,37 @@ namespace DocumentManagementSystemApplication.Controllers
             var result = await _documentService.UpdateConfirmTaskWithDocument(documentId);
             return result;
         }
+
+        [HttpGet("view-all-type-documents-mobile")]
+        public async Task<ResponseDto> ViewAllTypeDocumentsMobile()
+        {
+            var id = User.FindFirst("userid")?.Value;
+            var result = await _documentService.GetAllTypeDocumentsMobile(Guid.Parse(id));
+            return result;
+        }
+        
+        [HttpGet("view-all-documents-mobile")]
+        public async Task<ResponseDto> ViewAllDocumentsMobile([FromQuery] Guid workFlowId,[FromQuery] Guid documentTypeId)
+        {
+            var id = User.FindFirst("userid")?.Value;
+            var result = await _documentService.GetAllDocumentsMobile(workFlowId, documentTypeId, Guid.Parse(id));
+            return result;
+        }
+
+        [HttpGet("view-detail-documents-mobile")]
+        public async Task<ResponseDto> ViewAllDocumentsMobile([FromQuery] Guid documentId)
+        {
+            var id = User.FindFirst("userid")?.Value;
+            var result = await _documentService.GetDocumentDetailById(documentId, Guid.Parse(id));
+            return result;
+        }
+        
+        [HttpGet("update-clear-cache-document-mobile")]
+        public async Task<ResponseDto> UpdateClearCacheDocumentMobile()
+        {
+            var id = User.FindFirst("userid")?.Value;
+            var result = await _documentService.ClearCacheDocumentMobile(Guid.Parse(id));
+            return result;
+        }
     }
 }
