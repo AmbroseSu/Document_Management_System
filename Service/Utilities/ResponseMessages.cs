@@ -108,16 +108,21 @@ public static class ResponseMessages
     
     //Tasks
     public const string TaskStartdayEndDayFailed = "Start and end times must be greater than current";
+    public const string TaskStartdayLowerEndDaypreviousStepFailed = "Start times of current task must be greater than end task of previous task";
     public const string TaskEndDayFailed = "End date must be greater than start date";
     public const string TaskNotFound = "Task not found";
     public const string TaskAlreadyDeleted = "Task already deleted";
     public const string TaskNotExists = "The task does not exist or is not within your control.";
     public const string TaskHadAccepted = "Task has been accepted";
-    public const string TaskHadNotAccepted = "You have not accepted to process this task.";
+    public const string TaskHadNotYourTurn = "It is not your turn to handle this quest.";
     public const string TaskHadRejected = "Task has been rejected";
     public const string TaskHadNotCompleted = "It's not your turn to approve yet.";
     public const string TaskIdInvalid = "Invalid task id";
+    public const string TaskHasUpdatedInformation = "Task has updated information";
     
     //Step
     public const string StepIdNull = "Step id cannot be null";
+    
+    //Notification
+    public const string NotificationNotFound = "Notification not found";
 }

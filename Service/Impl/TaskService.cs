@@ -4,9 +4,11 @@ using BusinessObject;
 using BusinessObject.Enums;
 using DataAccess;
 using DataAccess.DTO;
+using DataAccess.DTO.Request;
 using DataAccess.DTO.Response;
 using Microsoft.AspNetCore.SignalR;
 using MongoDB.Driver;
+using MongoDB.Driver.Linq;
 using Repository;
 using Service.Response;
 using Service.SignalRHub;
@@ -52,7 +54,7 @@ public class TaskService : ITaskService
             if (taskDto.StartDate < DateTime.Now || taskDto.EndDate < DateTime.Now)
                 return ResponseUtil.Error(ResponseMessages.TaskStartdayEndDayFailed, ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
 
-            if (taskDto.EndDate <= taskDto.StartDate)
+            if (taskDto.EndDate >= taskDto.StartDate)
                 return ResponseUtil.Error(ResponseMessages.TaskEndDayFailed, ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
             
             var existingTasks = await _unitOfWork.TaskUOW.FindTaskByStepIdDocIdAsync(taskDto.StepId, taskDto.DocumentId);
@@ -74,6 +76,9 @@ public class TaskService : ITaskService
             var firstStepInFlow = stepAllOfFlow!.OrderBy(s => s.StepNumber).FirstOrDefault();
 
             var user = await _unitOfWork.UserUOW.FindUserByIdAsync(taskDto.UserId.Value);
+            if (user == null)
+                return ResponseUtil.Error(ResponseMessages.UserNotFound, ResponseMessages.OperationFailed,
+                    HttpStatusCode.NotFound);
             var userRoles = user.UserRoles
                 .Select(ur => ur.Role.RoleName)
                 .ToList();
@@ -98,6 +103,10 @@ public class TaskService : ITaskService
                     HttpStatusCode.BadRequest);
             }
             
+            var document = await _unitOfWork.DocumentUOW.FindDocumentByIdAsync(taskDto.DocumentId.Value);
+            var orderedTasks = await GetOrderedTasks(document.Tasks, document.DocumentWorkflowStatuses.FirstOrDefault()?.WorkflowId ?? Guid.Empty);
+            if(orderedTasks[orderedTasks.Count - 1].EndDate > taskDto.StartDate)
+                return ResponseUtil.Error(ResponseMessages.TaskStartdayLowerEndDaypreviousStepFailed, ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
             
             if (taskDto.StepId == firstStepInFlow!.StepId)
             {
@@ -177,6 +186,103 @@ public class TaskService : ITaskService
             }
             await _unitOfWork.SaveChangesAsync();
             return ResponseUtil.GetObject(task, ResponseMessages.DeleteSuccessfully, HttpStatusCode.OK, 1);
+        }
+        catch (Exception e)
+        {
+            return ResponseUtil.Error(e.Message, ResponseMessages.OperationFailed, HttpStatusCode.InternalServerError);
+        }
+    }
+
+    public async Task<ResponseDto> UpdateTaskAsync(TaskRequest taskRequest)
+    {
+        try
+        {
+            var task = await _unitOfWork.TaskUOW.FindTaskByIdAsync(taskRequest.TaskId);
+            if (task == null)
+                return ResponseUtil.Error(ResponseMessages.TaskNotFound, ResponseMessages.OperationFailed,
+                    HttpStatusCode.NotFound);
+            if (task.IsDeleted)
+                return ResponseUtil.Error(ResponseMessages.TaskAlreadyDeleted, ResponseMessages.OperationFailed,
+                    HttpStatusCode.NotFound);
+            if (taskRequest.StartDate < DateTime.Now || taskRequest.EndDate < DateTime.Now)
+                return ResponseUtil.Error(ResponseMessages.TaskStartdayEndDayFailed, ResponseMessages.OperationFailed,
+                    HttpStatusCode.BadRequest);
+            if (taskRequest.EndDate >= taskRequest.StartDate)
+                return ResponseUtil.Error(ResponseMessages.TaskEndDayFailed, ResponseMessages.OperationFailed,
+                    HttpStatusCode.BadRequest);
+            var document = await _unitOfWork.DocumentUOW.FindDocumentByIdAsync(task.DocumentId);
+            var orderedTasks = await GetOrderedTasks(document.Tasks, document.DocumentWorkflowStatuses.FirstOrDefault()?.WorkflowId ?? Guid.Empty);
+            if(orderedTasks[orderedTasks.Count - 1].EndDate > taskRequest.StartDate)
+                return ResponseUtil.Error(ResponseMessages.TaskStartdayLowerEndDaypreviousStepFailed, ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
+
+            var hasChanges = false;
+            
+            if (!string.IsNullOrWhiteSpace(taskRequest.Title) && !task.Title.Equals(taskRequest.Title))
+            {
+                task.Title = taskRequest.Title;
+                hasChanges = true;
+            }
+            if (!string.IsNullOrWhiteSpace(taskRequest.Description) && !task.Title.Equals(taskRequest.Description))
+            {
+                task.Description = taskRequest.Description;
+                hasChanges = true;
+            }
+            if (taskRequest.StartDate != null && task.StartDate != taskRequest.StartDate)
+            {
+                task.StartDate = taskRequest.StartDate.Value;
+                hasChanges = true;
+            }
+
+            if (taskRequest.EndDate != null && task.EndDate != taskRequest.EndDate)
+            {
+                task.EndDate = taskRequest.EndDate.Value;
+                hasChanges = true;
+            }
+            
+            if (taskRequest.UserId != null && task.UserId != taskRequest.UserId)
+            {
+                var user = await _unitOfWork.UserUOW.FindUserByIdAsync(taskRequest.UserId.Value);
+                if (user == null)
+                    return ResponseUtil.Error(ResponseMessages.UserNotFound, ResponseMessages.OperationFailed,
+                        HttpStatusCode.NotFound);
+                var userRoles = user.UserRoles
+                    .Select(ur => ur.Role.RoleName)
+                    .ToList();
+                var primaryRoles = userRoles
+                    .Select(name =>
+                    {
+                        // Nếu role có chứa "_", lấy phần cuối sau dấu "_"
+                        if (name.Contains("_"))
+                        {
+                            var parts = name.Split('_');
+                            return parts[^1].Trim().ToLower(); // phần cuối cùng
+                        }
+                        return name.Trim().ToLower();
+                    })
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+            
+                var currentStep = await _unitOfWork.StepUOW.FindStepByIdAsync(task.StepId);
+                var matchedRoles = primaryRoles.Where(role => role.Equals(currentStep.Role.RoleName.ToLower())).ToList();
+                if (!matchedRoles.Any())
+                {
+                    return ResponseUtil.Error(ResponseMessages.UserNotRoleWithStep, ResponseMessages.OperationFailed,
+                        HttpStatusCode.BadRequest);
+                }
+                else
+                {
+                    task.UserId = taskRequest.UserId.Value;
+                    hasChanges = true;
+                }
+            }
+            
+            if (!hasChanges)
+                return ResponseUtil.GetObject(ResponseMessages.NoChangesDetected, ResponseMessages.UpdateSuccessfully,
+                    HttpStatusCode.OK, 0);
+            await _unitOfWork.TaskUOW.UpdateAsync(task);
+            await _unitOfWork.SaveChangesAsync();
+            return ResponseUtil.GetObject(ResponseMessages.TaskHasUpdatedInformation,
+                ResponseMessages.UpdateSuccessfully, HttpStatusCode.OK, 1);
         }
         catch (Exception e)
         {
@@ -263,6 +369,29 @@ public class TaskService : ITaskService
            return ResponseUtil.Error(e.Message, ResponseMessages.OperationFailed, HttpStatusCode.InternalServerError);
        }
    }
+
+   public async Task<ResponseDto> FindAllTaskByDocumentIdAsync(Guid documentId)
+   {
+       try
+       {
+           var document = await _unitOfWork.DocumentUOW.FindDocumentByIdAsync(documentId);
+           if (document == null)
+               return ResponseUtil.Error(ResponseMessages.DocumentNotFound, ResponseMessages.OperationFailed,
+                   HttpStatusCode.NotFound);
+           var orderedTasks = await GetOrderedTasks(
+               document.Tasks,
+               document.DocumentWorkflowStatuses.FirstOrDefault()?.WorkflowId ?? Guid.Empty
+           );
+           var taskDtos = _mapper.Map<IEnumerable<TaskDto>>(orderedTasks);
+           return ResponseUtil.GetObject(taskDtos, ResponseMessages.GetSuccessfully, HttpStatusCode.OK, 1);
+       }
+       catch (Exception e)
+       {
+           return ResponseUtil.Error(e.Message, ResponseMessages.OperationFailed, HttpStatusCode.InternalServerError);
+       }
+   }
+   
+   
     
     
     public async Task<ResponseDto> GetDocumentsByTabForUser(Guid userId, DocumentTab tab, int page, int limit)
@@ -404,7 +533,7 @@ public class TaskService : ITaskService
 
                     if (currentTask.UserId == userId && currentTask.TaskStatus == TasksStatus.Completed)
                     {
-                        if (nextTask.TaskStatus != TasksStatus.Completed && nextTask.UserId != userId)
+                        if (nextTask.TaskStatus == TasksStatus.InProgress && nextTask.UserId != userId)
                         {
                             waitingDocuments.Add(doc);
                             break; // Thỏa điều kiện => thêm document và thoát vòng lặp
@@ -494,7 +623,8 @@ public class TaskService : ITaskService
         return ResponseUtil.Error(ResponseMessages.TaskNotExists, ResponseMessages.OperationFailed,
             HttpStatusCode.NotFound);
 
-    var document = task.Document;
+    var documentTask = task.Document;
+    var document = await _unitOfWork.DocumentUOW.FindDocumentByIdAsync(documentTask!.DocumentId);
     if (document == null)
         return ResponseUtil.Error(ResponseMessages.DocumentNotFound, ResponseMessages.OperationFailed,
             HttpStatusCode.NotFound);
@@ -506,7 +636,7 @@ public class TaskService : ITaskService
     {
         case TaskAction.AcceptTask:
         {
-            task.TaskStatus = TasksStatus.InProgress;
+            task.TaskStatus = TasksStatus.Waiting;
             task.UpdatedDate = DateTime.UtcNow;
             await _unitOfWork.SaveChangesAsync();
             
@@ -539,7 +669,7 @@ public class TaskService : ITaskService
         case TaskAction.ApproveDocument:
         {
             if (task.TaskStatus != TasksStatus.InProgress)
-                return ResponseUtil.Error(ResponseMessages.TaskHadNotAccepted, ResponseMessages.OperationFailed,
+                return ResponseUtil.Error(ResponseMessages.TaskHadNotYourTurn, ResponseMessages.OperationFailed,
                     HttpStatusCode.BadRequest);
 
             var tasksInSameStep = task.Step.Tasks.OrderBy(t => t.TaskNumber).ToList();
@@ -574,7 +704,7 @@ public class TaskService : ITaskService
         case TaskAction.RejectDocument:
         {
             if (task.TaskStatus != TasksStatus.InProgress)
-                return ResponseUtil.Error(ResponseMessages.TaskHadNotAccepted, ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
+                return ResponseUtil.Error(ResponseMessages.TaskHadNotYourTurn, ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
 
             // 1. Cập nhật trạng thái task hiện tại
             task.TaskStatus = TasksStatus.Revised;
@@ -599,7 +729,7 @@ public class TaskService : ITaskService
 
             foreach (var orderedTask in orderedTasks)
             {
-                var notification = _notificationService.CreateTaskRejectedNotification(task, user.UserId);
+                var notification = _notificationService.CreateDocRejectedNotification(task, orderedTask.UserId);
                 await _notificationCollection.CreateNotificationAsync(notification);
                 await _hubContext.Clients.User(orderedTask.UserId.ToString()).SendAsync("ReceiveMessage", notification);
 
@@ -635,6 +765,17 @@ public class TaskService : ITaskService
         // 🔍 Tìm task kế tiếp trong cùng Step
         var tasksInStep = stepp.Tasks.OrderBy(t => t.TaskNumber).ToList();
         var nextTask = tasksInStep.FirstOrDefault(t => t.TaskNumber > currentTask.TaskNumber);
+        var previousTask = tasksInStep
+            .Where(t => t.TaskNumber < currentTask.TaskNumber)
+            .OrderByDescending(t => t.TaskNumber)
+            .FirstOrDefault();
+        
+        if (previousTask != null)
+        {
+            var notification = _notificationService.CreateDocAcceptedNotification(previousTask, previousTask.UserId);
+            await _notificationCollection.CreateNotificationAsync(notification);
+            await _hubContext.Clients.User(notification.UserId.ToString()).SendAsync("ReceiveMessage", notification);
+        }
         if (nextTask != null)
         {
             nextTask.TaskStatus = TasksStatus.InProgress;
@@ -655,13 +796,20 @@ public class TaskService : ITaskService
         // Không còn task trong Step hiện tại — kiểm tra Step tiếp theo
         var stepsInFlow = currentFlow.Steps.OrderBy(s => s.StepNumber).ToList();
         var currentStepIndex = stepsInFlow.FindIndex(s => s.StepId == currentStep.StepId);
-
+        
         if (currentStepIndex < stepsInFlow.Count - 1)
         {
             var nextStep = stepsInFlow[currentStepIndex + 1];
             var nextStepTasks = (await _unitOfWork.TaskUOW.GetTasksByStepAndDocumentAsync(nextStep.StepId, documentId.Value))
                 .OrderBy(t => t.TaskNumber).ToList();
             var firstTaskInNextStep = nextStepTasks.FirstOrDefault();
+            var finalTaskInCurrentStep = tasksInStep.OrderByDescending(t => t.TaskNumber).FirstOrDefault();
+            if (finalTaskInCurrentStep != null)
+            {
+                var notification = _notificationService.CreateDocAcceptedNotification(finalTaskInCurrentStep, finalTaskInCurrentStep.UserId);
+                await _notificationCollection.CreateNotificationAsync(notification);
+                await _hubContext.Clients.User(notification.UserId.ToString()).SendAsync("ReceiveMessage", notification);
+            }
             if (firstTaskInNextStep != null)
             {
                 firstTaskInNextStep.TaskStatus = TasksStatus.InProgress;
@@ -702,9 +850,11 @@ public class TaskService : ITaskService
     {
         var nextWorkflowFlow = orderedWorkflowFlows[currentWorkflowFlowIndex + 1];
         var nextFlow = nextWorkflowFlow.Flow;
-
         var nextSteps = nextFlow.Steps.OrderBy(s => s.StepNumber).ToList();
         var firstStep = nextSteps.FirstOrDefault();
+        var finalSteps = currentWorkflowFlow.Flow.Steps.OrderByDescending(s => s.StepNumber).ToList();
+        var finalStep = finalSteps.FirstOrDefault();
+        
         if (firstStep != null)
         {
             var firstTask = (await _unitOfWork.TaskUOW.GetTasksByStepAndDocumentAsync(firstStep.StepId, documentId))
@@ -765,7 +915,7 @@ public class TaskService : ITaskService
 
         foreach (var orderedTask in orderedTasks)
         {
-            var notification = _notificationService.CreateTaskRejectedNotification(task, task.UserId);
+            var notification = _notificationService.CreateDocCompletedNotification(task, task.UserId);
             await _notificationCollection.CreateNotificationAsync(notification);
             await _hubContext.Clients.User(orderedTask.UserId.ToString()).SendAsync("ReceiveMessage", notification);
 

@@ -6,16 +6,19 @@ using AutoMapper;
 using BusinessObject;
 using BusinessObject.Enums;
 using BusinessObject.Option;
+using DataAccess;
 using DataAccess.DTO;
 using DataAccess.DTO.Response;
 using iText.Kernel.Pdf;
 using iText.Signatures;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Repository;
 using Service.Response;
+using Service.SignalRHub;
 using Service.Utilities;
 
 namespace Service.Impl;
@@ -30,12 +33,15 @@ public partial class DocumentService : IDocumentService
     private readonly ILogger<DocumentService> _logger;
     private readonly IMapper _mapper;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly INotificationService _notificationService;
+    private readonly MongoDbService _notificationCollection;
+    private readonly IHubContext<NotificationHub> _hubContext;
 
 
     public DocumentService(IUnitOfWork unitOfWork, IMapper mapper, IFileService fileService,
         ILogger<DocumentService> logger, IExternalApiService externalApiService,
         IDigitalCertificateService digitalCertificateService, IDocumentSignatureService documentSignatureService,
-        IOptions<AppsetingOptions> options)
+        IOptions<AppsetingOptions> options, INotificationService notificationService, MongoDbService notificationCollection, IHubContext<NotificationHub> hubContext)
     {
         _unitOfWork = unitOfWork;
         _mapper = mapper;
@@ -44,6 +50,9 @@ public partial class DocumentService : IDocumentService
         _externalApiService = externalApiService;
         _digitalCertificateService = digitalCertificateService;
         _documentSignatureService = documentSignatureService;
+        _notificationService = notificationService;
+        _notificationCollection = notificationCollection;
+        _hubContext = hubContext;
         _host = options.Value.Host;
     }
 
@@ -282,6 +291,13 @@ public partial class DocumentService : IDocumentService
             case Scope.InComing:
                 var archiveId = Guid.NewGuid();
                 //TODO Send notification
+                var taskList = document.Tasks;
+                foreach (var task  in taskList)
+                {
+                    var notification = _notificationService.CreateTaskAssignNotification(task, task.UserId);
+                    await _notificationCollection.CreateNotificationAsync(notification);
+                    await _hubContext.Clients.User(notification.UserId.ToString()).SendAsync("ReceiveMessage", notification);
+                }
                 var archiveDocument = new ArchivedDocument
                 {
                     ArchivedDocumentId = archiveId,
