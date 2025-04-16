@@ -17,4 +17,5 @@ public interface IDocumentService
     Task<ResponseDto> GetDocumentDetailById(Guid? documentId, Guid userId,Guid workFlowId);
     Task<ResponseDto> ClearCacheDocumentMobile(Guid userId);
     Task<ResponseDto> GetAllTypeDocMobile(Guid userId);
+    Task<ResponseDto> GetAllDocumentsByTypeMobile(Guid documentTypeId, Guid userId);
 }

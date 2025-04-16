@@ -154,7 +154,6 @@ public partial class DocumentService : IDocumentService
 
     public async Task<ResponseDto> GetAllTypeDocMobile(Guid userId)
     {
-        List<DocumentTypeResponseMobile> result;
         var cache = _unitOfWork.RedisCacheUOW.GetData<List<AllDocumentResponseMobile>>(
             "GetAllTypeDocumentsMobile_userId_" + userId);
         if (cache != null)
@@ -167,7 +166,7 @@ public partial class DocumentService : IDocumentService
                 "GetAllTypeDocumentsMobile_userId_" + userId);
         }
 
-        result = cache.Where(w => w.DocumentTypes != null)
+        var result = cache.Where(w => w.DocumentTypes != null)
             .SelectMany(w => w.DocumentTypes!)
             .GroupBy(dt => dt.DocumentTypeId)
             .Select(g => new DocumentTypeResponseMobile
@@ -176,6 +175,37 @@ public partial class DocumentService : IDocumentService
                 DocumentTypeName = g.FirstOrDefault()?.DocumentTypeName,
                 Percent = g.Sum(x => x.Percent ?? 0),
                 DocumentResponseMobiles = null // Bỏ luôn danh sách documents
+            })
+            .ToList();
+        return ResponseUtil.GetObject(result,ResponseMessages.GetSuccessfully,HttpStatusCode.OK,1);
+    }
+
+    public async Task<ResponseDto> GetAllDocumentsByTypeMobile(Guid documentTypeId, Guid userId)
+    {
+        
+        var cache = _unitOfWork.RedisCacheUOW.GetData<List<AllDocumentResponseMobile>>(
+            "GetAllTypeDocumentsMobile_userId_" + userId);
+        if (cache != null)
+        {
+        }
+        else
+        {
+            await GetAllTypeDocumentsMobile(userId);
+            cache = _unitOfWork.RedisCacheUOW.GetData<List<AllDocumentResponseMobile>>(
+                "GetAllTypeDocumentsMobile_userId_" + userId);
+        }
+
+        var result = cache.Where(w => w.DocumentTypes != null)
+            .SelectMany(w => w.DocumentTypes!)
+            .Where(dt => dt.DocumentResponseMobiles != null)
+            .SelectMany(dt => dt.DocumentResponseMobiles!, 
+                (dt, doc) => new { dt.DocumentTypeId, dt.DocumentTypeName, Document = doc })
+            .GroupBy(x => x.DocumentTypeId)
+            .Select(g => new
+            {
+                DocumentTypeId = g.Key,
+                DocumentTypeName = g.FirstOrDefault()?.DocumentTypeName,
+                Documents = g.Select(x => x.Document).ToList()
             })
             .ToList();
         return ResponseUtil.GetObject(result,ResponseMessages.GetSuccessfully,HttpStatusCode.OK,1);
@@ -209,7 +239,6 @@ public partial class DocumentService : IDocumentService
                 .ToList();
         }
         return ResponseUtil.GetObject(result,ResponseMessages.GetSuccessfully,HttpStatusCode.OK,1);
-        // throw new NotImplementedException();
     }
 
     public async Task<ResponseDto> GetDocumentDetailById(Guid? documentId, Guid userId,Guid workFlowId)
@@ -253,12 +282,7 @@ public partial class DocumentService : IDocumentService
         }
         var documentA = await _unitOfWork.ArchivedDocumentUOW.FindArchivedDocumentByIdAsync(documentId);
         var usersA = documentA.UserDocumentPermissions.Select(x => x.User).Distinct().ToList();
-        // users.AddRange(document.DocumentVersions.FirstOrDefault(t => t.IsFinalVersion).DocumentSignatures
-        //     .Select(t => t.DigitalCertificate.User)
-        //     .ToList());
-        // users.AddRange(document.Tasks.Select(x => x.User).ToList());
-        // users = users.Distinct().ToList();
-        // users = users.Where(u => u != null).ToList();
+
         var divisionsA = usersA.Select(u => u?.Division?.DivisionName).Distinct().ToList();
         var userListA = usersA.Select(u => new UserResponseMobile()
         {
