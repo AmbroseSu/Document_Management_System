@@ -14,4 +14,5 @@ public interface IFileService
     string CreateAVersionFromUpload(string fileName, Guid versionId, Guid documentId,string versionName);
     string ArchiveDocument(string fileName, Guid documentId, Guid versionId, Guid archiveId);
 
+    string? GetFileSize(Guid documentId, Guid versionId, string fileName);
 }

@@ -46,6 +46,8 @@ public class UserRepository : IUserRepository
         return await _userDao.FindByAsync(u => u.UserName!.ToLower().Equals(userName.ToLower()));
     }
 
+
+    
     public async Task<IEnumerable<User>> FindAllUserAsync()
     {
         return await _userDao.FindAsync(u => true,
