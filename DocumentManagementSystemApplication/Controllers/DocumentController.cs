@@ -100,5 +100,14 @@ namespace DocumentManagementSystemApplication.Controllers
             var result = await _documentService.ClearCacheDocumentMobile(Guid.Parse(id));
             return result;
         }
+        
+        [HttpGet("view-document-by-name")]
+        public async Task<ResponseDto> GetDocumentByNameMobile([FromQuery] string documentName)
+        {
+            var id = User.FindFirst("userid")?.Value;
+
+            var result = await _documentService.GetDocumentByNameMobile(documentName, Guid.Parse(id));
+            return result;
+        }
     }
 }

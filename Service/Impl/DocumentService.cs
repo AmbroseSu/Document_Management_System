@@ -201,13 +201,41 @@ public partial class DocumentService : IDocumentService
             .SelectMany(dt => dt.DocumentResponseMobiles!, 
                 (dt, doc) => new { dt.DocumentTypeId, dt.DocumentTypeName, Document = doc })
             .GroupBy(x => x.DocumentTypeId)
-            .Select(g => new
-            {
-                DocumentTypeId = g.Key,
-                DocumentTypeName = g.FirstOrDefault()?.DocumentTypeName,
-                Documents = g.Select(x => x.Document).ToList()
-            })
+            .Select(g => 
+            
+                 g.Select(x => x.Document).ToList()
+            )
             .ToList();
+        return ResponseUtil.GetObject(result,ResponseMessages.GetSuccessfully,HttpStatusCode.OK,1);
+    }
+
+    public async Task<ResponseDto> GetDocumentByNameMobile(string documentName,Guid userId)
+    {
+        var cache = _unitOfWork.RedisCacheUOW.GetData<List<AllDocumentResponseMobile>>(
+            "GetAllTypeDocumentsMobile_userId_" + userId);
+        if (cache != null)
+        {
+        }
+        else
+        {
+            await GetAllTypeDocumentsMobile(userId);
+            cache = _unitOfWork.RedisCacheUOW.GetData<List<AllDocumentResponseMobile>>(
+                "GetAllTypeDocumentsMobile_userId_" + userId);
+        }
+
+        var result = cache.Where(w => w.DocumentTypes != null)
+            .SelectMany(w => w.DocumentTypes!)
+            .Where(dt => dt.DocumentResponseMobiles != null)
+            .SelectMany(dt => dt.DocumentResponseMobiles!,
+                (dt, doc) => new { dt.DocumentTypeId, dt.DocumentTypeName, Document = doc })
+            .Where(x => !string.IsNullOrEmpty(x.Document.DocumentName) &&
+                        x.Document.DocumentName.Contains(documentName, StringComparison.OrdinalIgnoreCase)) // search tương đối
+            .GroupBy(x => x.DocumentTypeId)
+            .Select(g => 
+                g.Select(x => x.Document).ToList()
+            )
+            .ToList();
+
         return ResponseUtil.GetObject(result,ResponseMessages.GetSuccessfully,HttpStatusCode.OK,1);
     }
 
