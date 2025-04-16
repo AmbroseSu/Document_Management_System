@@ -100,7 +100,40 @@ public partial class DocumentService : IDocumentService
                 })
                 .Where(res => res.DocumentTypes.Any())
                 .ToList();
-            // Sau khi result được tạo
+            var archiveDoc = await _unitOfWork.ArchivedDocumentUOW.FindArchivedDocumentByUserIdAsync(userId);
+            var tmp = new AllDocumentResponseMobile()
+            {
+                WorkFlowId = Guid.Parse("00000000-0000-0000-0000-000000000000"),
+                WorkFlowName = "Đã lưu",
+                DocumentTypes = archiveDoc.Select(x =>
+                    new DocumentTypeResponseMobile()
+                    {
+                        DocumentTypeId = x.DocumentTypeId,
+                        DocumentTypeName = x.DocumentType.DocumentTypeName,
+                        DocumentResponseMobiles = []
+                    }
+                ).Distinct().ToList()
+            };
+            foreach (var ad in archiveDoc)
+            {
+                tmp.DocumentTypes
+                    .FirstOrDefault(x => x.DocumentTypeId == ad.DocumentTypeId)
+                    ?.DocumentResponseMobiles?.Add(
+                        new DocumentResponseMobile()
+                        {
+                            Id = ad.ArchivedDocumentId,
+                            DocumentName = ad.ArchivedDocumentName,
+                            CreatedDate = ad.CreatedDate,
+                            Size = _fileService.GetFileSize(
+                                ad.ArchivedDocumentId,
+                                Guid.Empty,
+                                ad.ArchivedDocumentName
+                            )
+                        }
+                        );
+
+            }
+            result.Add(tmp);
             var totalDocuments = result
                 .SelectMany(wf => wf.DocumentTypes ?? [])
                 .Sum(dt => dt.DocumentResponseMobiles?.Count ?? 0);
@@ -111,12 +144,12 @@ public partial class DocumentService : IDocumentService
                 {
                     var count = dt.DocumentResponseMobiles?.Count ?? 0;
                     dt.Percent = totalDocuments > 0
-                        ? (float)Math.Round((count * 100f) / totalDocuments, 2)
+                        ? (float)Math.Round((count *1f) / totalDocuments, 2)
                         : 0;
                 }
             }
 
-             _unitOfWork.RedisCacheUOW.SetData("GetAllTypeDocumentsMobile_userId_" + userId, result,
+            _unitOfWork.RedisCacheUOW.SetData("GetAllTypeDocumentsMobile_userId_" + userId, result,
                 TimeSpan.FromMinutes(3));
         }
 
@@ -128,7 +161,95 @@ public partial class DocumentService : IDocumentService
         return ResponseUtil.GetObject(result,ResponseMessages.GetSuccessfully,HttpStatusCode.OK,1);
     }
 
-    public async Task<ResponseDto> GetAllDocumentsMobile(Guid workFlowId, Guid documentTypeId, Guid userId)
+    public async Task<ResponseDto> GetAllTypeDocMobile(Guid userId)
+    {
+        var cache = _unitOfWork.RedisCacheUOW.GetData<List<AllDocumentResponseMobile>>(
+            "GetAllTypeDocumentsMobile_userId_" + userId);
+        if (cache != null)
+        {
+        }
+        else
+        {
+            await GetAllTypeDocumentsMobile(userId);
+            cache = _unitOfWork.RedisCacheUOW.GetData<List<AllDocumentResponseMobile>>(
+                "GetAllTypeDocumentsMobile_userId_" + userId);
+        }
+
+        var result = cache.Where(w => w.DocumentTypes != null)
+            .SelectMany(w => w.DocumentTypes!)
+            .GroupBy(dt => dt.DocumentTypeId)
+            .Select(g => new DocumentTypeResponseMobile
+            {
+                DocumentTypeId = g.Key,
+                DocumentTypeName = g.FirstOrDefault()?.DocumentTypeName,
+                Percent = g.Sum(x => x.Percent ?? 0),
+                DocumentResponseMobiles = null // Bỏ luôn danh sách documents
+            })
+            .ToList();
+        return ResponseUtil.GetObject(result,ResponseMessages.GetSuccessfully,HttpStatusCode.OK,1);
+    }
+
+    public async Task<ResponseDto> GetAllDocumentsByTypeMobile(Guid documentTypeId, Guid userId)
+    {
+        
+        var cache = _unitOfWork.RedisCacheUOW.GetData<List<AllDocumentResponseMobile>>(
+            "GetAllTypeDocumentsMobile_userId_" + userId);
+        if (cache != null)
+        {
+        }
+        else
+        {
+            await GetAllTypeDocumentsMobile(userId);
+            cache = _unitOfWork.RedisCacheUOW.GetData<List<AllDocumentResponseMobile>>(
+                "GetAllTypeDocumentsMobile_userId_" + userId);
+        }
+
+        var result = cache.Where(w => w.DocumentTypes != null)
+            .SelectMany(w => w.DocumentTypes!)
+            .Where(dt => dt.DocumentResponseMobiles != null)
+            .SelectMany(dt => dt.DocumentResponseMobiles!, 
+                (dt, doc) => new { dt.DocumentTypeId, dt.DocumentTypeName, Document = doc })
+            .GroupBy(x => x.DocumentTypeId)
+            .Select(g => 
+            
+                 g.Select(x => x.Document).ToList()
+            )
+            .ToList();
+        return ResponseUtil.GetObject(result,ResponseMessages.GetSuccessfully,HttpStatusCode.OK,1);
+    }
+
+    public async Task<ResponseDto> GetDocumentByNameMobile(string documentName,Guid userId)
+    {
+        var cache = _unitOfWork.RedisCacheUOW.GetData<List<AllDocumentResponseMobile>>(
+            "GetAllTypeDocumentsMobile_userId_" + userId);
+        if (cache != null)
+        {
+        }
+        else
+        {
+            await GetAllTypeDocumentsMobile(userId);
+            cache = _unitOfWork.RedisCacheUOW.GetData<List<AllDocumentResponseMobile>>(
+                "GetAllTypeDocumentsMobile_userId_" + userId);
+        }
+
+        var result = cache.Where(w => w.DocumentTypes != null)
+            .SelectMany(w => w.DocumentTypes!)
+            .Where(dt => dt.DocumentResponseMobiles != null)
+            .SelectMany(dt => dt.DocumentResponseMobiles!,
+                (dt, doc) => new { dt.DocumentTypeId, dt.DocumentTypeName, Document = doc })
+            .Where(x => !string.IsNullOrEmpty(x.Document.DocumentName) &&
+                        x.Document.DocumentName.Contains(documentName, StringComparison.OrdinalIgnoreCase)) // search tương đối
+            .GroupBy(x => x.DocumentTypeId)
+            .Select(g => 
+                g.Select(x => x.Document).ToList()
+            )
+            .ToList();
+
+        return ResponseUtil.GetObject(result,ResponseMessages.GetSuccessfully,HttpStatusCode.OK,1);
+    }
+
+
+    public async Task<ResponseDto> GetAllDocumentsMobile(Guid? workFlowId, Guid documentTypeId, Guid userId)
     {
         List<DocumentResponseMobile> result;
         var cache = _unitOfWork.RedisCacheUOW.GetData<List<AllDocumentResponseMobile>>(
@@ -155,54 +276,85 @@ public partial class DocumentService : IDocumentService
                 .ToList();
         }
         return ResponseUtil.GetObject(result,ResponseMessages.GetSuccessfully,HttpStatusCode.OK,1);
-        // throw new NotImplementedException();
     }
 
-    public async Task<ResponseDto> GetDocumentDetailById(Guid documentId, Guid userId)
+    public async Task<ResponseDto> GetDocumentDetailById(Guid? documentId, Guid userId,Guid workFlowId)
     {
-        var document = await _unitOfWork.DocumentUOW.FindDocumentByIdAsync(documentId);
-        var result = new DocumentDetailResponse()
+        var isArchive = workFlowId.Equals(Guid.Parse("00000000-0000-0000-0000-000000000000"));
+        if(!isArchive)
         {
-            DocumentId = document.DocumentId,
-            DocumentName = document.DocumentName,
-            DocumentContent = document.DocumentContent,
-            NumberOfDocument = document.NumberOfDocument,
-            ProcessingStatus = document.ProcessingStatus,
-            DateIssued = document.DateIssued,
-            DocumentTypeName = document.DocumentType.DocumentTypeName,
-            CreatedDate = document.CreatedDate,
-            CreatedBy = document.User.UserName,
-            // DivisionList = _unitOfWork.DivisionUOW.GetDivisionByDocumentId(documentId),
-            // UserList = _unitOfWork.UserUOW.GetUserByDocumentId(documentId),
-            SignBys = ExtractSigners(document.DocumentVersions.FirstOrDefault(x => x.IsFinalVersion).DocumentSignatures),
-            DocumentUrl = document.DocumentVersions.FirstOrDefault(x => x.IsFinalVersion).DocumentVersionUrl
+            var document = await _unitOfWork.DocumentUOW.FindDocumentByIdAsync(documentId);
+            var users = new List<User> { document.User };
+            users.AddRange(document.DocumentVersions.FirstOrDefault(t => t.IsFinalVersion).DocumentSignatures
+                .Select(t => t.DigitalCertificate.User)
+                .ToList());
+            users.AddRange(document.Tasks.Select(x => x.User).ToList());
+            users = users.Distinct().ToList();
+            users = users.Where(u => u != null).ToList();
+            var divisions = users.Select(u => u?.Division?.DivisionName).Distinct().ToList();
+            var userList = users.Select(u => new UserResponseMobile()
+            {
+                UserId = u.UserId,
+                FullName = u.UserName,
+                DivisionName = u.Division.DivisionName
+            }).ToList();
+            var result = new DocumentDetailResponse()
+            {
+                DocumentId = document.DocumentId,
+                DocumentName = document.DocumentName,
+                DocumentContent = document.DocumentContent,
+                NumberOfDocument = document.NumberOfDocument,
+                ProcessingStatus = document.ProcessingStatus,
+                DateIssued = document.DateIssued,
+                DocumentTypeName = document.DocumentType.DocumentTypeName,
+                CreatedDate = document.CreatedDate,
+                CreatedBy = document.User.UserName,
+                DivisionList = divisions,
+                UserList = userList,
+                SignBys = ExtractSigners(document.DocumentVersions.FirstOrDefault(x => x.IsFinalVersion)
+                    .DocumentSignatures),
+                DocumentUrl = document.DocumentVersions.FirstOrDefault(x => x.IsFinalVersion).DocumentVersionUrl
+            };
+            return ResponseUtil.GetObject(result, ResponseMessages.GetSuccessfully, HttpStatusCode.OK, 1);
+        }
+        var documentA = await _unitOfWork.ArchivedDocumentUOW.FindArchivedDocumentByIdAsync(documentId);
+        var usersA = documentA.UserDocumentPermissions.Select(x => x.User).Distinct().ToList();
+
+        var divisionsA = usersA.Select(u => u?.Division?.DivisionName).Distinct().ToList();
+        var userListA = usersA.Select(u => new UserResponseMobile()
+        {
+            UserId = u.UserId,
+            FullName = u.UserName,
+            DivisionName = u.Division.DivisionName
+        }).ToList();
+        var resultA = new DocumentDetailResponse()
+        {
+            DocumentId = documentA.ArchivedDocumentId,
+            DocumentName = documentA.ArchivedDocumentName,
+            DocumentContent = documentA.ArchivedDocumentContent,
+            NumberOfDocument = documentA.NumberOfDocument,
+            ProcessingStatus = 0,
+            DateIssued = documentA.DateIssued.ToString(),
+            DocumentTypeName = documentA.DocumentType.DocumentTypeName,
+            CreatedDate = documentA.CreatedDate,
+            CreatedBy = documentA.CreatedBy,
+            DivisionList = divisionsA,
+            UserList = userListA,
+            SignBys = ExtractSigners(documentA.ArchiveDocumentSignatures),
+            DocumentUrl = documentA.ArchivedDocumentUrl
         };
-        return ResponseUtil.GetObject(result,ResponseMessages.GetSuccessfully,HttpStatusCode.OK,1);
+        return ResponseUtil.GetObject(resultA, ResponseMessages.GetSuccessfully, HttpStatusCode.OK, 1);
+
     }
 
     public async Task<ResponseDto> ClearCacheDocumentMobile(Guid userId)
     {
-         _unitOfWork.RedisCacheUOW.SetData("ClearCacheDocumentMobile_userId_" + userId, new object(), TimeSpan.FromMicroseconds(1));
+        _unitOfWork.RedisCacheUOW.RemoveData("GetAllTypeDocumentsMobile_userId_" + userId);
         return ResponseUtil.GetObject("oke", "oke", HttpStatusCode.OK, 1);
     }
 
     public async Task<ResponseDto> CreateIncomingDoc(DocumentUploadDto documentUploadDto, Guid userId)
     {
-        string? GetString(object? obj)
-        {
-            return obj is JsonElement e ? e.GetString() : obj as string;
-        }
-
-        DateTime? GetDateTime(object? obj)
-        {
-            return obj is JsonElement e && DateTime.TryParse(e.GetString(), out var dt) ? dt : null;
-        }
-
-        Guid? GetGuid(object? obj)
-        {
-            return obj is JsonElement e && Guid.TryParse(e.GetString(), out var guid) ? guid : null;
-        }
-
         var name = GetString(documentUploadDto.CanChange.GetValueOrDefault("Name"));
         var sender = GetString(documentUploadDto.CanChange.GetValueOrDefault("Sender"));
         var numberOfDocument = GetString(documentUploadDto.CanChange.GetValueOrDefault("NumberOfDocument"));
@@ -272,6 +424,21 @@ public partial class DocumentService : IDocumentService
         doc.DocumentVersion = _mapper.Map<DocumentVersionDto>(version);
 
         return ResponseUtil.GetCollection(new List<object> { result, doc }, "Success", HttpStatusCode.OK, 2, 1, 2, 2);
+
+        Guid? GetGuid(object? obj)
+        {
+            return obj is JsonElement e && Guid.TryParse(e.GetString(), out var guid) ? guid : null;
+        }
+
+        DateTime? GetDateTime(object? obj)
+        {
+            return obj is JsonElement e && DateTime.TryParse(e.GetString(), out var dt) ? dt : null;
+        }
+
+        string? GetString(object? obj)
+        {
+            return obj is JsonElement e ? e.GetString() : obj as string;
+        }
     }
 
     public async Task<IActionResult> GetDocumentById(Guid documentId, string version)
@@ -428,6 +595,16 @@ public partial class DocumentService : IDocumentService
     }
 
     private static List<string> ExtractSigners(List<DocumentSignature> signatures)
+    {
+        var regex = MyRegex();
+        return signatures
+            .Select(signature => regex.Match(signature.DigitalCertificate?.Subject ?? string.Empty))
+            .Where(match => match.Success)
+            .Select(match => match.Groups[1].Value)
+            .ToList();
+    }
+    
+    private static List<string> ExtractSigners(List<ArchiveDocumentSignature> signatures)
     {
         var regex = MyRegex();
         return signatures

@@ -54,16 +54,24 @@ namespace DocumentManagementSystemApplication.Controllers
             return result;
         }
 
-        [HttpGet("view-all-type-documents-mobile")]
-        public async Task<ResponseDto> ViewAllTypeDocumentsMobile()
+        [HttpGet("view-all-type-documents-by-workflow-mobile")]
+        public async Task<ResponseDto> ViewAllTypeDocumentsByWorkFlowMobile()
         {
             var id = User.FindFirst("userid")?.Value;
             var result = await _documentService.GetAllTypeDocumentsMobile(Guid.Parse(id));
             return result;
         }
         
+        [HttpGet("view-all-type-documents-mobile")]
+        public async Task<ResponseDto> ViewAllTypeDocumentsMobile()
+        {
+            var id = User.FindFirst("userid")?.Value;
+            var result = await _documentService.GetAllTypeDocMobile(Guid.Parse(id));
+            return result;
+        }
+        
         [HttpGet("view-all-documents-mobile")]
-        public async Task<ResponseDto> ViewAllDocumentsMobile([FromQuery] Guid workFlowId,[FromQuery] Guid documentTypeId)
+        public async Task<ResponseDto> ViewAllDocumentsMobile([FromQuery] Guid? workFlowId,[FromQuery] Guid documentTypeId)
         {
             var id = User.FindFirst("userid")?.Value;
             var result = await _documentService.GetAllDocumentsMobile(workFlowId, documentTypeId, Guid.Parse(id));
@@ -71,10 +79,17 @@ namespace DocumentManagementSystemApplication.Controllers
         }
 
         [HttpGet("view-detail-documents-mobile")]
-        public async Task<ResponseDto> ViewAllDocumentsMobile([FromQuery] Guid documentId)
+        public async Task<ResponseDto> ViewDetailDocumentsMobile([FromQuery] Guid documentId,[FromQuery] Guid workFlowId)
         {
             var id = User.FindFirst("userid")?.Value;
-            var result = await _documentService.GetDocumentDetailById(documentId, Guid.Parse(id));
+            var result = await _documentService.GetDocumentDetailById(documentId, Guid.Parse(id),workFlowId);
+            return result;
+        }
+        [HttpGet("view-all-documents-by-document-type-mobile")]
+        public async Task<ResponseDto> ViewAllDocumentsByTypeMobile([FromQuery] Guid documentTypeId)
+        {
+            var id = User.FindFirst("userid")?.Value;
+            var result = await _documentService.GetAllDocumentsByTypeMobile(documentTypeId, Guid.Parse(id));
             return result;
         }
         
@@ -83,6 +98,15 @@ namespace DocumentManagementSystemApplication.Controllers
         {
             var id = User.FindFirst("userid")?.Value;
             var result = await _documentService.ClearCacheDocumentMobile(Guid.Parse(id));
+            return result;
+        }
+        
+        [HttpGet("view-document-by-name")]
+        public async Task<ResponseDto> GetDocumentByNameMobile([FromQuery] string documentName)
+        {
+            var id = User.FindFirst("userid")?.Value;
+
+            var result = await _documentService.GetDocumentByNameMobile(documentName, Guid.Parse(id));
             return result;
         }
     }
