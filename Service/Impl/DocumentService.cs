@@ -94,7 +94,7 @@ public partial class DocumentService : IDocumentService
             var archiveDoc = await _unitOfWork.ArchivedDocumentUOW.FindArchivedDocumentByUserIdAsync(userId);
             var tmp = new AllDocumentResponseMobile()
             {
-                WorkFlowId = null,
+                WorkFlowId = Guid.Parse("00000000-0000-0000-0000-000000000000"),
                 WorkFlowName = "Đã lưu",
                 DocumentTypes = archiveDoc.Select(x =>
                     new DocumentTypeResponseMobile()
@@ -119,8 +119,7 @@ public partial class DocumentService : IDocumentService
                                 ad.ArchivedDocumentId,
                                 Guid.Empty,
                                 ad.ArchivedDocumentName
-                            ),
-                            IsArchived = true
+                            )
                         }
                         );
 
@@ -136,7 +135,7 @@ public partial class DocumentService : IDocumentService
                 {
                     var count = dt.DocumentResponseMobiles?.Count ?? 0;
                     dt.Percent = totalDocuments > 0
-                        ? (float)Math.Round((count * 100f) / totalDocuments, 2)
+                        ? (float)Math.Round((count *1f) / totalDocuments, 2)
                         : 0;
                 }
             }
@@ -183,7 +182,7 @@ public partial class DocumentService : IDocumentService
     }
 
 
-    public async Task<ResponseDto> GetAllDocumentsMobile(Guid? workFlowId, Guid documentTypeId,bool isArchive, Guid userId)
+    public async Task<ResponseDto> GetAllDocumentsMobile(Guid? workFlowId, Guid documentTypeId, Guid userId)
     {
         List<DocumentResponseMobile> result;
         var cache = _unitOfWork.RedisCacheUOW.GetData<List<AllDocumentResponseMobile>>(
@@ -213,8 +212,9 @@ public partial class DocumentService : IDocumentService
         // throw new NotImplementedException();
     }
 
-    public async Task<ResponseDto> GetDocumentDetailById(Guid documentId, Guid userId, bool isArchive)
+    public async Task<ResponseDto> GetDocumentDetailById(Guid? documentId, Guid userId,Guid workFlowId)
     {
+        var isArchive = workFlowId.Equals(Guid.Parse("00000000-0000-0000-0000-000000000000"));
         if(!isArchive)
         {
             var document = await _unitOfWork.DocumentUOW.FindDocumentByIdAsync(documentId);

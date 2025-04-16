@@ -71,18 +71,18 @@ namespace DocumentManagementSystemApplication.Controllers
         }
         
         [HttpGet("view-all-documents-mobile")]
-        public async Task<ResponseDto> ViewAllDocumentsMobile([FromQuery] Guid? workFlowId,[FromQuery] Guid documentTypeId,[FromQuery] bool isArchive)
+        public async Task<ResponseDto> ViewAllDocumentsMobile([FromQuery] Guid? workFlowId,[FromQuery] Guid documentTypeId)
         {
             var id = User.FindFirst("userid")?.Value;
-            var result = await _documentService.GetAllDocumentsMobile(workFlowId, documentTypeId,isArchive, Guid.Parse(id));
+            var result = await _documentService.GetAllDocumentsMobile(workFlowId, documentTypeId, Guid.Parse(id));
             return result;
         }
 
         [HttpGet("view-detail-documents-mobile")]
-        public async Task<ResponseDto> ViewAllDocumentsMobile([FromQuery] Guid documentId,[FromQuery] bool isArchive)
+        public async Task<ResponseDto> ViewAllDocumentsMobile([FromQuery] Guid documentId,[FromQuery] Guid workFlowId)
         {
             var id = User.FindFirst("userid")?.Value;
-            var result = await _documentService.GetDocumentDetailById(documentId, Guid.Parse(id),isArchive);
+            var result = await _documentService.GetDocumentDetailById(documentId, Guid.Parse(id),workFlowId);
             return result;
         }
         

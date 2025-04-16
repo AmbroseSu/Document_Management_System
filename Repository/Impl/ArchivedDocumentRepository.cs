@@ -29,7 +29,11 @@ public class ArchivedDocumentRepository : IArchivedDocumentRepository
     public async Task<ArchivedDocument?> FindArchivedDocumentByIdAsync(Guid? id)
     {
         if (id == null) throw new ArgumentNullException(nameof(id));
-        return await _archivedDocumentDao.FindByAsync(u => u.ArchivedDocumentId == id);
+        return await _archivedDocumentDao.FindByAsync(u => u.ArchivedDocumentId == id,
+            q => q
+                .Include(d => d.UserDocumentPermissions).ThenInclude(q => q.User).ThenInclude(u => u.Division)
+            .Include(d => d.DocumentType)
+                .Include(a => a.ArchiveDocumentSignatures));
     }
     
     public async Task<ArchivedDocument?> FindArchivedDocumentByNameAsync(string? name)

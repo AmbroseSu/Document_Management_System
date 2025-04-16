@@ -20,7 +20,6 @@ public  class DocumentResponseMobile
     public Guid Id { get; set; }
     public string? DocumentName { get; set; }
     public DateTime? CreatedDate { get; set; }
-    public bool IsArchived { get; set; } = false;
     public string? Size { get; set; }
 }
 
