@@ -25,7 +25,7 @@ public class NotificationService : INotificationService
             UserId = userId.ToString(),
             Title = "Văn bản của bạn đã được chấp nhận",
             Content = $"Văn bản {task.Document?.DocumentName} đã được chấp nhận.",
-            Type = "document",
+            Type = "Document",
             TaskId = task.TaskId.ToString(),
             WorkflowId = task.Document?.DocumentWorkflowStatuses?.FirstOrDefault()?.WorkflowId.ToString(),
             RedirectUrl = $"/task/{task.TaskId}", // frontend sẽ định nghĩa đường dẫn cụ thể
@@ -41,7 +41,7 @@ public class NotificationService : INotificationService
             UserId = userId.ToString(),
             Title = $"Văn bản {task.Document?.DocumentName} đã bị từ chối bởi {task.User.FullName}",
             Content = $"Văn bản {task.Document?.DocumentName} đã bị từ chối bởi {task.User.FullName}",
-            Type = "document",
+            Type = "Document",
             TaskId = task.TaskId.ToString(),
             WorkflowId = task.Document?.DocumentWorkflowStatuses?.FirstOrDefault()?.WorkflowId.ToString(),
             RedirectUrl = $"/task/{task.TaskId}", // frontend sẽ định nghĩa đường dẫn cụ thể
@@ -73,7 +73,7 @@ public class NotificationService : INotificationService
             UserId = userId.ToString(),
             Title = $"Văn bản {task.Document?.DocumentName} đã hoàn thành",
             Content = $"Văn bản {task.Document?.DocumentName} đã hoàn thành.",
-            Type = "document",
+            Type = "Document",
             TaskId = task.TaskId.ToString(),
             WorkflowId = task.Document?.DocumentWorkflowStatuses?.FirstOrDefault()?.WorkflowId.ToString(),
             RedirectUrl = $"/task/{task.TaskId}", // frontend sẽ định nghĩa đường dẫn cụ thể
@@ -150,4 +150,14 @@ public class NotificationService : INotificationService
         
         return ResponseUtil.GetCollection(notificationResults, ResponseMessages.GetSuccessfully, HttpStatusCode.OK, (int)notifications.Count(), 1, 10, totalPages);;
     }
+    
+    public async Task MarkNotificationAsReadAsync(Guid notificationId)
+    {
+        var filter = Builders<Notification>.Filter.Eq(n => n.Id, notificationId);
+        var update = Builders<Notification>.Update.Set(n => n.IsRead, true);
+    
+        await _mongoDbService.Notifications.UpdateOneAsync(filter, update);
+        
+    }
+
 }

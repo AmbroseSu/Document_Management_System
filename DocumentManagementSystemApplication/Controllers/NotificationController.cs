@@ -20,5 +20,11 @@ namespace DocumentManagementSystemApplication.Controllers
             var response = await _notificationService.GetNotificationsByUserIdAsync(userId, page, limit);
             return Ok(response);
         }
+
+        [HttpPost("update-mark-notification-as-read")]
+        public async Task MarkNotificationAsRead([FromQuery] Guid notificationId)
+        {
+            await _notificationService.MarkNotificationAsReadAsync(notificationId);
+        }
     }
 }

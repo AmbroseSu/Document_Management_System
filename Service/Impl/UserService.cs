@@ -596,7 +596,7 @@ public class UserService : IUserService
         
         await transaction.CommitAsync();
         return ResponseUtil.GetObject(ResponseMessages.ImportSuccessfully, ResponseMessages.CreatedSuccessfully,
-            HttpStatusCode.OK, 1);
+            HttpStatusCode.Created, 1);
         }
         catch (Exception e)
         {

@@ -6,4 +6,5 @@ public enum TasksStatus
     Completed,
     Revised,
     Pending,
+    Waiting,
 }

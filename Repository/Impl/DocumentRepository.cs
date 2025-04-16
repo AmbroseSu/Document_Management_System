@@ -35,7 +35,9 @@ public class DocumentRepository : IDocumentRepository
                 .Include(d => d.DocumentVersions).ThenInclude(v => v.DocumentSignatures).ThenInclude(s => s.DigitalCertificate).ThenInclude(s => s.User).ThenInclude(u => u.Division)
                 .Include(d => d.Tasks).ThenInclude(t => t.User).ThenInclude(u => u.Division)
                 .Include(d => d.DocumentWorkflowStatuses).ThenInclude(y => y.Workflow)
-                .Include(d => d.DocumentVersions)
+                .Include(d => d.Tasks)
+                .ThenInclude(s => s.Step)
+                .ThenInclude(f => f.Flow)
                 .Include(d => d.User).ThenInclude(u => u.Division)
                 .Include(d => d.DocumentType));
     }

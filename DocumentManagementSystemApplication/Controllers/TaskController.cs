@@ -1,6 +1,7 @@
 using BusinessObject;
 using BusinessObject.Enums;
 using DataAccess.DTO;
+using DataAccess.DTO.Request;
 using DocumentManagementSystemApplication.Middleware;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -34,6 +35,18 @@ namespace DocumentManagementSystemApplication.Controllers
             return await _taskService.DeleteTaskAsync(taskId);
         }
         
+        [HttpPost("update-task")]
+        public async Task<ResponseDto> UpdateTask([FromBody] TaskRequest taskRequest)
+        {
+            return await _taskService.UpdateTaskAsync(taskRequest);
+        }
+        
+        [HttpGet("view-all-tasks-by-document-id")]
+        public async Task<ResponseDto> ViewAllTasksByDocumentId([FromQuery] Guid documentId)
+        {
+            return await _taskService.FindAllTaskByDocumentIdAsync(documentId);
+        }
+        
         
         [HttpGet("view-documents-by-tab-for-user")]
         public async Task<ResponseDto> ViewDocumentsByTabForUser([FromQuery] Guid userId, [FromQuery] DocumentTab tab, [FromQuery] int page = 1, [FromQuery] int limit = 10)
@@ -42,7 +55,7 @@ namespace DocumentManagementSystemApplication.Controllers
         }
 
         [HttpPost("create-handle-task-action")]
-        [AuthorizeResource("[Task] Create Handle Task Action")]
+        //[AuthorizeResource("[Task] Create Handle Task Action")]
         public async Task<ResponseDto> HandleTaskAction([FromQuery] Guid taskId, [FromQuery] Guid userId,
             [FromQuery] TaskAction action)
         {
