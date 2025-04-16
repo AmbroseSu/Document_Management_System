@@ -51,6 +51,14 @@ public class BaseDao<T> where T : class
         if (entities == null || entities.Count == 0) return;
         await _context.Set<T>().AddRangeAsync(entities);
     }
+    
+    public async Task DeleteAsync(T entity)
+    {
+        if (entity == null) throw new ArgumentNullException(nameof(entity));
+        //using var context = new DocumentManagementSystemDbContext();
+        _context.Set<T>().Remove(entity);
+        //await context.SaveChangesAsync();
+    }
 
     public async Task RemoveRangeAsync(List<T> entities)
     {

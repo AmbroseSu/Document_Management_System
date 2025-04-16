@@ -64,6 +64,46 @@ public class RoleResourceService : IRoleResourceService
             throw;
         }
     }
+    
+    public async Task ScanAndSaveRoleResourcesForOneRoleAsync(Role role)
+    {
+        try
+        {
+            // Lấy tất cả Resource
+            var resources = await _unitOfWork.ResourceUOW.GetAllAsync();
+
+            // Duyệt qua tất cả các Role và Resource, tạo RoleResource mới
+            foreach (var resource in resources)
+            {
+                var roleResourceId = UUIDv5Generator.Generate(role.RoleId + resource.ResourceId.ToString());
+                var existingRoleResource = await _unitOfWork.RoleResourceUOW
+                    .FindRoleResourceByIdAsync(roleResourceId);
+                if (existingRoleResource == null)
+                {
+                    var roleResource = new RoleResource
+                    {
+                        RoleResourceId = roleResourceId, // Tạo mới GUID cho RoleResourceId
+                        RoleId = role.RoleId, // Gán RoleId từ bảng Role
+                        ResourceId = resource.ResourceId, // Gán ResourceId từ bảng Resource
+                        Resource = resource, // Gán Resource   ;
+                        IsDeleted = true // Đặt IsDeleted = true
+                    };
+
+                    // Thêm RoleResource vào DbContext
+                    await _unitOfWork.RoleResourceUOW.AddAsync(roleResource);
+                }
+            }
+
+            // Lưu thay đổi vào cơ sở dữ liệu
+            await _unitOfWork.SaveChangesAsync();
+        }
+        catch (Exception ex)
+        {
+            // Xử lý lỗi: Ghi log lỗi hoặc báo cáo thông tin chi tiết
+            Console.Error.WriteLine($"An error occurred while scanning and saving RoleResources: {ex.Message}");
+            throw;
+        }
+    }
 
     public async Task<ResponseDto> UpdateRoleResourceAsync(List<RoleResourceRequest>? roleResourceRequests)
     {

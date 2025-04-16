@@ -65,10 +65,11 @@ public class RoleService : IRoleService
                     HttpStatusCode.BadRequest);
 
             var roleNew = _mapper.Map<Role>(roleDto);
+            roleNew.RoleId = Guid.NewGuid();
             roleNew.CreatedDate = DateTime.Now;
             await _unitOfWork.RoleUOW.AddAsync(roleNew);
             await _unitOfWork.SaveChangesAsync();
-            await _roleResourceService.ScanAndSaveRoleResourcesAsync();
+            await _roleResourceService.ScanAndSaveRoleResourcesForOneRoleAsync(roleNew);
             var result = _mapper.Map<RoleDto>(roleNew);
             return ResponseUtil.GetObject(result, ResponseMessages.CreatedSuccessfully, HttpStatusCode.Created, 1);
         }
