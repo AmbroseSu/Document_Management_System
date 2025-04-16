@@ -29,6 +29,7 @@ public static class ResponseMessages
     public const string SendEmailSuccessfully = "Send email successfully";
     public const string PasswordNotMatchConfirm = "New password and confirm password do not match";
     public const string ImportSuccessfully = "Import successfully";
+    public const string UserNotRoleWithStep = "User role are incorrect for this step.";
 
     //public const string UserDelete = "User is deleted";
     public const string UserNotFound = "User not found";

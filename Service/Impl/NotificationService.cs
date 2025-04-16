@@ -39,8 +39,8 @@ public class NotificationService : INotificationService
         return new Notification
         {
             UserId = userId.ToString(),
-            Title = $"Văn bản {task.Document?.DocumentName} đã bị từ chối",
-            Content = $"Văn bản {task.Document?.DocumentName} đã bị từ chối.",
+            Title = $"Văn bản {task.Document?.DocumentName} đã bị từ chối bởi {task.User.FullName}",
+            Content = $"Văn bản {task.Document?.DocumentName} đã bị từ chối bởi {task.User.FullName}",
             Type = "document",
             TaskId = task.TaskId.ToString(),
             WorkflowId = task.Document?.DocumentWorkflowStatuses?.FirstOrDefault()?.WorkflowId.ToString(),
@@ -57,7 +57,7 @@ public class NotificationService : INotificationService
             UserId = userId.ToString(),
             Title = $"Văn bản {task.Document?.DocumentName} đã được chuyển đến cho bạn",
             Content = $"Task {task.Title} của văn bản {task.Document?.DocumentName} đã đến lượt của bạn.",
-            Type = "document",
+            Type = "Task",
             TaskId = task.TaskId.ToString(),
             WorkflowId = task.Document?.DocumentWorkflowStatuses?.FirstOrDefault()?.WorkflowId.ToString(),
             RedirectUrl = $"/task/{task.TaskId}", // frontend sẽ định nghĩa đường dẫn cụ thể
@@ -66,7 +66,7 @@ public class NotificationService : INotificationService
         };
     }
     
-    public Notification CreateTaskCompletedNotification(Tasks task, Guid userId)
+    public Notification CreateDocCompletedNotification(Tasks task, Guid userId)
     {
         return new Notification
         {
@@ -90,7 +90,7 @@ public class NotificationService : INotificationService
             UserId = userId.ToString(),
             Title = $"Task {task.Title} đã được giao cho bạn",
             Content = $"Task {task.Title} đã được giao cho bạn.",
-            Type = "document",
+            Type = "Task",
             TaskId = task.TaskId.ToString(),
             WorkflowId = task.Document?.DocumentWorkflowStatuses?.FirstOrDefault()?.WorkflowId.ToString(),
             RedirectUrl = $"/task/{task.TaskId}", // frontend sẽ định nghĩa đường dẫn cụ thể
@@ -104,9 +104,25 @@ public class NotificationService : INotificationService
         return new Notification
         {
             UserId = userId.ToString(),
-            Title = $"Task {task.Title} đã được chấp nhận",
-            Content = $"Task {task.Title} đã được chấp nhận.",
-            Type = "document",
+            Title = $"Task {task.Title} của ${task.User.FullName} đã được chấp nhận",
+            Content = $"Task {task.Title} của ${task.User.FullName} đã được chấp nhận.",
+            Type = "Task",
+            TaskId = task.TaskId.ToString(),
+            WorkflowId = task.Document?.DocumentWorkflowStatuses?.FirstOrDefault()?.WorkflowId.ToString(),
+            RedirectUrl = $"/task/{task.TaskId}", // frontend sẽ định nghĩa đường dẫn cụ thể
+            CreatedAt = DateTime.UtcNow,
+            IsRead = false
+        };
+    }
+    
+    public Notification CreateTaskRejectedNotification(Tasks task, Guid userId)
+    {
+        return new Notification
+        {
+            UserId = userId.ToString(),
+            Title = $"Task {task.Title} của ${task.User.FullName} đã bị từ chối",
+            Content = $"Task {task.Title} của ${task.User.FullName} đã bị từ chối",
+            Type = "Task",
             TaskId = task.TaskId.ToString(),
             WorkflowId = task.Document?.DocumentWorkflowStatuses?.FirstOrDefault()?.WorkflowId.ToString(),
             RedirectUrl = $"/task/{task.TaskId}", // frontend sẽ định nghĩa đường dẫn cụ thể

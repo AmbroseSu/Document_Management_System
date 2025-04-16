@@ -469,6 +469,37 @@ public class UserService : IUserService
                 user.Avatar = adminUpdateUserRequest.Avatar;
                 hasChanges = true;
             }
+            
+            var userRoles = user.UserRoles
+                .Select(ur => ur.Role)
+                .ToList();
+            
+            var matchedRoles = userRoles.Where(role => role.RoleId == adminUpdateUserRequest.SubRoleId).ToList();
+            
+            if (adminUpdateUserRequest.SubRoleId.HasValue && !matchedRoles.Any())
+            {
+                
+                if (userRoles.Count >= 2 && userRoles.Any(r => r.RoleName.Contains("_")))
+                {
+                    var rolesToRemove = user.UserRoles
+                        .Where(ur => ur.Role.RoleName.Contains("_"))
+                        .ToList();
+
+                    foreach (var ur in rolesToRemove)
+                    {
+                        _unitOfWork.UserRoleUOW.DeleteAsync(ur);
+                    }
+
+                    await _unitOfWork.SaveChangesAsync();
+                }
+                
+                var userRole = new UserRole();
+                userRole.UserId = user.UserId;
+                userRole.RoleId = adminUpdateUserRequest.SubRoleId.Value;
+                await _unitOfWork.UserRoleUOW.AddAsync(userRole);
+                await _unitOfWork.SaveChangesAsync();
+                hasChanges = true;
+            }
 
 
             if (!hasChanges)

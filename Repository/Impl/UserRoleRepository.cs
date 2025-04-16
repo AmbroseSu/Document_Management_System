@@ -20,6 +20,12 @@ public class UserRoleRepository : IUserRoleRepository
         if (userRole == null) throw new ArgumentNullException(nameof(userRole));
         await _userRoleDao.AddAsync(userRole);
     }
+    
+    public async Task DeleteAsync(UserRole userRole)
+    {
+        if (userRole == null) throw new ArgumentNullException(nameof(userRole));
+        await _userRoleDao.DeleteAsync(userRole);
+    }
 
     public async Task<IEnumerable<UserRole>> FindRolesByUserIdAsync(Guid? userId)
     {
@@ -37,5 +43,6 @@ public class UserRoleRepository : IUserRoleRepository
             q => q.Include(ur => ur.Role)
         );
     }
+    
     
 }
