@@ -17,13 +17,13 @@ public class DigitalCertificate
 
     public DateTime ValidFrom
     {
-        get => _validFrom.ToLocalTime();
+        get => DateTime.SpecifyKind(_validFrom, DateTimeKind.Utc).ToLocalTime();
         set => _validFrom = value.ToUniversalTime();
     }
 
     public DateTime ValidTo
     {
-        get => _validTo.ToLocalTime();
+        get => DateTime.SpecifyKind(_validTo, DateTimeKind.Utc).ToLocalTime();
         set => _validTo = value.ToUniversalTime();
     }
     

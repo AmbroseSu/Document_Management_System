@@ -13,7 +13,7 @@ public class ArchiveDocumentSignature
 
     public DateTime SignedAt
     {
-        get => _signedAt.ToLocalTime();
+        get => DateTime.SpecifyKind(_signedAt, DateTimeKind.Utc).ToLocalTime();
         set => _signedAt = value.ToUniversalTime();
     }
     

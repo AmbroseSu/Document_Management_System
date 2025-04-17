@@ -31,7 +31,7 @@ public class VerificationOtp
 
     public DateTime ExpirationTime
     {
-        get => _expirationTime.ToLocalTime();
+        get => DateTime.SpecifyKind(_expirationTime, DateTimeKind.Utc).ToLocalTime();
         set => _expirationTime = value.ToUniversalTime();
     }
 

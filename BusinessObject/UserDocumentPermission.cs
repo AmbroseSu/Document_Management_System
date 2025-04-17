@@ -13,7 +13,7 @@ public class UserDocumentPermission
 
     public DateTime CreatedDate
     {
-        get => _createdDate.ToLocalTime();
+        get => DateTime.SpecifyKind(_createdDate, DateTimeKind.Utc).ToLocalTime();
         set => _createdDate = value.ToUniversalTime();
     }
 

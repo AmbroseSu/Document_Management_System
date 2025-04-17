@@ -36,7 +36,8 @@ public class DivisionService : IDivisionService
             var division = new Division
             {
                 DivisionName = divisionName,
-                IsDeleted = false
+                IsDeleted = false,
+                CreateAt = DateTime.UtcNow,
             };
             //var division = _mapper.Map<Division>(divisionDto);
             await _unitOfWork.DivisionUOW.AddAsync(division);

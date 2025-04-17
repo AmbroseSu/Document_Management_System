@@ -55,10 +55,22 @@ public class WorkflowService : IWorkflowService
             {
                 workflow.RequiredRolesJson = JsonConvert.SerializeObject(new List<string> { "Leader", "Chief" });
             }
-            else if (workflowRequest.Scope.Equals(Scope.InComing))
+            else
             {
-                workflow.RequiredRolesJson = JsonConvert.SerializeObject(new List<string> { "Division Head", "Leader" });
+                if (workflowRequest.Scope.Equals(Scope.InComing))
+                {
+                    workflow.RequiredRolesJson = JsonConvert.SerializeObject(new List<string> { "Clerical Assistant", "Chief" });
+                }
+                else
+                {
+                    if (workflowRequest.Scope.Equals(Scope.School))
+                    {
+                        workflow.RequiredRolesJson = JsonConvert.SerializeObject(new List<string> { "Leader", "Chief" });
+                    }
+                }
+
             }
+            
             
             await _unitOfWork.WorkflowUOW.AddAsync(workflow);
             await _unitOfWork.SaveChangesAsync();
@@ -299,9 +311,20 @@ public class WorkflowService : IWorkflowService
             {
                 workflow.RequiredRolesJson = JsonConvert.SerializeObject(new List<string> { "Leader", "Chief" });
             }
-            else if (workflowRequest.Scope.Equals(Scope.InComing))
+            else
             {
-                workflow.RequiredRolesJson = JsonConvert.SerializeObject(new List<string> { "Division Head", "Leader" });
+                if (workflowRequest.Scope.Equals(Scope.InComing))
+                {
+                    workflow.RequiredRolesJson = JsonConvert.SerializeObject(new List<string> { "Clerical Assistant", "Chief" });
+                }
+                else
+                {
+                    if (workflowRequest.Scope.Equals(Scope.School))
+                    {
+                        workflow.RequiredRolesJson = JsonConvert.SerializeObject(new List<string> { "Leader", "Chief" });
+                    }
+                }
+
             }
             
             await _unitOfWork.WorkflowUOW.AddAsync(workflow);
@@ -326,6 +349,8 @@ public class WorkflowService : IWorkflowService
                 };
                 workflowFlows.Add(workflowFlow);
             }
+            
+            
 
             await _unitOfWork.WorkflowFlowUOW.AddRangeAsync(workflowFlows);
             await _unitOfWork.SaveChangesAsync();
@@ -361,6 +386,30 @@ public class WorkflowService : IWorkflowService
                 }
                 
                 
+            }
+            
+            var requiredRoles = JsonConvert.DeserializeObject<List<string>>(workflow.RequiredRolesJson);
+            bool hasValidFlow = false;
+
+            foreach (var flow in flowEntities)
+            {
+                // var steps = (await _unitOfWork.StepUOW.FindStepByFlowIdAsync(flow.FlowId)).ToList();
+                // if (steps.Count >= 2)
+                // {
+                    var startRole = flow.RoleStart;
+                    var endRole = flow.RoleEnd;
+
+                    if (requiredRoles.First().ToLower().Equals(startRole.ToLower()) && requiredRoles.Last().ToLower().Equals(endRole.ToLower()))
+                    {
+                        hasValidFlow = true;
+                        break;
+                    }
+                //}
+            }
+
+            if (!hasValidFlow)
+            {
+                return ResponseUtil.Error($"Workflow phải có 2 vai trò chính {requiredRoles.First()} và {requiredRoles.Last()}", ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
             }
             
             await _unitOfWork.SaveChangesAsync();

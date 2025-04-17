@@ -16,7 +16,7 @@ public class Workflow
     private DateTime? _createAt;
     public DateTime? CreateAt
     {
-        get => _createAt?.ToLocalTime();
+        get => _createAt.HasValue ? DateTime.SpecifyKind(_createAt.Value, DateTimeKind.Utc).ToLocalTime() : (DateTime?)null;
         set => _createAt = value?.ToUniversalTime();
     }
     public Guid? CreateBy { get; set; }

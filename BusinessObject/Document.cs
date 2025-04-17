@@ -10,7 +10,7 @@ public class Document
     private DateTime _createdDate;
     private DateTime _updatedDate;
     private DateTime _deadline;
-    private DateTime _dateReceived;
+    private DateTime? _dateReceived;
 
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     [Key]
@@ -23,18 +23,18 @@ public class Document
 
     public DateTime CreatedDate
     {
-        get => _createdDate.ToLocalTime();
+        get => DateTime.SpecifyKind(_createdDate, DateTimeKind.Utc).ToLocalTime();
         set => _createdDate = value.ToUniversalTime();
     }
     public DateTime UpdatedDate
     {
-        get => _updatedDate.ToLocalTime();
+        get => DateTime.SpecifyKind(_updatedDate, DateTimeKind.Utc).ToLocalTime();
         set => _updatedDate = value.ToUniversalTime();
     }
 
     public DateTime Deadline
     {
-        get => _deadline.ToLocalTime();
+        get => DateTime.SpecifyKind(_deadline, DateTimeKind.Utc).ToLocalTime();
         set => _deadline = value.ToUniversalTime();
     }
 
@@ -44,7 +44,7 @@ public class Document
 
     public DateTime? DateReceived
     {
-        get => _dateReceived.ToLocalTime();
+        get => _dateReceived.HasValue ? DateTime.SpecifyKind(_dateReceived.Value, DateTimeKind.Utc).ToLocalTime() : (DateTime?)null;
         set => _dateReceived = value.HasValue ? value.Value.ToUniversalTime() : default;
     }
     public string? DateIssued { get; set; }

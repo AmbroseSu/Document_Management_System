@@ -23,7 +23,7 @@ public class ArchivedDocument
 
     public DateTime CreatedDate
     {
-        get => _createdDate.ToLocalTime();
+        get => DateTime.SpecifyKind(_createdDate, DateTimeKind.Utc).ToLocalTime();
         set => _createdDate = value.ToUniversalTime();
     }
 
@@ -34,19 +34,19 @@ public class ArchivedDocument
 
     public DateTime? DateIssued
     {
-        get => _dateIssued?.ToLocalTime();
+        get => _dateIssued.HasValue ? DateTime.SpecifyKind(_dateIssued.Value, DateTimeKind.Utc).ToLocalTime() : (DateTime?)null;
         set => _dateIssued = value?.ToUniversalTime();
     }
 
     public DateTime? DateReceived
     {
-        get => _dateReceived?.ToLocalTime();
+        get => _dateReceived.HasValue ? DateTime.SpecifyKind(_dateReceived.Value, DateTimeKind.Utc).ToLocalTime() : (DateTime?)null;
         set => _dateReceived = value?.ToUniversalTime();
     }
 
     public DateTime? DateSented
     {
-        get => _dateSented?.ToLocalTime();
+        get => _dateSented.HasValue ? DateTime.SpecifyKind(_dateSented.Value, DateTimeKind.Utc).ToLocalTime() : (DateTime?)null;
         set => _dateSented = value?.ToUniversalTime();
     }
 
