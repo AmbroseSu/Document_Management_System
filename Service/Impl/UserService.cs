@@ -562,7 +562,8 @@ public class UserService : IUserService
             //     throw new Exception($"Dòng {row}: Ngày sinh không đúng định dạng.");
             // }
             
-            string[] formats = { "dd/MM/yyyy", "d/M/yyyy", "dd-MM-yyyy", "yyyy-MM-dd" };
+            string[] formats = {"dd-MMM-yyyy hh:mm:ss tt", "dd-MMM-yy hh:mm:ss tt", "dd/MM/yyyy", "d/M/yyyy", "dd-MM-yyyy", "yyyy-MM-dd", "MM-dd-yyyy", "yyyy/MM/dd", "dd/MM/yy", "d/M/yy", "dd-MM-yy", "yyyy-MM-dd", "MM-dd-yy", "yyyy/MM/yy", "dd-MMM-yy",
+                "dd-MMM-yyyy" };
 
             if (!DateTime.TryParseExact(dobRaw, formats, CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime dob))
             {
