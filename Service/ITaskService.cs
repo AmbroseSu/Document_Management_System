@@ -14,4 +14,5 @@ public interface ITaskService
     Task<ResponseDto> HandleTaskActionAsync(Guid taskId, Guid userId, TaskAction action);
     Task<ResponseDto> FindAllTasksAsync(Guid userId, int page, int limit);
     Task<ResponseDto> FindTaskByIdAsync(Guid id);
+    Task<ResponseDto> RejectDocumentActionAsync(RejectDocumentRequest rejectDocumentRequest);
 }

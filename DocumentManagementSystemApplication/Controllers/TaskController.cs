@@ -73,6 +73,12 @@ namespace DocumentManagementSystemApplication.Controllers
         {
             return await _taskService.FindTaskByIdAsync(id);
         }
+        
+        [HttpPost("create-reject-document-action")]
+        public async Task<ResponseDto> RejectDocumentAction([FromBody] RejectDocumentRequest rejectDocumentRequest)
+        {
+            return await _taskService.RejectDocumentActionAsync(rejectDocumentRequest);
+        }
 
     }
 }
