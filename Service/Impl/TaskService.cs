@@ -609,11 +609,11 @@ public class TaskService : ITaskService
 
     result = _mapper.Map<IEnumerable<DocumentDto>>(documentResults);
     
-    List<DocumentResponse> documentResponses = new List<DocumentResponse>();
+    List<DocumentTabResponse> documentResponses = new List<DocumentTabResponse>();
     foreach (var doc in result)
     {
         var workflow = await _unitOfWork.WorkflowUOW.FindWorkflowByIdAsync(doc.DocumentWorkflowStatuses?.FirstOrDefault()?.WorkflowId);
-        var documentResponse = new DocumentResponse
+        var documentResponse = new DocumentTabResponse
         {
             DocumentDto = doc,
             WorkflowName = workflow?.WorkflowName,
