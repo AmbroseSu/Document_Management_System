@@ -14,9 +14,10 @@ public interface IDocumentService
     Task<IActionResult> GetArchiveDocumentById(Guid documentId, string? version);
     Task<ResponseDto> GetAllTypeDocumentsMobile(Guid userId);
     Task<ResponseDto> GetAllDocumentsMobile(Guid? workFlowId, Guid documentTypeId, Guid userId);
-    Task<ResponseDto> GetDocumentDetailById(Guid? documentId, Guid userId,Guid workFlowId);
+    Task<ResponseDto> GetDocumentDetailByIdMobile(Guid? documentId, Guid userId,Guid workFlowId);
     Task<ResponseDto> ClearCacheDocumentMobile(Guid userId);
     Task<ResponseDto> GetAllTypeDocMobile(Guid userId);
     Task<ResponseDto> GetAllDocumentsByTypeMobile(Guid documentTypeId, Guid userId);
     Task<ResponseDto> GetDocumentByNameMobile(string documentName, Guid userId);
+    Task<ResponseDto> GetDocumentDetailById(Guid documentId, Guid userId);
 }

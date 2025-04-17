@@ -248,6 +248,51 @@ public partial class DocumentService : IDocumentService
         return ResponseUtil.GetObject(result,ResponseMessages.GetSuccessfully,HttpStatusCode.OK,1);
     }
 
+    public async Task<ResponseDto> GetDocumentDetailById(Guid documentId, Guid userId)
+    {
+        var cache = _unitOfWork.RedisCacheUOW.GetData<DocumentResponse>(
+            "GetDocumentDetailById" + userId+documentId);
+        if (cache != null)
+        {
+            return ResponseUtil.GetObject(cache,ResponseMessages.GetSuccessfully,HttpStatusCode.OK,1);
+        }
+        var document = await _unitOfWork.DocumentUOW.FindDocumentByIdAsync(documentId);
+        var task = await _unitOfWork.TaskUOW.FindTaskByDocumentIdAndUserIdAsync(documentId, userId);
+        var versions = document.DocumentVersions.ToList();
+
+        var result = new DocumentResponse()
+        {
+            DocumentId = document.DocumentId,
+            DocumentName = document.DocumentName,
+            DocumentContent = document.DocumentContent,
+            NumberOfDocument = document.NumberOfDocument,
+            Sender = document.Sender,
+            CreatedBy = document.User.FullName,
+            DateReceived = document.DateReceived,
+            WorkflowName = document.DocumentWorkflowStatuses.FirstOrDefault().Workflow.WorkflowName,
+            Deadline = document.Deadline,
+            Status = document.ProcessingStatus.ToString(),
+            DocumentTypeName = document.DocumentType.DocumentTypeName,
+            Versions = versions.Select(v => new VersionDetailRespone()
+            {
+                VersionNumber = v.VersionNumber,
+                CreatedDate = v.CreateDate,
+                Url = v.DocumentVersionUrl
+            }).ToList(),
+            Tasks = task.Select(t => new TasksResponse()
+            {
+                TaskId = t.TaskId,
+                TaskTitle = t.Title,
+                Description = t.Description,
+                TaskType = t.TaskType.ToString(),
+                Status = t.TaskStatus.ToString()
+            }).ToList(),
+            
+        };
+        _unitOfWork.RedisCacheUOW.SetData("GetDocumentDetailById" + userId+documentId, result,TimeSpan.FromMinutes(2));
+        return ResponseUtil.GetObject(result,ResponseMessages.GetSuccessfully,HttpStatusCode.OK,1);
+    }
+
 
     public async Task<ResponseDto> GetAllDocumentsMobile(Guid? workFlowId, Guid documentTypeId, Guid userId)
     {
@@ -278,7 +323,7 @@ public partial class DocumentService : IDocumentService
         return ResponseUtil.GetObject(result,ResponseMessages.GetSuccessfully,HttpStatusCode.OK,1);
     }
 
-    public async Task<ResponseDto> GetDocumentDetailById(Guid? documentId, Guid userId,Guid workFlowId)
+    public async Task<ResponseDto> GetDocumentDetailByIdMobile(Guid? documentId, Guid userId,Guid workFlowId)
     {
         var isArchive = workFlowId.Equals(Guid.Parse("00000000-0000-0000-0000-000000000000"));
         if(!isArchive)
@@ -443,10 +488,13 @@ public partial class DocumentService : IDocumentService
 
     public async Task<IActionResult> GetDocumentById(Guid documentId, string version)
     {
-        var document = await _unitOfWork.DocumentUOW.FindDocumentByIdAsync(documentId);
-        var versionId = document.DocumentVersions.FirstOrDefault(x => x.VersionNumber == version)?.DocumentVersionId;
-        return await _fileService.GetPdfFile(Path.Combine("document", documentId.ToString(), versionId.ToString(),
+
+         var document = await _unitOfWork.DocumentUOW.FindDocumentByIdAsync(documentId);
+        var versionId1 = document.DocumentVersions.FirstOrDefault(x => x.VersionNumber == version)?.DocumentVersionId;
+        var result = await _fileService.GetPdfFile(Path.Combine("document", documentId.ToString(), versionId1.ToString(),
             document.DocumentName + ".pdf"));
+
+        return result;
     }
 
     public async Task<ResponseDto> UpdateConfirmTaskWithDocument(Guid documentId)
@@ -516,8 +564,9 @@ public partial class DocumentService : IDocumentService
     public async Task<IActionResult> GetArchiveDocumentById(Guid documentId, string? version)
     {
         var document = await _unitOfWork.ArchivedDocumentUOW.FindArchivedDocumentByIdAsync(documentId);
-        return await _fileService.GetPdfFile(Path.Combine("archive_document", documentId.ToString(),
+        var result = await _fileService.GetPdfFile(Path.Combine("archive_document", documentId.ToString(),
             document.ArchivedDocumentName + ".pdf"));
+        return result;
     }
     
 
