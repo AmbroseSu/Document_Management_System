@@ -557,9 +557,16 @@ public class UserService : IUserService
                 continue;
             }
 
-            if (!DateTime.TryParse(dobRaw, new CultureInfo("vi-VN"), DateTimeStyles.None, out DateTime dob))
+            // if (!DateTime.TryParse(dobRaw, new CultureInfo("vi-VN"), DateTimeStyles.None, out DateTime dob))
+            // {
+            //     throw new Exception($"Dòng {row}: Ngày sinh không đúng định dạng.");
+            // }
+            
+            string[] formats = { "dd/MM/yyyy", "d/M/yyyy", "dd-MM-yyyy", "yyyy-MM-dd" };
+
+            if (!DateTime.TryParseExact(dobRaw, formats, CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime dob))
             {
-                throw new Exception($"Dòng {row}: Ngày sinh không đúng định dạng.");
+                throw new Exception($"Dòng {rowIndex}: Ngày sinh không đúng định dạng.");
             }
 
             Gender gender = genderRaw switch
