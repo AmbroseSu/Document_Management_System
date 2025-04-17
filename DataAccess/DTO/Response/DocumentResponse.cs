@@ -16,6 +16,8 @@ public class DocumentResponse
     public DateTime? Deadline { get; set; }
     public string? Status { get; set; }
     public string? CreatedBy { get; set; }
+    public string? DateIssued { get; set; }
+    public DateTime? DateExpires { get; set; }
     public List<SignatureResponse>? Signatures { get; set; } = [];
     public List<VersionDetailRespone>? Versions { get; set; } = [];  
     public List<TasksResponse>? Tasks { get; set; } = [];
@@ -25,7 +27,7 @@ public class SignatureResponse
 {
     public string? SignerName { get; set; }
     public DateTime? SignedDate { get; set; }
-    public bool IsDigital {get;set;} = false;
+    public bool IsDigital {get;set;}
 }
 
 public class VersionDetailRespone
@@ -33,6 +35,7 @@ public class VersionDetailRespone
     public string? VersionNumber { get; set; }
     public DateTime? CreatedDate { get; set; }
     public string? Url { get; set; }
+    public bool? IsFinal { get; set; }
 }
 public class TasksResponse
 {

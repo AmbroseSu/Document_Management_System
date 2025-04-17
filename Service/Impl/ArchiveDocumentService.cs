@@ -1,20 +1,26 @@
 using System;
+using System.Net;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
+using System.Text.RegularExpressions;
 using AutoMapper;
+using BusinessObject;
+using DataAccess.DTO;
 using Org.BouncyCastle.X509;
 using Org.BouncyCastle.Security;
 using iText.Signatures;
 //using iTextSharp.text.pdf;
 using Microsoft.AspNetCore.Http;
 using Repository;
+using Service.Response;
+using Service.Utilities;
 using Syncfusion.Pdf.Parsing;
 using PdfDocument = iText.Kernel.Pdf.PdfDocument;
 using PdfReader = iText.Kernel.Pdf.PdfReader;
 
 namespace Service.Impl;
 
-public class ArchiveDocumentService : IArchiveDocumentService
+public partial class ArchiveDocumentService : IArchiveDocumentService
 {
     private readonly IMapper _mapper;
     private readonly IUnitOfWork _unitOfWork;
@@ -83,4 +89,48 @@ public class ArchiveDocumentService : IArchiveDocumentService
     }
 }*/
 
+    public async Task<ResponseDto> GetAllArchiveDocuments(Guid userId, int page, int pageSize)
+    {
+        var cache = _unitOfWork.RedisCacheUOW.GetData<List<object>>("ArchiveDocumentUserId" + userId);
+        IEnumerable<ArchivedDocument> aDoc;
+        if (cache == null)
+        {
+            aDoc = await _unitOfWork.ArchivedDocumentUOW.FindArchivedDocumentByUserIdAsync(userId);
+        }
+        else
+        {
+            return ResponseUtil.GetCollection(cache.Skip((page - 1) * pageSize).Take(pageSize).ToList(), ResponseMessages.GetSuccessfully, HttpStatusCode.OK, 10, page,
+                pageSize, cache.Count);
+        }
+
+        
+        var response = aDoc.Select(x =>
+            new
+            {
+                Name = x.ArchivedDocumentName,
+                CreateDate = x.CreatedDate,
+                Status = x.ArchivedDocumentStatus.ToString(),
+                Type = x.DocumentType?.DocumentTypeName ?? string.Empty,
+                SignBy = ExtractSigners(
+                    x.ArchiveDocumentSignatures?
+                        .Select(c => c.DigitalCertificate)
+                        .FirstOrDefault()?.Subject ?? string.Empty
+                )
+            }).ToList();
+
+        _unitOfWork.RedisCacheUOW.SetData("ArchiveDocumentUserId" + userId, response,TimeSpan.FromMinutes(1));
+        response.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+        return ResponseUtil.GetCollection(response, ResponseMessages.GetSuccessfully, HttpStatusCode.OK, response.Count, page,
+            pageSize, (long)Math.Ceiling((double)(response.Count/pageSize)));
+    }
+    
+    private static string ExtractSigners(string? signature)
+    {
+        var regex = MyRegex();
+        var result = regex.Match(signature ?? string.Empty);
+        var extracted = result.Success ? result.Groups[1].Value : string.Empty;
+        return extracted;
+    }
+    [GeneratedRegex(@"CN=([^,]+)")]
+    private static partial Regex MyRegex();
 }

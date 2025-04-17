@@ -55,7 +55,10 @@ public class ArchivedDocumentRepository : IArchivedDocumentRepository
                 .Include(d => d.UserDocumentPermissions)
                 .ThenInclude(up => up.User)
                 .ThenInclude(u => u.Division)
-                .Include(d => d.DocumentType));
+                .Include(d => d.DocumentType)
+                .Include(d => d.ArchiveDocumentSignatures)
+                .ThenInclude(d => d.DigitalCertificate)
+                .ThenInclude(d => d.User));
     }
     
     public async Task<IEnumerable<ArchivedDocument>> FindArchivedDocumentsByIdsAsync(List<Guid> archivedDocumentIds)

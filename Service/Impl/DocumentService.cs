@@ -259,38 +259,59 @@ public partial class DocumentService : IDocumentService
         var document = await _unitOfWork.DocumentUOW.FindDocumentByIdAsync(documentId);
         var task = await _unitOfWork.TaskUOW.FindTaskByDocumentIdAndUserIdAsync(documentId, userId);
         var versions = document.DocumentVersions.ToList();
+        var signature = document.DocumentVersions.FirstOrDefault(x => x.IsFinalVersion)?.DocumentSignatures;
+        var dateExpires = DateTime.MaxValue;
+        if(signature!=null)
+            foreach (var sig in signature.Where(sig => sig.SignedAt < dateExpires))
+            {
+                dateExpires = sig.SignedAt;
+            }
+
+
+        signature ??= [];
 
         var result = new DocumentResponse()
-        {
-            DocumentId = document.DocumentId,
-            DocumentName = document.DocumentName,
-            DocumentContent = document.DocumentContent,
-            NumberOfDocument = document.NumberOfDocument,
-            Sender = document.Sender,
-            CreatedBy = document.User.FullName,
-            DateReceived = document.DateReceived,
-            WorkflowName = document.DocumentWorkflowStatuses.FirstOrDefault().Workflow.WorkflowName,
-            Deadline = document.Deadline,
-            Status = document.ProcessingStatus.ToString(),
-            DocumentTypeName = document.DocumentType.DocumentTypeName,
-            Versions = versions.Select(v => new VersionDetailRespone()
             {
-                VersionNumber = v.VersionNumber,
-                CreatedDate = v.CreateDate,
-                Url = v.DocumentVersionUrl
-            }).ToList(),
-            Tasks = task.Select(t => new TasksResponse()
-            {
-                TaskId = t.TaskId,
-                TaskTitle = t.Title,
-                Description = t.Description,
-                TaskType = t.TaskType.ToString(),
-                Status = t.TaskStatus.ToString()
-            }).ToList(),
+                DocumentId = document.DocumentId,
+                DocumentName = document.DocumentName,
+                DocumentContent = document.DocumentContent,
+                NumberOfDocument = document.NumberOfDocument,
+                Sender = document.Sender,
+                CreatedBy = document.User.FullName,
+                DateReceived = document.DateReceived,
+                WorkflowName = document.DocumentWorkflowStatuses.FirstOrDefault().Workflow.WorkflowName,
+                Deadline = document.Deadline,
+                Status = document.ProcessingStatus.ToString(),
+                DocumentTypeName = document.DocumentType.DocumentTypeName,
+                DateIssued = document.DateIssued,
+                DateExpires = dateExpires,
+                Versions = versions.Select(v => new VersionDetailRespone()
+                {
+                    VersionNumber = v.VersionNumber,
+                    CreatedDate = v.CreateDate,
+                    Url = v.DocumentVersionUrl,
+                    IsFinal = v.IsFinalVersion
+                }).ToList(),
+                Tasks = task.Select(t => new TasksResponse()
+                {
+                    TaskId = t.TaskId,
+                    TaskTitle = t.Title,
+                    Description = t.Description,
+                    TaskType = t.TaskType.ToString(),
+                    Status = t.TaskStatus.ToString()
+                }).ToList(),
+                Signatures = signature.Select(x => new SignatureResponse()
+                    {
+                        SignerName = ExtractSigners(x.DigitalCertificate.Subject),
+                        SignedDate = x.SignedAt,
+                        IsDigital = x.DigitalCertificate.SerialNumber != null
+                    }
+                ).ToList()
             
-        };
-        _unitOfWork.RedisCacheUOW.SetData("GetDocumentDetailById" + userId+documentId, result,TimeSpan.FromMinutes(2));
-        return ResponseUtil.GetObject(result,ResponseMessages.GetSuccessfully,HttpStatusCode.OK,1);
+            };
+            _unitOfWork.RedisCacheUOW.SetData("GetDocumentDetailById" + userId+documentId, result,TimeSpan.FromMinutes(2));
+            return ResponseUtil.GetObject(result,ResponseMessages.GetSuccessfully,HttpStatusCode.OK,1);
+        
     }
 
 
@@ -698,7 +719,13 @@ public partial class DocumentService : IDocumentService
             }).ToList()
             : null;
     }
-
+    private static string ExtractSigners(string? signature)
+    {
+        var regex = MyRegex();
+        var result = regex.Match(signature ?? string.Empty);
+        var extracted = result.Success ? result.Groups[1].Value : string.Empty;
+        return extracted;
+    }
     [GeneratedRegex(@"CN=([^,]+)")]
     private static partial Regex MyRegex();
 }

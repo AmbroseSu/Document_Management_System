@@ -113,6 +113,38 @@ public class FileService : IFileService
 
     }
 
+    public async Task<string> SaveSignature(IFormFile file, string userId)
+    {
+        var avatarFolder = Path.Combine(_storagePath, "signature");
+        Directory.CreateDirectory(avatarFolder);
+
+        var fileExt = Path.GetExtension(file.FileName);
+        var fileName = $"{userId}{fileExt}"; // tạo tên mới
+        var filePath = Path.Combine(avatarFolder, fileName);
+
+        using (var stream = new FileStream(filePath, FileMode.Create))
+        {
+            await file.CopyToAsync(stream);
+        }
+
+        return fileName;
+    }
+
+    public async Task<IActionResult> GetSignature(string userId)
+    {
+        var filePath = Path.Combine(_storagePath,"signature", userId);
+
+        if (!File.Exists(filePath))
+        {
+            throw new FileNotFoundException("File not found", filePath);
+        }
+
+        var contentType = GetContentType(filePath);
+        var bytes = await File.ReadAllBytesAsync(filePath);
+
+        return new FileContentResult(bytes, contentType);
+    }
+
     // public async Task<IActionResult> GetPdfFile(Guid id)
     // {
     //     var filePath = Path.Combine(_storagePath, "document", "UploadedFiles", id+".pdf");;

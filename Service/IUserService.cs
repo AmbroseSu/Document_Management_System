@@ -16,4 +16,6 @@ public interface IUserService
     Task<ResponseDto> UpdateAvatarAsync(IFormFile file,string id);
     Task<ResponseDto> ImportUsersFromExcelAsync(IFormFile file, Guid divisionId);
     Task<IActionResult> GetAvatar(string userId);
+    Task<ResponseDto> UploadSignatureImgAsync(IFormFile file, Guid userId);
+    Task<IActionResult> GetSignatureImg(string userId);
 }

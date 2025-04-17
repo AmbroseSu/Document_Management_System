@@ -641,6 +641,17 @@ public class UserService : IUserService
         return await _fileService.GetAvatar(userId);
     }
 
+    public async Task<ResponseDto> UploadSignatureImgAsync(IFormFile file, Guid userId)
+    {
+        var url = _host+"/api/User/view-signature-img/"+ await _fileService.SaveSignature(file, userId.ToString());
+        return ResponseUtil.GetObject(url,"ok",HttpStatusCode.OK,1);
+    }
+
+    public async Task<IActionResult> GetSignatureImg(string userId)
+    {
+        return await _fileService.GetSignature(userId);
+    }
+
     public static string GenerateRandomString(int length)
     {
         const string lowerCase = "abcdefghijklmnopqrstuvwxyz";

@@ -15,4 +15,6 @@ public interface IFileService
     string ArchiveDocument(string fileName, Guid documentId, Guid versionId, Guid archiveId);
 
     string? GetFileSize(Guid documentId, Guid versionId, string fileName);
+    Task<string> SaveSignature(IFormFile file, string userId);
+    Task<IActionResult> GetSignature(string userId);
 }

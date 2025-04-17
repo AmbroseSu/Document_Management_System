@@ -73,6 +73,18 @@ public class UserController : ControllerBase
 
         return await _userService.GetAvatar(fileName);
     }
+    
+    [HttpPost("update-signature-img/{userId:guid}")]
+    public async Task<ResponseDto> UploadSignatureImg([FromForm] IFormFile file,[FromRoute] Guid userId)
+    {
+        return await _userService.UploadSignatureImgAsync(file, userId);
+    }
+    
+    [HttpGet("view-signature-img/{userId}")]
+    public async Task<IActionResult> GetSignatureImg([FromRoute] string userId)
+    {
+        return await _userService.GetSignatureImg(userId);
+    }
 
 
 
