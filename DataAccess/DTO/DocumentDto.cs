@@ -34,5 +34,6 @@ public class DocumentDto
     public List<DocumentVersion>? DocumentVersions { get; set; }
     public List<DocumentWorkflowStatus>? DocumentWorkflowStatuses { get; set; }
     public DocumentVersionDto? DocumentVersion { get; set; }
+    public DocumentType? DocumentType { get; set; }
 
 }

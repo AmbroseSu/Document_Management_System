@@ -396,7 +396,7 @@ public class TaskService : ITaskService
    
     
     
-    public async Task<ResponseDto> GetDocumentsByTabForUser(Guid userId, DocumentTab tab, int page, int limit)
+    public async Task<ResponseDto> GetDocumentsByTabForUser(String? docName, Guid userId, DocumentTab tab, int page, int limit)
     {
         try
         {
@@ -408,6 +408,7 @@ public class TaskService : ITaskService
     int totalRecords = 0;
     int totalPages = 0;
     IEnumerable<Document> documentResults = new List<Document>();
+    IEnumerable<DocumentRejectResponse> documentRejectResults = new List<DocumentRejectResponse>();
     IEnumerable<DocumentDto> result = new List<DocumentDto>();
 
     switch (tab)
@@ -415,15 +416,6 @@ public class TaskService : ITaskService
         case DocumentTab.All:
             filteredDocuments = allDocuments;
             break;
-
-        case DocumentTab.Draft:
-        {
-            filteredDocuments = allDocuments
-                .Where(d => d.UserId == userId &&
-                            d.Tasks.All(t => t.TaskStatus == TasksStatus.Pending))
-                .ToList();
-            break;
-        }
 
         case DocumentTab.Overdue:
         {
@@ -437,18 +429,62 @@ public class TaskService : ITaskService
 
         case DocumentTab.Rejected:
         {
-            filteredDocuments = allDocuments
-                .Where(d => d.Tasks.Any(t => t.UserId == userId &&
-                                             t.TaskStatus == TasksStatus.Revised))
-                .ToList();
-            break;
-            
-            IEnumerable<Document> documentRejectResponses = new List<Document>();
+            List<DocumentRejectResponse> documentRejectResponses = new List<DocumentRejectResponse>();
             foreach (var allDocument in allDocuments)
             {
-                var documentVersion = await _unitOfWork.DocumentVersionUOW.FindDocumentVersionByDocumentIdAsync(allDocument.DocumentId);
+                var documentVersions = await _unitOfWork.DocumentVersionUOW.FindDocumentVersionByDocumentIdAsync(allDocument.DocumentId);
                 
+                var rejectedVersions = documentVersions
+                    .Where(v => v.IsFinalVersion == false)
+                    .ToList();
+                
+                if (!rejectedVersions.Any())
+                    continue;
+                
+                List<VersionOfDocResponse> versionOfDocResponses = new List<VersionOfDocResponse>();
+                foreach (var documentVersion in rejectedVersions)
+                {
+                    var rejectComment = documentVersion.Comments.FirstOrDefault();
+                    if (rejectComment == null) continue;
+                    var documentVersionRes = new VersionOfDocResponse
+                    {
+                        VersionId = documentVersion.DocumentVersionId,
+                        VersionNumber = documentVersion.VersionNumber,
+                        DateReject = rejectComment.CreateDate,
+                        UserIdReject = rejectComment.UserId,
+                        UserReject = rejectComment.User.UserName
+                    };
+                    versionOfDocResponses.Add(documentVersionRes);
+                }
+                var documentRejectResponse = new DocumentRejectResponse
+                {
+                    DocumentId = allDocument.DocumentId,
+                    DocumentName = allDocument.DocumentName,
+                    WorkflowName = allDocument.DocumentWorkflowStatuses.FirstOrDefault()?.Workflow.WorkflowName,
+                    DocumentType = allDocument.DocumentType.DocumentTypeName,
+                    VersionOfDocResponses = versionOfDocResponses
+                };
+                documentRejectResponses.Add(documentRejectResponse);
             }
+            
+            if (!string.IsNullOrWhiteSpace(docName))
+            {
+                documentRejectResponses = documentRejectResponses
+                    .Where(d => d.DocumentName != null && d.DocumentName.ToLower().Contains(docName.ToLower(), StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+            }
+            
+            totalRecords = documentRejectResponses.Count();
+            totalPages = (int)Math.Ceiling((double)totalRecords / limit);
+            documentRejectResults = documentRejectResponses
+                .Skip((page - 1) * limit)
+                .Take(limit)
+                .ToList();
+            
+            
+
+            return ResponseUtil.GetCollection(documentRejectResults, ResponseMessages.GetSuccessfully, HttpStatusCode.OK, totalRecords, page, limit, totalPages);
+
             // docId, docName, docType, versionId, versionNumber, date reject, user reject
         }
             
@@ -557,6 +593,13 @@ public class TaskService : ITaskService
         }
     }
     
+    if (!string.IsNullOrWhiteSpace(docName))
+    {
+        filteredDocuments = filteredDocuments
+            .Where(d => !string.IsNullOrEmpty(d.DocumentName) &&
+                        d.DocumentName.Contains(docName, StringComparison.OrdinalIgnoreCase));
+    }
+    
     totalRecords = filteredDocuments.Count();
     totalPages = (int)Math.Ceiling((double)totalRecords / limit);
     documentResults = filteredDocuments
@@ -565,8 +608,20 @@ public class TaskService : ITaskService
         .ToList();
 
     result = _mapper.Map<IEnumerable<DocumentDto>>(documentResults);
+    
+    List<DocumentResponse> documentResponses = new List<DocumentResponse>();
+    foreach (var doc in result)
+    {
+        var workflow = await _unitOfWork.WorkflowUOW.FindWorkflowByIdAsync(doc.DocumentWorkflowStatuses?.FirstOrDefault()?.WorkflowId);
+        var documentResponse = new DocumentResponse
+        {
+            DocumentDto = doc,
+            WorkflowName = workflow?.WorkflowName,
+        };
+        documentResponses.Add(documentResponse);
+    }
 
-    return ResponseUtil.GetCollection(result, ResponseMessages.GetSuccessfully, HttpStatusCode.OK, totalRecords, page, limit, totalPages);
+    return ResponseUtil.GetCollection(documentResponses, ResponseMessages.GetSuccessfully, HttpStatusCode.OK, totalRecords, page, limit, totalPages);
     
         }
         catch (Exception e)
