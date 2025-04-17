@@ -15,7 +15,7 @@ public class DocumentWorkflowStatus
     private DateTime _updatedAt;
     public DateTime UpdatedAt
     {
-        get => _updatedAt.ToLocalTime();
+        get => DateTime.SpecifyKind(_updatedAt, DateTimeKind.Utc).ToLocalTime();
         set => _updatedAt = value.ToUniversalTime();
     }
     

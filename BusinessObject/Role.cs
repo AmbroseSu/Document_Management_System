@@ -15,7 +15,7 @@ public class Role
 
     public DateTime? CreatedDate
     {
-        get => _createdDate?.ToLocalTime();
+        get => _createdDate.HasValue ? DateTime.SpecifyKind(_createdDate.Value, DateTimeKind.Utc).ToLocalTime() : (DateTime?)null;
         set => _createdDate = value?.ToUniversalTime();
     }
     

@@ -21,13 +21,13 @@ public class Tasks
 
     public DateTime StartDate
     {
-        get => _startDate.ToLocalTime();
+        get => DateTime.SpecifyKind(_startDate, DateTimeKind.Utc).ToLocalTime();
         set => _startDate = value.ToUniversalTime();
     }
 
     public DateTime EndDate
     {
-        get => _endDate.ToLocalTime();
+        get => DateTime.SpecifyKind(_endDate, DateTimeKind.Utc).ToLocalTime();
         set => _endDate = value.ToUniversalTime();
     }
 
@@ -36,13 +36,13 @@ public class Tasks
 
     public DateTime CreatedDate
     {
-        get => _createdDate.ToLocalTime();
+        get => DateTime.SpecifyKind(_createdDate, DateTimeKind.Utc).ToLocalTime();
         set => _createdDate = value.ToUniversalTime();
     }
     
     public DateTime UpdatedDate
     {
-        get => _updatedDate.ToLocalTime();
+        get => DateTime.SpecifyKind(_updatedDate, DateTimeKind.Utc).ToLocalTime();
         set => _updatedDate = value.ToUniversalTime();
     }
     public int TaskNumber { get; set; }

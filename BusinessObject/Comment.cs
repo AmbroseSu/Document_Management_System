@@ -15,7 +15,7 @@ public class Comment
 
     public DateTime CreateDate
     {
-        get => _createDate.ToLocalTime();
+        get => DateTime.SpecifyKind(_createDate, DateTimeKind.Utc).ToLocalTime();
         set => _createDate = value.ToUniversalTime();
     }
 

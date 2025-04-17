@@ -14,7 +14,7 @@ public class DocumentType
     private DateTime _createAt;
     public DateTime CreateAt
     {
-        get => _createAt.ToLocalTime();
+        get => DateTime.SpecifyKind(_createAt, DateTimeKind.Utc).ToLocalTime();
         set => _createAt = value.ToUniversalTime();
     }
     public Guid? CreateBy { get; set; }

@@ -26,13 +26,14 @@ public class User
 
     public DateTime CreatedAt
     {
-        get => _createdAt.ToLocalTime();
+        get => DateTime.SpecifyKind(_createdAt, DateTimeKind.Utc).ToLocalTime();
         set => _createdAt = value.ToUniversalTime();
     }
+    
 
     public DateTime UpdatedAt
     {
-        get => _updatedAt.ToLocalTime();
+        get => DateTime.SpecifyKind(_updatedAt, DateTimeKind.Utc).ToLocalTime();
         set => _updatedAt = value.ToUniversalTime();
     }
 
@@ -41,7 +42,7 @@ public class User
 
     public DateTime? DateOfBirth
     {
-        get => _dateOfBirth?.ToLocalTime();
+        get => _dateOfBirth.HasValue ? DateTime.SpecifyKind(_dateOfBirth.Value, DateTimeKind.Utc).ToLocalTime() : (DateTime?)null;
         set => _dateOfBirth = value?.ToUniversalTime();
     }
 
