@@ -50,6 +50,14 @@ namespace DocumentManagementSystemApplication.Controllers
             return Ok(new { message = "Notification sent" });
         }
         
+        [HttpGet("view-all-documents")]
+        public async Task<ResponseDto> GetAllDocuments([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+        {
+            var id = User.FindFirst("userid")?.Value;
+            var documents = await _archiveDocumentService.GetAllArchiveDocuments(Guid.Parse(id),page,pageSize);
+            return documents;
+        }
+        
         /*[HttpPost("create-send-to-user")]
         [AuthorizeResource("[Archivedocument] Create Send To User")]
         public async Task<IActionResult> SendToUser([FromQuery] string userId, [FromQuery] string message)
