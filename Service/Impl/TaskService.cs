@@ -358,7 +358,9 @@ public class TaskService : ITaskService
            result.TaskDto = taskDto;
            result.Scope = task.Document.DocumentWorkflowStatuses.FirstOrDefault().Workflow.Scope;
            result.WorkflowName = task.Document.DocumentWorkflowStatuses.FirstOrDefault().Workflow.WorkflowName;
+           result.WorkflowId = task.Document.DocumentWorkflowStatuses.FirstOrDefault().Workflow.WorkflowId;
            result.StepAction = task.Step.Action;
+           result.DocumentId = document.DocumentId;
            result.DocumentTypeName = task.Document.DocumentType.DocumentTypeName;
            var user = await _unitOfWork.UserUOW.FindUserByIdAsync(orderedTasks.First().UserId);
            result.UserNameCreateTask = user.FullName;
