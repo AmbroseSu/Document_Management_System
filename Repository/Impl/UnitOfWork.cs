@@ -14,7 +14,7 @@ public class UnitOfWork : IUnitOfWork
         IResourceRepository resourceUow, IPermissionRepository permissionUow, IRoleRepository roleUow,
         IRoleResourceRepository roleResourceUow, IUserRoleRepository userRoleUow,
         IVerificationOtpRepository verificationOtpUow, IDigitalCertificateRepository digitalCertificateUow,
-        IDivisionRepository divisionUow, IDocumentTypeRepository documentTypeUow, IWorkflowRepository workflowUow, IStepRepository stepUow, IFlowRepository flowUow, IWorkflowFlowTransitionRepository workflowFlowTransitionUow, IWorkflowFlowRepository workflowFlowUow, ITaskRepository taskUow, IArchivedDocumentRepository archivedDocumentUow, IArchiveDocumentSignatureRepository archiveDocumentSignatureUow, IDocumentRepository documentUow, IDocumentSignatureRepository documentSignatureUow, IDocumentWorkflowStatusRepository documentWorkflowStatusUow, IDocumentTypeWorkflowRepository documentTypeWorkflowUow, IRedisCacheRepository redisCacheUow)
+        IDivisionRepository divisionUow, IDocumentTypeRepository documentTypeUow, IWorkflowRepository workflowUow, IStepRepository stepUow, IFlowRepository flowUow, IWorkflowFlowTransitionRepository workflowFlowTransitionUow, IWorkflowFlowRepository workflowFlowUow, ITaskRepository taskUow, IArchivedDocumentRepository archivedDocumentUow, IArchiveDocumentSignatureRepository archiveDocumentSignatureUow, IDocumentRepository documentUow, IDocumentSignatureRepository documentSignatureUow, IDocumentWorkflowStatusRepository documentWorkflowStatusUow, IDocumentTypeWorkflowRepository documentTypeWorkflowUow, IRedisCacheRepository redisCacheUow, IDocumentVersionRepository documentVersionUow, ICommentRepository commentUow)
     {
         UserUOW = userUow ?? throw new ArgumentNullException(nameof(userUow));
         _disposed = false;
@@ -42,6 +42,8 @@ public class UnitOfWork : IUnitOfWork
         DocumentWorkflowStatusUOW = documentWorkflowStatusUow;
         DocumentTypeWorkflowUOW = documentTypeWorkflowUow;
         RedisCacheUOW = redisCacheUow;
+        DocumentVersionUOW = documentVersionUow;
+        CommentUOW = commentUow;
     }
 
     public IUserRepository UserUOW { get; }
@@ -68,6 +70,9 @@ public class UnitOfWork : IUnitOfWork
     
     public IDocumentTypeWorkflowRepository DocumentTypeWorkflowUOW { get; set; }
     public IRedisCacheRepository RedisCacheUOW { get; }
+    
+    public IDocumentVersionRepository DocumentVersionUOW { get; set; }
+    public ICommentRepository CommentUOW { get; set; }
 
     public async Task<int> SaveChangesAsync()
     {

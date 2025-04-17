@@ -27,7 +27,9 @@ public interface IUnitOfWork : IDisposable
     IArchiveDocumentSignatureRepository ArchiveDocumentSignatureUOW { get; }
     IDocumentWorkflowStatusRepository DocumentWorkflowStatusUOW { get; }
     IDocumentTypeWorkflowRepository DocumentTypeWorkflowUOW { get; }
+    IDocumentVersionRepository DocumentVersionUOW { get; }
     IRedisCacheRepository RedisCacheUOW { get; }
+    ICommentRepository CommentUOW { get; }
     Task<int> SaveChangesAsync();
     
     Task<IDbContextTransaction> BeginTransactionAsync();

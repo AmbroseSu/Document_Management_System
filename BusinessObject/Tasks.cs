@@ -58,7 +58,7 @@ public class Tasks
     [JsonIgnore]
     public Document? Document { get; set; }
     public User? User { get; set; }
-    public List<Comment>? Comments { get; set; }
+    
 
     /*public Task()
     {

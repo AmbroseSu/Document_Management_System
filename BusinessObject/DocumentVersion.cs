@@ -27,4 +27,5 @@ public class DocumentVersion
     [JsonIgnore]
     public Document? Document { get; set; }
     public List<DocumentSignature>? DocumentSignatures { get; set; }
+    public List<Comment>? Comments { get; set; }
 }

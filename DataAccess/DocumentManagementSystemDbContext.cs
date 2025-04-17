@@ -302,6 +302,9 @@ public class DocumentManagementSystemDbContext : DbContext
             entity.HasMany(e => e.DocumentSignatures)
                 .WithOne(e => e.DocumentVersion)
                 .HasForeignKey(e => e.DocumentVersionId);
+            entity.HasMany(e => e.Comments)
+                .WithOne(e => e.DocumentVersion)
+                .HasForeignKey(e => e.DocumentVersionId);
         });
 
         modelBuilder.Entity<DocumentWorkflowStatus>(entity =>
@@ -433,9 +436,7 @@ public class DocumentManagementSystemDbContext : DbContext
             entity.Property(e => e.IsDeleted);
             entity.Property(e => e.IsActive);
 
-            entity.HasMany(e => e.Comments)
-                .WithOne(e => e.Task)
-                .HasForeignKey(e => e.TaskId);
+
         });
 
 

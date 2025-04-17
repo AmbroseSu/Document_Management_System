@@ -10,25 +10,25 @@ namespace DataAccess.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AlterColumn<int>(
-                name: "FlowNumber",
-                table: "WorkflowFlow",
-                type: "integer",
-                nullable: false,
-                oldClrType: typeof(bool),
-                oldType: "boolean");
+            migrationBuilder.Sql(
+                @"ALTER TABLE ""WorkflowFlow"" 
+          ALTER COLUMN ""FlowNumber"" TYPE integer 
+          USING CASE 
+              WHEN ""FlowNumber"" = true THEN 1 
+              ELSE 0 
+          END");
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AlterColumn<bool>(
-                name: "FlowNumber",
-                table: "WorkflowFlow",
-                type: "boolean",
-                nullable: false,
-                oldClrType: typeof(int),
-                oldType: "integer");
+            migrationBuilder.Sql(
+                @"ALTER TABLE ""WorkflowFlow"" 
+          ALTER COLUMN ""FlowNumber"" TYPE boolean 
+          USING CASE 
+              WHEN ""FlowNumber"" = 1 THEN true 
+              ELSE false 
+          END");
         }
     }
 }

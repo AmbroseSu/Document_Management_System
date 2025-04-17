@@ -22,9 +22,9 @@ public class Comment
     public bool IsDeleted { get; set; }
 
     public Guid UserId { get; set; }
-    public Guid TaskId { get; set; }
+    public Guid DocumentVersionId { get; set; }
     public User? User { get; set; }
-    public Tasks? Task { get; set; }
+    public DocumentVersion? DocumentVersion { get; set; }
 
     /*public Comment()
     {
