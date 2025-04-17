@@ -11,7 +11,7 @@ public class UserRequest
     public string IdentityCard { get; set; }
     public Guid DivisionId { get; set; }
     public Guid RoleId { get; set; }
-    public DateTime DateOfBirth { get; set; }
+    public DateTime? DateOfBirth { get; set; }
     public string Position { get; set; }
     public string Address { get; set; }
     public Gender Gender { get; set; }

@@ -7,7 +7,7 @@ namespace BusinessObject;
 public class User
 {
     private DateTime _createdAt;
-    private DateTime _dateOfBirth;
+    private DateTime? _dateOfBirth;
     private DateTime _updatedAt;
 
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
@@ -39,10 +39,10 @@ public class User
     public string? FcmToken { get; set; }
     public string? Position { get; set; }
 
-    public DateTime DateOfBirth
+    public DateTime? DateOfBirth
     {
-        get => _dateOfBirth.ToLocalTime();
-        set => _dateOfBirth = value.ToUniversalTime();
+        get => _dateOfBirth?.ToLocalTime();
+        set => _dateOfBirth = value?.ToUniversalTime();
     }
 
     public bool IsDeleted { get; set; }
