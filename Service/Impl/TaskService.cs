@@ -396,7 +396,7 @@ public class TaskService : ITaskService
    
     
     
-    public async Task<ResponseDto> GetDocumentsByTabForUser(String? docName, Guid userId, DocumentTab tab, int page, int limit)
+    public async Task<ResponseDto> GetDocumentsByTabForUser(String? docName, Scope? scope, Guid userId, DocumentTab tab, int page, int limit)
     {
         try
         {
@@ -471,6 +471,13 @@ public class TaskService : ITaskService
             {
                 documentRejectResponses = documentRejectResponses
                     .Where(d => d.DocumentName != null && d.DocumentName.ToLower().Contains(docName.ToLower(), StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+            }
+            
+            if (scope.HasValue)
+            {
+                documentRejectResponses = documentRejectResponses
+                    .Where(d => allDocuments.FirstOrDefault(doc => doc.DocumentId == d.DocumentId)?.DocumentWorkflowStatuses.FirstOrDefault().Workflow.Scope == scope.Value)
                     .ToList();
             }
             
@@ -598,6 +605,11 @@ public class TaskService : ITaskService
         filteredDocuments = filteredDocuments
             .Where(d => !string.IsNullOrEmpty(d.DocumentName) &&
                         d.DocumentName.Contains(docName, StringComparison.OrdinalIgnoreCase));
+    }
+    if (scope.HasValue)
+    {
+        filteredDocuments = filteredDocuments
+            .Where(d => d.DocumentWorkflowStatuses.FirstOrDefault().Workflow.Scope == scope.Value);
     }
     
     totalRecords = filteredDocuments.Count();

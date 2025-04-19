@@ -49,9 +49,9 @@ namespace DocumentManagementSystemApplication.Controllers
         
         
         [HttpGet("view-documents-by-tab-for-user")]
-        public async Task<ResponseDto> ViewDocumentsByTabForUser([FromQuery] String? docName, [FromQuery] Guid userId, [FromQuery] DocumentTab tab, [FromQuery] int page = 1, [FromQuery] int limit = 10)
+        public async Task<ResponseDto> ViewDocumentsByTabForUser([FromQuery] String? docName, [FromQuery] Scope? scope, [FromQuery] Guid userId, [FromQuery] DocumentTab tab, [FromQuery] int page = 1, [FromQuery] int limit = 10)
         {
-            return await _taskService.GetDocumentsByTabForUser(docName, userId, tab, page, limit);
+            return await _taskService.GetDocumentsByTabForUser(docName, scope, userId, tab, page, limit);
         }
 
         [HttpPost("create-handle-task-action")]
