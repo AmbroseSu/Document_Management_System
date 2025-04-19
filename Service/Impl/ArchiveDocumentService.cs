@@ -107,6 +107,7 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
         var response = aDoc.Select(x =>
             new
             {
+                Id = x.ArchivedDocumentId,
                 Name = x.ArchivedDocumentName,
                 CreateDate = x.CreatedDate,
                 Status = x.ArchivedDocumentStatus.ToString(),
