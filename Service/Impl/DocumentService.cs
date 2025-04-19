@@ -41,7 +41,8 @@ public partial class DocumentService : IDocumentService
     public DocumentService(IUnitOfWork unitOfWork, IMapper mapper, IFileService fileService,
         ILogger<DocumentService> logger, IExternalApiService externalApiService,
         IDigitalCertificateService digitalCertificateService, IDocumentSignatureService documentSignatureService,
-        IOptions<AppsetingOptions> options, INotificationService notificationService, MongoDbService notificationCollection, IHubContext<NotificationHub> hubContext)
+        IOptions<AppsetingOptions> options, INotificationService notificationService,
+        MongoDbService notificationCollection, IHubContext<NotificationHub> hubContext)
     {
         _unitOfWork = unitOfWork;
         _mapper = mapper;
@@ -56,11 +57,11 @@ public partial class DocumentService : IDocumentService
         _host = options.Value.Host;
     }
 
-    
+
     public async Task<ResponseDto> GetAllTypeDocumentsMobile(Guid userId)
     {
         List<AllDocumentResponseMobile> result;
-        var cache =  _unitOfWork.RedisCacheUOW.GetData<List<AllDocumentResponseMobile>>(
+        var cache = _unitOfWork.RedisCacheUOW.GetData<List<AllDocumentResponseMobile>>(
             "GetAllTypeDocumentsMobile_userId_" + userId);
         if (cache != null)
         {
@@ -130,9 +131,9 @@ public partial class DocumentService : IDocumentService
                                 ad.ArchivedDocumentName
                             )
                         }
-                        );
-
+                    );
             }
+
             result.Add(tmp);
             var totalDocuments = result
                 .SelectMany(wf => wf.DocumentTypes ?? [])
@@ -144,7 +145,7 @@ public partial class DocumentService : IDocumentService
                 {
                     var count = dt.DocumentResponseMobiles?.Count ?? 0;
                     dt.Percent = totalDocuments > 0
-                        ? (float)Math.Round((count *1f) / totalDocuments, 2)
+                        ? (float)Math.Round((count * 1f) / totalDocuments, 2)
                         : 0;
                 }
             }
@@ -158,7 +159,7 @@ public partial class DocumentService : IDocumentService
                 dt.DocumentResponseMobiles?.Clear()
             )
         );
-        return ResponseUtil.GetObject(result,ResponseMessages.GetSuccessfully,HttpStatusCode.OK,1);
+        return ResponseUtil.GetObject(result, ResponseMessages.GetSuccessfully, HttpStatusCode.OK, 1);
     }
 
     public async Task<ResponseDto> GetAllTypeDocMobile(Guid userId)
@@ -186,12 +187,11 @@ public partial class DocumentService : IDocumentService
                 DocumentResponseMobiles = null // Bỏ luôn danh sách documents
             })
             .ToList();
-        return ResponseUtil.GetObject(result,ResponseMessages.GetSuccessfully,HttpStatusCode.OK,1);
+        return ResponseUtil.GetObject(result, ResponseMessages.GetSuccessfully, HttpStatusCode.OK, 1);
     }
 
     public async Task<ResponseDto> GetAllDocumentsByTypeMobile(Guid documentTypeId, Guid userId)
     {
-        
         var cache = _unitOfWork.RedisCacheUOW.GetData<List<AllDocumentResponseMobile>>(
             "GetAllTypeDocumentsMobile_userId_" + userId);
         if (cache != null)
@@ -207,18 +207,17 @@ public partial class DocumentService : IDocumentService
         var result = cache.Where(w => w.DocumentTypes != null)
             .SelectMany(w => w.DocumentTypes!)
             .Where(dt => dt.DocumentResponseMobiles != null)
-            .SelectMany(dt => dt.DocumentResponseMobiles!, 
+            .SelectMany(dt => dt.DocumentResponseMobiles!,
                 (dt, doc) => new { dt.DocumentTypeId, dt.DocumentTypeName, Document = doc })
             .GroupBy(x => x.DocumentTypeId)
-            .Select(g => 
-            
-                 g.Select(x => x.Document).ToList()
+            .Select(g =>
+                g.Select(x => x.Document).ToList()
             )
             .ToList();
-        return ResponseUtil.GetObject(result,ResponseMessages.GetSuccessfully,HttpStatusCode.OK,1);
+        return ResponseUtil.GetObject(result, ResponseMessages.GetSuccessfully, HttpStatusCode.OK, 1);
     }
 
-    public async Task<ResponseDto> GetDocumentByNameMobile(string documentName,Guid userId)
+    public async Task<ResponseDto> GetDocumentByNameMobile(string documentName, Guid userId)
     {
         var cache = _unitOfWork.RedisCacheUOW.GetData<List<AllDocumentResponseMobile>>(
             "GetAllTypeDocumentsMobile_userId_" + userId);
@@ -238,30 +237,32 @@ public partial class DocumentService : IDocumentService
             .SelectMany(dt => dt.DocumentResponseMobiles!,
                 (dt, doc) => new { dt.DocumentTypeId, dt.DocumentTypeName, Document = doc })
             .Where(x => !string.IsNullOrEmpty(x.Document.DocumentName) &&
-                        x.Document.DocumentName.Contains(documentName, StringComparison.OrdinalIgnoreCase)) // search tương đối
+                        x.Document.DocumentName.Contains(documentName,
+                            StringComparison.OrdinalIgnoreCase)) // search tương đối
             .GroupBy(x => x.DocumentTypeId)
-            .Select(g => 
+            .Select(g =>
                 g.Select(x => x.Document).ToList()
             )
             .ToList();
 
-        return ResponseUtil.GetObject(result,ResponseMessages.GetSuccessfully,HttpStatusCode.OK,1);
+        return ResponseUtil.GetObject(result, ResponseMessages.GetSuccessfully, HttpStatusCode.OK, 1);
     }
 
     public async Task<ResponseDto> GetDocumentDetailById(Guid documentId, Guid userId)
     {
         var cache = _unitOfWork.RedisCacheUOW.GetData<DocumentResponse>(
-            "GetDocumentDetailById" + userId+documentId);
+            "GetDocumentDetailById" + userId + documentId);
         if (cache != null)
         {
-            return ResponseUtil.GetObject(cache,ResponseMessages.GetSuccessfully,HttpStatusCode.OK,1);
+            return ResponseUtil.GetObject(cache, ResponseMessages.GetSuccessfully, HttpStatusCode.OK, 1);
         }
+
         var document = await _unitOfWork.DocumentUOW.FindDocumentByIdAsync(documentId);
         var task = await _unitOfWork.TaskUOW.FindTaskByDocumentIdAndUserIdAsync(documentId, userId);
         var versions = document.DocumentVersions.ToList();
         var signature = document.DocumentVersions.FirstOrDefault(x => x.IsFinalVersion)?.DocumentSignatures;
         var dateExpires = DateTime.MaxValue;
-        if(signature!=null)
+        if (signature != null)
             foreach (var sig in signature.Where(sig => sig.SignedAt < dateExpires))
             {
                 dateExpires = sig.SignedAt;
@@ -271,47 +272,84 @@ public partial class DocumentService : IDocumentService
         signature ??= [];
 
         var result = new DocumentResponse()
+        {
+            DocumentId = document.DocumentId,
+            DocumentName = document.DocumentName,
+            DocumentContent = document.DocumentContent,
+            NumberOfDocument = document.NumberOfDocument,
+            Sender = document.Sender,
+            CreatedBy = document.User.FullName,
+            DateReceived = document.DateReceived,
+            WorkflowName = document.DocumentWorkflowStatuses.FirstOrDefault().Workflow.WorkflowName,
+            Deadline = document.Deadline,
+            Status = document.ProcessingStatus.ToString(),
+            DocumentTypeName = document.DocumentType.DocumentTypeName,
+            DateIssued = document.DateIssued,
+            DateExpires = dateExpires,
+            Versions = versions.Select(v => new VersionDetailRespone()
             {
-                DocumentId = document.DocumentId,
-                DocumentName = document.DocumentName,
-                DocumentContent = document.DocumentContent,
-                NumberOfDocument = document.NumberOfDocument,
-                Sender = document.Sender,
-                CreatedBy = document.User.FullName,
-                DateReceived = document.DateReceived,
-                WorkflowName = document.DocumentWorkflowStatuses.FirstOrDefault().Workflow.WorkflowName,
-                Deadline = document.Deadline,
-                Status = document.ProcessingStatus.ToString(),
-                DocumentTypeName = document.DocumentType.DocumentTypeName,
-                DateIssued = document.DateIssued,
-                DateExpires = dateExpires,
-                Versions = versions.Select(v => new VersionDetailRespone()
+                VersionNumber = v.VersionNumber,
+                CreatedDate = v.CreateDate,
+                Url = v.DocumentVersionUrl,
+                IsFinal = v.IsFinalVersion
+            }).ToList(),
+            Tasks = task.Select(t => new TasksResponse()
+            {
+                TaskId = t.TaskId,
+                TaskTitle = t.Title,
+                Description = t.Description,
+                TaskType = t.TaskType.ToString(),
+                Status = t.TaskStatus.ToString()
+            }).ToList(),
+            Signatures = signature.Select(x => new SignatureResponse()
                 {
-                    VersionNumber = v.VersionNumber,
-                    CreatedDate = v.CreateDate,
-                    Url = v.DocumentVersionUrl,
-                    IsFinal = v.IsFinalVersion
-                }).ToList(),
-                Tasks = task.Select(t => new TasksResponse()
-                {
-                    TaskId = t.TaskId,
-                    TaskTitle = t.Title,
-                    Description = t.Description,
-                    TaskType = t.TaskType.ToString(),
-                    Status = t.TaskStatus.ToString()
-                }).ToList(),
-                Signatures = signature.Select(x => new SignatureResponse()
-                    {
-                        SignerName = ExtractSigners(x.DigitalCertificate.Subject),
-                        SignedDate = x.SignedAt,
-                        IsDigital = x.DigitalCertificate.SerialNumber != null
-                    }
-                ).ToList()
+                    SignerName = ExtractSigners(x.DigitalCertificate.Subject),
+                    SignedDate = x.SignedAt,
+                    IsDigital = x.DigitalCertificate.SerialNumber != null
+                }
+            ).ToList()
+        };
+        _unitOfWork.RedisCacheUOW.SetData("GetDocumentDetailById" + userId + documentId, result,
+            TimeSpan.FromMinutes(2));
+        return ResponseUtil.GetObject(result, ResponseMessages.GetSuccessfully, HttpStatusCode.OK, 1);
+    }
+
+    public async Task<ResponseDto> GetMySelfDocument(Guid userId, string? searchText,int page,int pageSize)
+    {
+        IEnumerable<Document> doc;
+        searchText ??= "";
+        var cache = _unitOfWork.RedisCacheUOW.GetData<IEnumerable<Document>>(
+            "GetAllMySeflDoc_userId_" + userId);
+        if (cache != null)
+        {
+            doc = cache;
+        }
+        else
+        { 
+            doc = await _unitOfWork.DocumentUOW.FindAllDocumentMySelf(userId);
+            _unitOfWork.RedisCacheUOW.SetData("GetAllMySeflDoc_userId_" + userId, doc, TimeSpan.FromMinutes(2)); 
             
+        }
+        var result = doc.Where(x => x.DocumentName.Contains(searchText)).Select(x =>
+        {
+            return new
+            {
+                Id = x.DocumentId,
+                Name = x.DocumentName,
+                CreateDate = x.CreatedDate,
+                Status = x.ProcessingStatus.ToString(),
+                Type = x.DocumentType?.DocumentTypeName ?? string.Empty,
+                SignBy = ExtractSigners(
+                    x.DocumentVersions.FirstOrDefault(v => v.IsFinalVersion)?.DocumentSignatures
+                        .Select(c => c.DigitalCertificate)
+                        .FirstOrDefault()?.Subject ?? string.Empty
+                )
             };
-            _unitOfWork.RedisCacheUOW.SetData("GetDocumentDetailById" + userId+documentId, result,TimeSpan.FromMinutes(2));
-            return ResponseUtil.GetObject(result,ResponseMessages.GetSuccessfully,HttpStatusCode.OK,1);
-        
+        }).ToList();
+        result.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+        return ResponseUtil.GetCollection(result, ResponseMessages.GetSuccessfully, HttpStatusCode.OK, result.Count, page,
+            pageSize, (long)Math.Ceiling((double)(result.Count / pageSize)));
+            // throw new NotImplementedException();
     }
 
 
@@ -341,13 +379,14 @@ public partial class DocumentService : IDocumentService
                 .SelectMany(dt => dt.DocumentResponseMobiles ?? [])
                 .ToList();
         }
-        return ResponseUtil.GetObject(result,ResponseMessages.GetSuccessfully,HttpStatusCode.OK,1);
+
+        return ResponseUtil.GetObject(result, ResponseMessages.GetSuccessfully, HttpStatusCode.OK, 1);
     }
 
-    public async Task<ResponseDto> GetDocumentDetailByIdMobile(Guid? documentId, Guid userId,Guid workFlowId)
+    public async Task<ResponseDto> GetDocumentDetailByIdMobile(Guid? documentId, Guid userId, Guid workFlowId)
     {
         var isArchive = workFlowId.Equals(Guid.Parse("00000000-0000-0000-0000-000000000000"));
-        if(!isArchive)
+        if (!isArchive)
         {
             var document = await _unitOfWork.DocumentUOW.FindDocumentByIdAsync(documentId);
             var users = new List<User> { document.User };
@@ -383,6 +422,7 @@ public partial class DocumentService : IDocumentService
             };
             return ResponseUtil.GetObject(result, ResponseMessages.GetSuccessfully, HttpStatusCode.OK, 1);
         }
+
         var documentA = await _unitOfWork.ArchivedDocumentUOW.FindArchivedDocumentByIdAsync(documentId);
         var usersA = documentA.UserDocumentPermissions.Select(x => x.User).Distinct().ToList();
 
@@ -410,7 +450,6 @@ public partial class DocumentService : IDocumentService
             DocumentUrl = documentA.ArchivedDocumentUrl
         };
         return ResponseUtil.GetObject(resultA, ResponseMessages.GetSuccessfully, HttpStatusCode.OK, 1);
-
     }
 
     public async Task<ResponseDto> ClearCacheDocumentMobile(Guid userId)
@@ -509,10 +548,10 @@ public partial class DocumentService : IDocumentService
 
     public async Task<IActionResult> GetDocumentById(Guid documentId, string version)
     {
-
-         var document = await _unitOfWork.DocumentUOW.FindDocumentByIdAsync(documentId);
+        var document = await _unitOfWork.DocumentUOW.FindDocumentByIdAsync(documentId);
         var versionId1 = document.DocumentVersions.FirstOrDefault(x => x.VersionNumber == version)?.DocumentVersionId;
-        var result = await _fileService.GetPdfFile(Path.Combine("document", documentId.ToString(), versionId1.ToString(),
+        var result = await _fileService.GetPdfFile(Path.Combine("document", documentId.ToString(),
+            versionId1.ToString(),
             document.DocumentName + ".pdf"));
 
         return result;
@@ -528,12 +567,14 @@ public partial class DocumentService : IDocumentService
                 var archiveId = Guid.NewGuid();
                 //TODO Send notification
                 var taskList = document.Tasks;
-                foreach (var task  in taskList)
+                foreach (var task in taskList)
                 {
                     var notification = _notificationService.CreateTaskAssignNotification(task, task.UserId);
                     await _notificationCollection.CreateNotificationAsync(notification);
-                    await _hubContext.Clients.User(notification.UserId.ToString()).SendAsync("ReceiveMessage", notification);
+                    await _hubContext.Clients.User(notification.UserId.ToString())
+                        .SendAsync("ReceiveMessage", notification);
                 }
+
                 var archiveDocument = new ArchivedDocument
                 {
                     ArchivedDocumentId = archiveId,
@@ -589,7 +630,7 @@ public partial class DocumentService : IDocumentService
             document.ArchivedDocumentName + ".pdf"));
         return result;
     }
-    
+
 
     public async Task<ResponseDto> UploadDocument(IFormFile file, string userId)
     {
@@ -673,7 +714,7 @@ public partial class DocumentService : IDocumentService
             .Select(match => match.Groups[1].Value)
             .ToList();
     }
-    
+
     private static List<string> ExtractSigners(List<ArchiveDocumentSignature> signatures)
     {
         var regex = MyRegex();
@@ -719,6 +760,7 @@ public partial class DocumentService : IDocumentService
             }).ToList()
             : null;
     }
+
     private static string ExtractSigners(string? signature)
     {
         var regex = MyRegex();
@@ -726,6 +768,7 @@ public partial class DocumentService : IDocumentService
         var extracted = result.Success ? result.Groups[1].Value : string.Empty;
         return extracted;
     }
+
     [GeneratedRegex(@"CN=([^,]+)")]
     private static partial Regex MyRegex();
 }
