@@ -117,5 +117,13 @@ namespace DocumentManagementSystemApplication.Controllers
             var result = await _documentService.GetDocumentDetailById(documentId, Guid.Parse(id));
             return result;
         }
+        
+        [HttpGet("view-my-self-document")]
+        public async Task<ResponseDto> ViewMySelfDocument([FromQuery] string? searchText,[FromQuery]int page =1,int pageSize=10)
+        {
+            var id = User.FindFirst("userid")?.Value;
+            var result = await _documentService.GetMySelfDocument(Guid.Parse(id), searchText, page, pageSize);
+            return result;
+        }
     }
 }

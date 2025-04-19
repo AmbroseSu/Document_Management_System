@@ -20,4 +20,5 @@ public interface IDocumentService
     Task<ResponseDto> GetAllDocumentsByTypeMobile(Guid documentTypeId, Guid userId);
     Task<ResponseDto> GetDocumentByNameMobile(string documentName, Guid userId);
     Task<ResponseDto> GetDocumentDetailById(Guid documentId, Guid userId);
+    Task<ResponseDto> GetMySelfDocument(Guid userId, string? searchText, int page, int pageSize);
 }

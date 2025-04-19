@@ -66,7 +66,16 @@ public class DocumentRepository : IDocumentRepository
                 
         );
     }
-    
+
+    public async Task<IEnumerable<Document>> FindAllDocumentMySelf(Guid userId)
+    {
+        return await _documentDao.FindAsync(d => d.UserId == userId,
+            q => q.Include(v => v.DocumentVersions).ThenInclude(s => s.DocumentSignatures)
+                .ThenInclude(c => c.DigitalCertificate).ThenInclude(u => u.User)
+                .Include(c => c.DocumentType));
+
+    }
+
     public async Task<IEnumerable<Document>> FindAllDocumentAsync()
     {
         return await _documentDao.FindAsync(u => true);
