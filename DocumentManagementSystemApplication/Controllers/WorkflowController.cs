@@ -1,3 +1,4 @@
+using BusinessObject.Enums;
 using DataAccess.DTO;
 using DataAccess.DTO.Request;
 using Microsoft.AspNetCore.Http;
@@ -45,6 +46,12 @@ namespace DocumentManagementSystemApplication.Controllers
         public async Task<ResponseDto> ViewWorkflowDetailsWithFlowAndStep([FromQuery] Guid workflowId)
         {
             return await _workflowService.GetWorkflowDetailsWithFlowAndStep(workflowId);
+        }
+
+        [HttpGet("view-workflow-by-scope")]
+        public async Task<ResponseDto> ViewWorkflowByScope([FromQuery] Scope scope)
+        {
+            return await _workflowService.GetWorkflowByScopeAsync(scope);
         }
     }
 }

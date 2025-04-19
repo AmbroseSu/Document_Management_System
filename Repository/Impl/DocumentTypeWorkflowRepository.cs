@@ -36,7 +36,7 @@ public class DocumentTypeWorkflowRepository : IDocumentTypeWorkflowRepository
     public async Task<IEnumerable<DocumentTypeWorkflow>> FindAllDocumentTypeNameByWorkflowIdAsync(Guid? workflowId)
     {
         if (workflowId == null) throw new ArgumentNullException(nameof(workflowId));
-        return await _documentTypeWorkflowDao.FindAsync(u => u.WorkflowId == workflowId,
+        return await _documentTypeWorkflowDao.FindAsync(u => u.WorkflowId == workflowId && u.DocumentType.IsDeleted == false,
             u => u.Include(d => d.Workflow)
                 .Include(d => d.DocumentType));
     }
