@@ -30,7 +30,7 @@ public class DocumentDetailResponse
     public string? DocumentContent { get; set; }
     public string? NumberOfDocument { get; set; }
     public ProcessingStatus ProcessingStatus { get; set; }
-    public string? DateIssued { get; set; }
+    public DateTime? DateIssued { get; set; }
     public string? DocumentTypeName { get; set; }
     public DateTime? CreatedDate { get; set; }
     public string? CreatedBy { get; set; }
