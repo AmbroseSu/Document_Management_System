@@ -4,6 +4,7 @@ using BusinessObject;
 using BusinessObject.Enums;
 using DataAccess.DTO;
 using DataAccess.DTO.Request;
+using DataAccess.DTO.Response;
 using Newtonsoft.Json;
 using Repository;
 using Service.Response;
@@ -594,6 +595,40 @@ public class WorkflowService : IWorkflowService
                 Flows = flowDtoList
             };
             return ResponseUtil.GetObject(workflowResponse, ResponseMessages.GetSuccessfully, HttpStatusCode.OK, 1);
+        }
+        catch (Exception ex)
+        {
+            return ResponseUtil.Error(ResponseMessages.FailedToSaveData, ex.Message,
+                HttpStatusCode.InternalServerError);
+        }
+    }
+    
+    
+    public async Task<ResponseDto> GetWorkflowByScopeAsync(Scope scope)
+    {
+        try
+        {
+            var workflows = await _unitOfWork.WorkflowUOW.FindAllWorkflowByScopeAsync(scope);
+            if (workflows == null)
+                return ResponseUtil.Error(ResponseMessages.WorkflowNotFound, ResponseMessages.OperationFailed,
+                    HttpStatusCode.NotFound);
+            
+            var workflowResponses = new List<WorkflowScopeResponse>();
+            foreach (var workflow in workflows)
+            {
+                var documentTypeWorkflows = await _unitOfWork.DocumentTypeWorkflowUOW.FindAllDocumentTypeNameByWorkflowIdAsync(workflow.WorkflowId);
+                var documentTypeDtos = documentTypeWorkflows.Select(dt => _mapper.Map<DocumentTypeDto>(dt.DocumentType)).ToList();
+                
+                workflowResponses.Add(new WorkflowScopeResponse
+                {
+                    WorkflowId = workflow.WorkflowId,
+                    WorkflowName = workflow.WorkflowName,
+                    DocumentTypes = documentTypeDtos
+                });
+                
+            }
+            
+            return ResponseUtil.GetObject(workflowResponses, ResponseMessages.GetSuccessfully, HttpStatusCode.OK, 1);
         }
         catch (Exception ex)
         {

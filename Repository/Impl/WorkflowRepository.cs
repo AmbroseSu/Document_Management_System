@@ -81,4 +81,14 @@ public class WorkflowRepository : IWorkflowRepository
                 .ThenInclude(f => f.Flow)
                 .ThenInclude(s => s.Steps));
     }
+    
+    public async Task<IEnumerable<Workflow>> FindAllWorkflowByScopeAsync(Scope scope)
+    {
+        return await _workflowDao.FindAsync(u => u.Scope.Equals(scope),
+            u => u.Include(d => d.DocumentTypeWorkflows)
+                .ThenInclude(dt => dt.DocumentType)
+                .Include(d => d.WorkflowFlows)
+                .ThenInclude(f => f.Flow)
+                .ThenInclude(s => s.Steps));
+    }
 }

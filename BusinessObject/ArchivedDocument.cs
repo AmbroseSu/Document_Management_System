@@ -53,6 +53,12 @@ public class ArchivedDocument
     public Guid? DocumentRevokeId { get; set; }
     public Guid? DocumentReplaceId { get; set; }
     public Scope Scope { get; set; }
+    public int? Llx { get; set; }
+    public int? Lly { get; set; }
+    public int? Urx { get; set; }
+    public int? Ury { get; set; }
+    public int? Page { get; set; }
+    
     public bool IsTemplate { get; set; }
 
     public Guid DocumentTypeId { get; set; }

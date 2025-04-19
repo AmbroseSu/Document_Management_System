@@ -1,3 +1,4 @@
+using BusinessObject.Enums;
 using DataAccess.DTO;
 using DataAccess.DTO.Request;
 
@@ -11,4 +12,5 @@ public interface IWorkflowService
     Task<ResponseDto> GetWorkflowDetails(Guid divisionId);
     Task<ResponseDto> GetWorkflowDetailsWithFlowAndStep(Guid workflowId);
     Task<ResponseDto> CreateWorkflowAsync(CreateWorkFlowRequest workflowRequest);
+    Task<ResponseDto> GetWorkflowByScopeAsync(Scope scope);
 }
