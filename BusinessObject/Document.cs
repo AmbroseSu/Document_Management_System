@@ -11,6 +11,7 @@ public class Document
     private DateTime _updatedDate;
     private DateTime _deadline;
     private DateTime? _dateReceived;
+    private DateTime? _dateIssued;
 
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     [Key]
@@ -47,7 +48,11 @@ public class Document
         get => _dateReceived.HasValue ? DateTime.SpecifyKind(_dateReceived.Value, DateTimeKind.Utc).ToLocalTime() : (DateTime?)null;
         set => _dateReceived = value.HasValue ? value.Value.ToUniversalTime() : default;
     }
-    public string? DateIssued { get; set; }
+    public DateTime? DateIssued 
+    {
+        get => _dateIssued.HasValue ? DateTime.SpecifyKind(_dateIssued.Value, DateTimeKind.Utc).ToLocalTime() : (DateTime?)null;
+        set => _dateIssued = value.HasValue ? value.Value.ToUniversalTime() : default;
+    }
     public bool IsDeleted { get; set; }
 
     public Guid UserId { get; set; }

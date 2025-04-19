@@ -283,7 +283,7 @@ public partial class DocumentService : IDocumentService
                 Deadline = document.Deadline,
                 Status = document.ProcessingStatus.ToString(),
                 DocumentTypeName = document.DocumentType.DocumentTypeName,
-                DateIssued = document.DateIssued,
+                //DateIssued = document.DateIssued,
                 DateExpires = dateExpires,
                 Versions = versions.Select(v => new VersionDetailRespone()
                 {
@@ -371,7 +371,7 @@ public partial class DocumentService : IDocumentService
                 DocumentContent = document.DocumentContent,
                 NumberOfDocument = document.NumberOfDocument,
                 ProcessingStatus = document.ProcessingStatus,
-                DateIssued = document.DateIssued,
+                //DateIssued = document.DateIssued,
                 DocumentTypeName = document.DocumentType.DocumentTypeName,
                 CreatedDate = document.CreatedDate,
                 CreatedBy = document.User.UserName,
@@ -474,7 +474,7 @@ public partial class DocumentService : IDocumentService
             version.DocumentVersionId, document.DocumentId, name);
         version.DocumentVersionUrl = url;
 
-        document.DateIssued = DateTime.Today.ToString("yyyy-MM-dd");
+        //document.DateIssued = DateTime.Today.ToString("yyyy-MM-dd");
         await _unitOfWork.DocumentUOW.UpdateAsync(document);
         await _unitOfWork.SaveChangesAsync();
 
@@ -545,7 +545,7 @@ public partial class DocumentService : IDocumentService
                     CreatedBy = document.User.UserName,
                     ExternalPartner = document.Sender,
                     ArchivedDocumentStatus = ArchivedDocumentStatus.Completed,
-                    DateIssued = DateTime.Parse(document.DateIssued),
+                    //DateIssued = DateTime.Parse(document.DateIssued),
                     DateReceived = document.DateReceived,
                     DateSented = document.DateReceived,
                     DocumentRevokeId = null,
