@@ -19,23 +19,24 @@ public class DocumentTypeService : IDocumentTypeService
         _unitOfWork = unitOfWork;
     }
     
-    public async Task<ResponseDto> AddDocumentTypeAsync(string? documentTypeName)
+    public async Task<ResponseDto> AddDocumentTypeAsync(DocumentTypeDto documentTypeDto)
     {
         try
         {
-            if (documentTypeName == null)
+            if (documentTypeDto.DocumentTypeName == null)
             {
                 return ResponseUtil.Error(ResponseMessages.DocumentTypeNameNotNull, ResponseMessages.OperationFailed, HttpStatusCode.NotFound);
             }
             
-            var documentTypeWithName = await _unitOfWork.DocumentTypeUOW.FindDocumentTypeByNameAsync(documentTypeName);
+            var documentTypeWithName = await _unitOfWork.DocumentTypeUOW.FindDocumentTypeByNameAsync(documentTypeDto.DocumentTypeName);
             if (documentTypeWithName != null)
             {
                 return ResponseUtil.Error(ResponseMessages.DocumentTypeNameExisted, ResponseMessages.OperationFailed, HttpStatusCode.NotFound);
             }
             var documentType = new DocumentType
             {
-                DocumentTypeName = documentTypeName,
+                DocumentTypeName = documentTypeDto.DocumentTypeName,
+                Acronym = documentTypeDto.Acronym,
                 IsDeleted = false
             };
             //var division = _mapper.Map<Division>(divisionDto);
