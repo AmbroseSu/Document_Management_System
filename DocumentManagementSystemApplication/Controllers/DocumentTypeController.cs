@@ -18,9 +18,9 @@ namespace DocumentManagementSystemApplication.Controllers
         }
         
         [HttpPost("create-document-type")]
-        public async Task<ResponseDto> CreateDocumentType([FromQuery] string documentTypeName)
+        public async Task<ResponseDto> CreateDocumentType([FromBody] DocumentTypeDto documentTypeDto)
         {
-            return await _documentTypeService.AddDocumentTypeAsync(documentTypeName);
+            return await _documentTypeService.AddDocumentTypeAsync(documentTypeDto);
         }
         
         [HttpPost("update-document-type")]

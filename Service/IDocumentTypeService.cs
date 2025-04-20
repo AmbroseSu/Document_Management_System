@@ -4,7 +4,7 @@ namespace Service;
 
 public interface IDocumentTypeService
 {
-    Task<ResponseDto> AddDocumentTypeAsync(string? documentTypeName);
+    Task<ResponseDto> AddDocumentTypeAsync(DocumentTypeDto documentTypeDto);
     Task<ResponseDto> UpdateDocumentTypeAsync(DocumentTypeDto documentTypeDto);
     Task<ResponseDto> GetAllDocumentTypeAsync(string? documentTypeName, int page, int limit);
     Task<ResponseDto> UpdateDocumentTypeActiveOrDeleteAsync(Guid documentTypeId);
