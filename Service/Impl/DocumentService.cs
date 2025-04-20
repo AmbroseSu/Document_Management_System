@@ -346,9 +346,10 @@ public partial class DocumentService : IDocumentService
                 )
             };
         }).ToList();
-        result = result.Skip((page - 1) * pageSize).Take(pageSize).ToList();
-        return ResponseUtil.GetCollection(result, ResponseMessages.GetSuccessfully, HttpStatusCode.OK, result.Count, page,
-            pageSize, (int)Math.Ceiling((double)(result.Count / pageSize)));
+        var finalResult = result.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+        var totalPage = (int)Math.Ceiling((double)result.Count / pageSize);
+        return ResponseUtil.GetCollection(finalResult, ResponseMessages.GetSuccessfully, HttpStatusCode.OK, result.Count, page,
+            pageSize, totalPage);
             // throw new NotImplementedException();
     }
 
@@ -782,4 +783,27 @@ public partial class DocumentService : IDocumentService
 
     [GeneratedRegex(@"CN=([^,]+)")]
     private static partial Regex MyRegex();
+
+
+    /*public async Task<ResponseDto> ShowProcessDocumentDetail(Guid? documentId)
+    {
+        try
+        {
+            var document = await _unitOfWork.DocumentUOW.FindDocumentByIdAsync(documentId);
+            if (document == null)
+            {
+                return ResponseUtil.Error(ResponseMessages.DocumentNotFound, ResponseMessages.OperationFailed,
+                    HttpStatusCode.NotFound);
+            }
+        }
+        catch (Exception ex)
+        {
+            return ResponseUtil.Error(ResponseMessages.FailedToSaveData, ex.Message,
+                HttpStatusCode.InternalServerError);
+        }
+    }*/
+    
+    
+    
+    
 }
