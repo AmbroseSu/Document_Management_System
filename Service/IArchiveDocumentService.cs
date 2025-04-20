@@ -7,4 +7,5 @@ public interface IArchiveDocumentService
 {
     //string ExtractSignatures(IFormFile file);
     Task<ResponseDto> GetAllArchiveDocuments(Guid userId,int page,int pageSize);
+    Task<ResponseDto> GetAllArchiveTemplates(int page, int pageSize);
 }

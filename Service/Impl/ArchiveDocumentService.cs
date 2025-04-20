@@ -124,7 +124,13 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
         return ResponseUtil.GetCollection(response, ResponseMessages.GetSuccessfully, HttpStatusCode.OK, response.Count, page,
             pageSize, (long)Math.Ceiling((double)(response.Count/pageSize)));
     }
-    
+
+    public async Task<ResponseDto> GetAllArchiveTemplates(int page, int pageSize)
+    {
+        var templates = await _unitOfWork.ArchivedDocumentUOW.GetAllArchiveTemplates();
+        throw new NotImplementedException();
+    }
+
     private static string ExtractSigners(string? signature)
     {
         var regex = MyRegex();

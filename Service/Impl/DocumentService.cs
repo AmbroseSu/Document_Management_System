@@ -346,7 +346,7 @@ public partial class DocumentService : IDocumentService
                 )
             };
         }).ToList();
-        result.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+        result = result.Skip((page - 1) * pageSize).Take(pageSize).ToList();
         return ResponseUtil.GetCollection(result, ResponseMessages.GetSuccessfully, HttpStatusCode.OK, result.Count, page,
             pageSize, (long)Math.Ceiling((double)(result.Count / pageSize)));
             // throw new NotImplementedException();
@@ -476,7 +476,7 @@ public partial class DocumentService : IDocumentService
         var deadline = GetDateTime(documentUploadDto.CanChange.GetValueOrDefault("Deadline")) ?? DateTime.Now;
 
         var workflowO = await _unitOfWork.WorkflowUOW.FindWorkflowByIdAsync(workflowId);
-        var workflowFlow = workflowO.WorkflowFlows.Select(x => x).First(x => x.FlowNumber == 1);
+        var workflowFlow = workflowO.WorkflowFlows.Select(x => x).FirstOrDefault(x => x.FlowNumber == 1);
 
         var document = new Document
         {

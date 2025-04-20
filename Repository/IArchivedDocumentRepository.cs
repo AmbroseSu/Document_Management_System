@@ -11,4 +11,5 @@ public interface IArchivedDocumentRepository
     Task<IEnumerable<ArchivedDocument>> FindAllArchivedDocumentAsync();
     Task<IEnumerable<ArchivedDocument>> FindArchivedDocumentsByIdsAsync(List<Guid> archivedDocumentIds);
     Task<IEnumerable<ArchivedDocument>> FindArchivedDocumentByUserIdAsync(Guid userId);
+    Task<IEnumerable<ArchivedDocument>> GetAllArchiveTemplates();
 }
