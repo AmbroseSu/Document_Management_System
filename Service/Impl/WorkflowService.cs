@@ -485,7 +485,7 @@ public class WorkflowService : IWorkflowService
                 .Skip((page - 1) * limit)
                 .Take(limit)
                 .ToList();
-            var result = _mapper.Map<IEnumerable<Workflow>>(workflows);
+            var result = _mapper.Map<IEnumerable<Workflow>>(workflowResults);
             return ResponseUtil.GetCollection(result, ResponseMessages.GetSuccessfully, HttpStatusCode.OK, totalRecords, page, limit, totalPages);
         }
         catch (Exception e)
