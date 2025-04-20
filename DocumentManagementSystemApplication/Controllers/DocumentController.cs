@@ -46,6 +46,13 @@ namespace DocumentManagementSystemApplication.Controllers
                 return  await _documentService.GetArchiveDocumentById(documentId, version);
         }
         
+        [HttpGet("view-file-by-name")]
+        public async Task<IActionResult> DownloadDocumentByFileName([FromQuery] string documentName)
+        {
+            var id = User.FindFirst("userid")?.Value;
+            return await _documentService.GetDocumentByFileName(documentName, Guid.Parse(id));
+        }
+        
         [HttpPost("update-confirm-task-with-document")]
         public async Task<ResponseDto> UpdateConfirmTaskWithDocument([FromQuery]Guid documentId)
         {
