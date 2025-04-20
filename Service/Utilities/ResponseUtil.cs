@@ -20,7 +20,7 @@ public class ResponseUtil
 
     // Phương thức trả về một tập hợp đối tượng (collection)
     public static ResponseDto GetCollection(object result, string message, HttpStatusCode status, int size, int page,
-        int limit, long count)
+        int limit, int count)
     {
         return new ResponseDto
         {
@@ -57,16 +57,16 @@ public class ResponseUtil
         };
     }
 
-    private static MeatadataDto GetMeatadata(int page, int limit, long count)
+    private static MeatadataDto GetMeatadata(int page, int limit, int count)
     {
-        var totalPages = (int)Math.Ceiling((double)count / limit);
+        //var totalPages = (int)Math.Ceiling((double)count / limit);
 
         return new MeatadataDto
         {
             page = page,
-            total = totalPages,
+            total = count,
             limit = limit,
-            hasNextPage = page < totalPages,
+            hasNextPage = page < count,
             hasPrevPage = page > 1
         };
     }

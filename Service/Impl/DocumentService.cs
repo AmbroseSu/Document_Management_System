@@ -348,7 +348,7 @@ public partial class DocumentService : IDocumentService
         }).ToList();
         result.Skip((page - 1) * pageSize).Take(pageSize).ToList();
         return ResponseUtil.GetCollection(result, ResponseMessages.GetSuccessfully, HttpStatusCode.OK, result.Count, page,
-            pageSize, (long)Math.Ceiling((double)(result.Count / pageSize)));
+            pageSize, (int)Math.Ceiling((double)(result.Count / pageSize)));
             // throw new NotImplementedException();
     }
 

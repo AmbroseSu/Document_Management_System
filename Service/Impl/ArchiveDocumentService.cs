@@ -122,7 +122,7 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
         _unitOfWork.RedisCacheUOW.SetData("ArchiveDocumentUserId" + userId, response,TimeSpan.FromMinutes(1));
         response.Skip((page - 1) * pageSize).Take(pageSize).ToList();
         return ResponseUtil.GetCollection(response, ResponseMessages.GetSuccessfully, HttpStatusCode.OK, response.Count, page,
-            pageSize, (long)Math.Ceiling((double)(response.Count/pageSize)));
+            pageSize, (int)Math.Ceiling((double)(response.Count/pageSize)));
     }
     
     private static string ExtractSigners(string? signature)
