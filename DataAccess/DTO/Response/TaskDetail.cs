@@ -10,6 +10,7 @@ public class TaskDetail
     public Guid WorkflowId { get; set; }
     public string StepAction { get; set; }
     public Guid DocumentId { get; set; }
+    public string DocumentName { get; set; }
     public string DocumentTypeName { get; set; }
     public string UserNameCreateTask { get; set; }
 }

@@ -361,6 +361,7 @@ public class TaskService : ITaskService
            result.WorkflowId = task.Document.DocumentWorkflowStatuses.FirstOrDefault().Workflow.WorkflowId;
            result.StepAction = task.Step.Action;
            result.DocumentId = document.DocumentId;
+           result.DocumentName = document.DocumentName;
            result.DocumentTypeName = task.Document.DocumentType.DocumentTypeName;
            var user = await _unitOfWork.UserUOW.FindUserByIdAsync(orderedTasks.First().UserId);
            result.UserNameCreateTask = user.FullName;
@@ -461,6 +462,7 @@ public class TaskService : ITaskService
                     DocumentId = allDocument.DocumentId,
                     DocumentName = allDocument.DocumentName,
                     WorkflowName = allDocument.DocumentWorkflowStatuses.FirstOrDefault()?.Workflow.WorkflowName,
+                    Scope = allDocument.DocumentWorkflowStatuses.FirstOrDefault()?.Workflow.Scope,
                     DocumentType = allDocument.DocumentType.DocumentTypeName,
                     VersionOfDocResponses = versionOfDocResponses
                 };
@@ -629,6 +631,7 @@ public class TaskService : ITaskService
         {
             DocumentDto = doc,
             WorkflowName = workflow?.WorkflowName,
+            Scope = workflow?.Scope,
         };
         documentResponses.Add(documentResponse);
     }
