@@ -60,7 +60,12 @@ public class ArchivedDocumentRepository : IArchivedDocumentRepository
                 .ThenInclude(d => d.DigitalCertificate)
                 .ThenInclude(d => d.User));
     }
-    
+
+    public async Task<IEnumerable<ArchivedDocument>> GetAllArchiveTemplates()
+    {
+        return await _archivedDocumentDao.FindAsync(d => d.IsTemplate);
+    }
+
     public async Task<IEnumerable<ArchivedDocument>> FindArchivedDocumentsByIdsAsync(List<Guid> archivedDocumentIds)
     {
         if (archivedDocumentIds == null || !archivedDocumentIds.Any())

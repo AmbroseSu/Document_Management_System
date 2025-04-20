@@ -477,7 +477,7 @@ public partial class DocumentService : IDocumentService
         var deadline = GetDateTime(documentUploadDto.CanChange.GetValueOrDefault("Deadline")) ?? DateTime.Now;
 
         var workflowO = await _unitOfWork.WorkflowUOW.FindWorkflowByIdAsync(workflowId);
-        var workflowFlow = workflowO.WorkflowFlows.Select(x => x).First(x => x.FlowNumber == 1);
+        var workflowFlow = workflowO.WorkflowFlows.Select(x => x).FirstOrDefault(x => x.FlowNumber == 1);
 
         var document = new Document
         {

@@ -58,6 +58,16 @@ namespace DocumentManagementSystemApplication.Controllers
             return documents;
         }
         
+        [HttpGet("view-all-templates")]
+        public async Task<ResponseDto> GetAllTemplates([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+        {
+            var templates = await _archiveDocumentService.GetAllArchiveTemplates(page,pageSize);
+            return templates;
+        }
+        
+        // [HttpPost("create-template")]
+        
+        
         /*[HttpPost("create-send-to-user")]
         [AuthorizeResource("[Archivedocument] Create Send To User")]
         public async Task<IActionResult> SendToUser([FromQuery] string userId, [FromQuery] string message)
