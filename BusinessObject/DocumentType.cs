@@ -17,6 +17,8 @@ public class DocumentType
         get => DateTime.SpecifyKind(_createAt, DateTimeKind.Utc).ToLocalTime();
         set => _createAt = value.ToUniversalTime();
     }
+    
+    public string Acronym { get; set; }
     public Guid? CreateBy { get; set; }
     public bool IsDeleted { get; set; }
 
