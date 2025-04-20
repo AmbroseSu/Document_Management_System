@@ -6,6 +6,6 @@ public class DocumentDetailAllWorkflowResponse
 {
     public Guid DocumentId { get; set; }
     public string? DocumentName { get; set; }
-    public string? DocumentType { get; set; }
+    public string? DocumentTypeName { get; set; }
     public WorkflowRequest WorkflowRequest { get; set; }
 }

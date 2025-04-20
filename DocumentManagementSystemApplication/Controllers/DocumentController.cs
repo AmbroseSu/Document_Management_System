@@ -15,19 +15,19 @@ namespace DocumentManagementSystemApplication.Controllers
     public class DocumentController : ControllerBase
     {
         private readonly IDocumentService _documentService;
-        
+
         public DocumentController(IDocumentService documentService)
         {
             _documentService = documentService;
         }
-        
+
         [HttpPost("create-test")]
         public async Task<string> Test([FromForm] TestDto testDto)
         {
             return testDto.Name;
         }
 
-        
+
         [HttpPost("create-upload-document")]
         public async Task<ResponseDto> UploadDocument(IFormFile file)
         {
@@ -35,7 +35,7 @@ namespace DocumentManagementSystemApplication.Controllers
             var result = await _documentService.UploadDocument(file, id);
             return result;
         }
-        
+
         [HttpPost("create-incoming-document")]
         public async Task<ResponseDto> CreateIncomingDocument([FromBody] DocumentUploadDto documentUploadDto)
         {
@@ -43,26 +43,27 @@ namespace DocumentManagementSystemApplication.Controllers
             var result = await _documentService.CreateIncomingDoc(documentUploadDto, Guid.Parse(id));
             return result;
         }
-        
-        
+
+
         [HttpGet("view-file/{documentId}")]
-        public async Task<IActionResult> DownloadDocumentByName([FromRoute] Guid documentId,[FromQuery] string? version,[FromQuery] bool isArchive)
+        public async Task<IActionResult> DownloadDocumentByName([FromRoute] Guid documentId,
+            [FromQuery] string? version, [FromQuery] bool isArchive)
         {
-            if(!isArchive)
-                return  await _documentService.GetDocumentById(documentId,version);
+            if (!isArchive)
+                return await _documentService.GetDocumentById(documentId, version);
             else
-                return  await _documentService.GetArchiveDocumentById(documentId, version);
+                return await _documentService.GetArchiveDocumentById(documentId, version);
         }
-        
+
         [HttpGet("view-file-by-name")]
         public async Task<IActionResult> DownloadDocumentByFileName([FromQuery] string documentName)
         {
             var id = User.FindFirst("userid")?.Value;
             return await _documentService.GetDocumentByFileName(documentName, Guid.Parse(id));
         }
-        
+
         [HttpPost("update-confirm-task-with-document")]
-        public async Task<ResponseDto> UpdateConfirmTaskWithDocument([FromQuery]Guid documentId)
+        public async Task<ResponseDto> UpdateConfirmTaskWithDocument([FromQuery] Guid documentId)
         {
             // var id = User.FindFirst("userid")?.Value;
             var result = await _documentService.UpdateConfirmTaskWithDocument(documentId);
@@ -76,7 +77,7 @@ namespace DocumentManagementSystemApplication.Controllers
             var result = await _documentService.GetAllTypeDocumentsMobile(Guid.Parse(id));
             return result;
         }
-        
+
         [HttpGet("view-all-type-documents-mobile")]
         public async Task<ResponseDto> ViewAllTypeDocumentsMobile()
         {
@@ -84,9 +85,10 @@ namespace DocumentManagementSystemApplication.Controllers
             var result = await _documentService.GetAllTypeDocMobile(Guid.Parse(id));
             return result;
         }
-        
+
         [HttpGet("view-all-documents-mobile")]
-        public async Task<ResponseDto> ViewAllDocumentsMobile([FromQuery] Guid? workFlowId,[FromQuery] Guid documentTypeId)
+        public async Task<ResponseDto> ViewAllDocumentsMobile([FromQuery] Guid? workFlowId,
+            [FromQuery] Guid documentTypeId)
         {
             var id = User.FindFirst("userid")?.Value;
             var result = await _documentService.GetAllDocumentsMobile(workFlowId, documentTypeId, Guid.Parse(id));
@@ -94,12 +96,14 @@ namespace DocumentManagementSystemApplication.Controllers
         }
 
         [HttpGet("view-detail-documents-mobile")]
-        public async Task<ResponseDto> ViewDetailDocumentsMobile([FromQuery] Guid documentId,[FromQuery] Guid workFlowId)
+        public async Task<ResponseDto> ViewDetailDocumentsMobile([FromQuery] Guid documentId,
+            [FromQuery] Guid workFlowId)
         {
             var id = User.FindFirst("userid")?.Value;
-            var result = await _documentService.GetDocumentDetailByIdMobile(documentId, Guid.Parse(id),workFlowId);
+            var result = await _documentService.GetDocumentDetailByIdMobile(documentId, Guid.Parse(id), workFlowId);
             return result;
         }
+
         [HttpGet("view-all-documents-by-document-type-mobile")]
         public async Task<ResponseDto> ViewAllDocumentsByTypeMobile([FromQuery] Guid documentTypeId)
         {
@@ -107,7 +111,7 @@ namespace DocumentManagementSystemApplication.Controllers
             var result = await _documentService.GetAllDocumentsByTypeMobile(documentTypeId, Guid.Parse(id));
             return result;
         }
-        
+
         [HttpGet("update-clear-cache-document-mobile")]
         public async Task<ResponseDto> UpdateClearCacheDocumentMobile()
         {
@@ -115,7 +119,7 @@ namespace DocumentManagementSystemApplication.Controllers
             var result = await _documentService.ClearCacheDocumentMobile(Guid.Parse(id));
             return result;
         }
-        
+
         [HttpGet("view-document-by-name")]
         public async Task<ResponseDto> GetDocumentByNameMobile([FromQuery] string documentName)
         {
@@ -124,7 +128,7 @@ namespace DocumentManagementSystemApplication.Controllers
             var result = await _documentService.GetDocumentByNameMobile(documentName, Guid.Parse(id));
             return result;
         }
-        
+
         [HttpGet("view-detail-document")]
         public async Task<ResponseDto> ViewDetailDocument([FromQuery] Guid documentId)
         {
@@ -132,13 +136,22 @@ namespace DocumentManagementSystemApplication.Controllers
             var result = await _documentService.GetDocumentDetailById(documentId, Guid.Parse(id));
             return result;
         }
-        
+
         [HttpGet("view-my-self-document")]
-        public async Task<ResponseDto> ViewMySelfDocument([FromQuery] string? searchText,[FromQuery]int page =1,int pageSize=10)
+        public async Task<ResponseDto> ViewMySelfDocument([FromQuery] string? searchText, [FromQuery] int page = 1,
+            int pageSize = 10)
         {
             var id = User.FindFirst("userid")?.Value;
             var result = await _documentService.GetMySelfDocument(Guid.Parse(id), searchText, page, pageSize);
             return result;
         }
-    }
+
+        [HttpGet("view-process-document-detail")]
+        public async Task<ResponseDto> ViewProcessDocumentDetail([FromQuery] Guid? documentId)
+        {
+            var result = await _documentService.ShowProcessDocumentDetail(documentId);
+            return result;
+        }
+    
+}
 }

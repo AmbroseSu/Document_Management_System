@@ -8,6 +8,7 @@ using BusinessObject.Enums;
 using BusinessObject.Option;
 using DataAccess;
 using DataAccess.DTO;
+using DataAccess.DTO.Request;
 using DataAccess.DTO.Response;
 using iText.Kernel.Pdf;
 using iText.Signatures;
@@ -785,7 +786,7 @@ public partial class DocumentService : IDocumentService
     private static partial Regex MyRegex();
 
 
-    /*public async Task<ResponseDto> ShowProcessDocumentDetail(Guid? documentId)
+    public async Task<ResponseDto> ShowProcessDocumentDetail(Guid? documentId)
     {
         try
         {
@@ -795,13 +796,105 @@ public partial class DocumentService : IDocumentService
                 return ResponseUtil.Error(ResponseMessages.DocumentNotFound, ResponseMessages.OperationFailed,
                     HttpStatusCode.NotFound);
             }
+
+            var documentDetailAllWorkflowResponse = new DocumentDetailAllWorkflowResponse();
+            documentDetailAllWorkflowResponse.DocumentId = document.DocumentId;
+            documentDetailAllWorkflowResponse.DocumentName = document.DocumentName;
+            documentDetailAllWorkflowResponse.DocumentTypeName = document.DocumentType.DocumentTypeName;
+            // var workflow = await _unitOfWork.WorkflowUOW.FindWorkflowByIdAsync(document.DocumentWorkflowStatuses.FirstOrDefault().WorkflowId);
+            // if (workflow == null)
+            //     return ResponseUtil.Error(ResponseMessages.WorkflowNotFound, ResponseMessages.OperationFailed,
+            //         HttpStatusCode.NotFound);
+            // var workflowFlows = await _unitOfWork.WorkflowFlowUOW.FindWorkflowFlowByWorkflowIdAsync(workflow.WorkflowId);
+            // var workflowFlowIds = workflowFlows.Select(wf => wf.WorkflowFlowId).ToList();
+            var workflowId = document.DocumentWorkflowStatuses.FirstOrDefault().WorkflowId;
+            if (workflowId == Guid.Empty)
+                return ResponseUtil.Error(ResponseMessages.WorkflowIdInvalid, ResponseMessages.OperationFailed,
+                    HttpStatusCode.BadRequest);
+
+            var workflow = await _unitOfWork.WorkflowUOW.FindWorkflowByIdAsync(workflowId);
+            if (workflow == null)
+                return ResponseUtil.Error(ResponseMessages.WorkflowNotFound, ResponseMessages.OperationFailed,
+                    HttpStatusCode.NotFound);
+            var workflowFlows = await _unitOfWork.WorkflowFlowUOW.FindWorkflowFlowByWorkflowIdAsync(workflowId);
+            var workflowFlowIds = workflowFlows.Select(wf => wf.WorkflowFlowId).ToList();
+            
+            var transitions = await _unitOfWork.WorkflowFlowTransitionUOW.FindByWorkflowFlowIdsAsync(workflowFlowIds);
+            
+            var flowIds = workflowFlows.Select(wf => wf.FlowId).ToList();
+            var flows = await _unitOfWork.FlowUOW.FindByIdsAsync(flowIds);
+            
+            var steps = await _unitOfWork.StepUOW.FindByFlowIdsAsync(flowIds);
+            
+            var flowDtoList = workflowFlows
+                .OrderBy(wf => wf.FlowNumber) // 🔹 Thêm dòng này để sắp xếp
+                .Select(workflowFlow =>
+                {
+                    // var isFallbackFlow = transitions.Any(t =>
+                    //     t.NextWorkFlowFlowId == workflowFlow.WorkflowFlowId &&
+                    //     t.Condition == FlowTransitionCondition.Reject
+                    // );
+
+                    var flow = flows.FirstOrDefault(f => f.FlowId == workflowFlow.FlowId);
+                    if (flow == null) return null;
+
+                    var stepsInFlow = steps.Where(s => s.FlowId == flow.FlowId).ToList();
+
+                    return new FlowDto
+                    {
+                        FlowId = flow.FlowId,
+                        IsFallbackFlow = false,
+                        RoleStart = flow.RoleStart,
+                        RoleEnd = flow.RoleEnd,
+                        Steps = stepsInFlow
+                            .OrderBy(s => s.StepNumber) // 🔹 Nếu cần sắp xếp steps theo StepNumber
+                            .Select(s => new StepDto
+                            {
+                                StepId = s.StepId,
+                                StepNumber = s.StepNumber,
+                                Action = s.Action,
+                                RoleId = s.RoleId,
+                                Role = new RoleDto
+                                {
+                                    RoleId = s.RoleId,
+                                    RoleName = s.Role?.RoleName,
+                                    CreatedDate = s.Role?.CreatedDate
+                                },
+                                NextStepId = s.NextStepId,
+                                RejectStepId = s.RejectStepId,
+                                IsFallbackStep = s.RejectStepId == null, // ✅ Gán giá trị ở đây thay vì sửa trong entity
+                                TaskDtos = new List<TaskDto>() // Nếu có TaskId thì lấy từ bảng liên quan
+                            }).ToList()
+                    };
+                })
+                .Where(flowDto => flowDto != null) // ✅ Loại bỏ flow null
+                .ToList();
+            
+
+            var workflowResponse = new WorkflowRequest
+            {
+                WorkflowId = workflow.WorkflowId,
+                WorkflowName = workflow.WorkflowName,
+                RequiredRolesJson = workflow.RequiredRolesJson,
+                Scope = workflow.Scope,
+                IsAllocate = workflow.IsAllocate,
+                CreateBy = workflow.CreateBy ?? Guid.Empty,
+                Flows = flowDtoList
+            };
+            
+            documentDetailAllWorkflowResponse.WorkflowRequest = workflowResponse;
+            
+            return ResponseUtil.GetObject(documentDetailAllWorkflowResponse,
+                ResponseMessages.GetSuccessfully, HttpStatusCode.OK, 1);
+            
+            
         }
         catch (Exception ex)
         {
             return ResponseUtil.Error(ResponseMessages.FailedToSaveData, ex.Message,
                 HttpStatusCode.InternalServerError);
         }
-    }*/
+    }
     
     
     

@@ -543,10 +543,10 @@ public class WorkflowService : IWorkflowService
                 .OrderBy(wf => wf.FlowNumber) // 🔹 Thêm dòng này để sắp xếp
                 .Select(workflowFlow =>
                 {
-                    var isFallbackFlow = transitions.Any(t =>
-                        t.NextWorkFlowFlowId == workflowFlow.WorkflowFlowId &&
-                        t.Condition == FlowTransitionCondition.Reject
-                    );
+                    // var isFallbackFlow = transitions.Any(t =>
+                    //     t.NextWorkFlowFlowId == workflowFlow.WorkflowFlowId &&
+                    //     t.Condition == FlowTransitionCondition.Reject
+                    // );
 
                     var flow = flows.FirstOrDefault(f => f.FlowId == workflowFlow.FlowId);
                     if (flow == null) return null;
@@ -556,7 +556,7 @@ public class WorkflowService : IWorkflowService
                     return new FlowDto
                     {
                         FlowId = flow.FlowId,
-                        IsFallbackFlow = isFallbackFlow,
+                        IsFallbackFlow = false,
                         RoleStart = flow.RoleStart,
                         RoleEnd = flow.RoleEnd,
                         Steps = stepsInFlow

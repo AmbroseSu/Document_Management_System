@@ -22,4 +22,5 @@ public interface IDocumentService
     Task<ResponseDto> GetDocumentDetailById(Guid documentId, Guid userId);
     Task<ResponseDto> GetMySelfDocument(Guid userId, string? searchText, int page, int pageSize);
     Task<IActionResult> GetDocumentByFileName(string documentName, Guid userId);
+    Task<ResponseDto> ShowProcessDocumentDetail(Guid? documentId);
 }
