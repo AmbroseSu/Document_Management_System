@@ -20,5 +20,4 @@ public class TaskDto
     public Guid? StepId { get; set; }
     public Guid? DocumentId { get; set; }
     public Guid? UserId { get; set; }
-    public List<Guid>? CommentIds { get; set; }
 }

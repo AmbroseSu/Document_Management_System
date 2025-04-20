@@ -576,7 +576,7 @@ public class WorkflowService : IWorkflowService
                                 NextStepId = s.NextStepId,
                                 RejectStepId = s.RejectStepId,
                                 IsFallbackStep = s.RejectStepId == null, // ✅ Gán giá trị ở đây thay vì sửa trong entity
-                                TaskIds = new List<Guid>() // Nếu có TaskId thì lấy từ bảng liên quan
+                                TaskDtos = new List<TaskDto>() // Nếu có TaskId thì lấy từ bảng liên quan
                             }).ToList()
                     };
                 })

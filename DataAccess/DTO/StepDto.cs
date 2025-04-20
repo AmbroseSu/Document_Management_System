@@ -10,5 +10,5 @@ public class StepDto
     public Guid? NextStepId { get; set; }
     public Guid? RejectStepId { get; set; }
     public bool? IsFallbackStep { get; set; }
-    public List<Guid>? TaskIds { get; set; }
+    public List<TaskDto>? TaskDtos { get; set; }
 }
