@@ -1,5 +1,6 @@
 using BusinessObject;
 using DataAccess.DTO;
+using DataAccess.DTO.Request;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -20,8 +21,15 @@ namespace DocumentManagementSystemApplication.Controllers
             _documentService = documentService;
         }
         
+        [HttpPost("create-test")]
+        public async Task<string> Test([FromForm] TestDto testDto)
+        {
+            return testDto.Name;
+        }
+
+        
         [HttpPost("create-upload-document")]
-        public async Task<ResponseDto> UploadDocument([FromForm] IFormFile file)
+        public async Task<ResponseDto> UploadDocument(IFormFile file)
         {
             var id = User.FindFirst("userid")?.Value;
             var result = await _documentService.UploadDocument(file, id);
