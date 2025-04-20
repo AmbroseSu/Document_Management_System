@@ -352,6 +352,12 @@ public partial class DocumentService : IDocumentService
             // throw new NotImplementedException();
     }
 
+    public async Task<IActionResult> GetDocumentByFileName(string documentName, Guid userId)
+    {
+        var result = await _fileService.GetPdfFile(Path.Combine("document","UploadedFiles",documentName));
+        return result;
+    }
+
 
     public async Task<ResponseDto> GetAllDocumentsMobile(Guid? workFlowId, Guid documentTypeId, Guid userId)
     {
@@ -655,9 +661,14 @@ public partial class DocumentService : IDocumentService
             { "DocumentTypeId", null },
             { "WorkflowId", null },
             { "Deadline", null },
-            { "NewSignerName", null }
-        };
+            { "NewSignerName", null },
+            {"validTo", metaData?.MaxBy(x => x.ExpirationDate).ExpirationDate},
+            {"validFrom", metaData?.MinBy(x => x.ValidFrom).ValidFrom},
+            {"signerName", metaData.Select(x => ExtractSigners(x.SignerName)).ToList()},
+            {"url", _host+"/api/document/view-file-by-name?documentName=" + fileName}
 
+        };
+        
         var cannotChange = new Dictionary<string, object?>
         {
             { "SignatureName", metaData?.Select(x => x.SignatureName).ToList() },
