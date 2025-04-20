@@ -264,6 +264,7 @@ public class DocumentManagementSystemDbContext : DbContext
                 .HasDefaultValueSql("gen_random_uuid()");
             entity.Property(e => e.DocumentTypeName);
             entity.Property(e => e.CreateAt);
+            entity.Property(e => e.Acronym);
             entity.Property(e => e.CreateBy);
             entity.Property(e => e.IsDeleted);
 
