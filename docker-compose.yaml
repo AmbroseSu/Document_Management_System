@@ -9,6 +9,8 @@ services:
       - "5291:5291"
     volumes:
       - ./DocumentManagementSystemApplication/data:/app/data
+    env_file:
+      - ./.env
     networks:
       - dmsBe
     restart: unless-stopped
