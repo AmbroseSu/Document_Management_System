@@ -465,6 +465,7 @@ public class TaskService : ITaskService
                 {
                     DocumentId = allDocument.DocumentId,
                     DocumentName = allDocument.DocumentName,
+                    FullName = user.FullName,
                     WorkflowName = allDocument.DocumentWorkflowStatuses.FirstOrDefault()?.Workflow.WorkflowName,
                     Scope = allDocument.DocumentWorkflowStatuses.FirstOrDefault()?.Workflow.Scope,
                     DocumentType = allDocument.DocumentType.DocumentTypeName,

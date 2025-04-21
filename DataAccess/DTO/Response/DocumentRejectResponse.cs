@@ -9,6 +9,7 @@ public class DocumentRejectResponse
     public string? DocumentName { get; set; }
     public string? DocumentType { get; set; }
     public string? WorkflowName { get; set; }
+    public String? FullName { get; set; }
     public Scope? Scope { get; set; }
     public List<VersionOfDocResponse>? VersionOfDocResponses { get; set; }
 }
