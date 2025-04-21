@@ -83,7 +83,7 @@ public class AuthenticationService : IAuthenticationService
             jwtAuthResponse.UserDto = userDto;
             jwtAuthResponse.Token = jwt;
             jwtAuthResponse.RefreshToken = refreshToken;
-            if (!signInRequest.FcmToken.Equals("string") || signInRequest.FcmToken != null)
+            if (!signInRequest.FcmToken.ToLower().Equals("string"))
                 user.FcmToken = signInRequest.FcmToken;
             await _unitOfWork.UserUOW.UpdateAsync(user);
             await _unitOfWork.SaveChangesAsync();

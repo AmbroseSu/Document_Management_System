@@ -12,6 +12,7 @@
         <PackageReference Include="BouncyCastle" Version="1.8.9" />
         <PackageReference Include="ClosedXML" Version="0.105.0-rc" />
         <PackageReference Include="FluentValidation" Version="11.9.2" />
+        <PackageReference Include="Google.Apis.Auth" Version="1.69.0" />
         <PackageReference Include="itext7" Version="9.1.0" />
         <PackageReference Include="itext7.bouncy-castle-adapter" Version="9.1.0" />
         <PackageReference Include="itext7.bouncy-castle-fips-adapter" Version="9.1.0" />

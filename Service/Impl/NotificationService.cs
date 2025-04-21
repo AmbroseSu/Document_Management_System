@@ -1,10 +1,15 @@
 using System.Net;
+using System.Net.Http.Headers;
+using System.Text;
 using BusinessObject;
 using DataAccess;
 using DataAccess.DTO;
+using Google.Apis.Auth.OAuth2;
 using MongoDB.Driver;
+using Newtonsoft.Json;
 using Service.Response;
 using Service.Utilities;
+using JsonSerializer = System.Text.Json.JsonSerializer;
 
 namespace Service.Impl;
 
@@ -165,6 +170,57 @@ public class NotificationService : INotificationService
     
         await _mongoDbService.Notifications.UpdateOneAsync(filter, update);
         
+    }
+    
+    public async Task SendPushNotificationMobileAsync(string deviceToken, string title, string body)
+    {
+        var base64 = Environment.GetEnvironmentVariable("FIREBASE_CREDENTIAL_JSON_BASE64");
+        var firebaseJson = Encoding.UTF8.GetString(Convert.FromBase64String(base64));
+
+        var credential = GoogleCredential
+            .FromJson(firebaseJson)
+            .CreateScoped("https://www.googleapis.com/auth/firebase.messaging");
+
+        var accessToken = await credential.UnderlyingCredential.GetAccessTokenForRequestAsync();
+
+        // 3. Construct HTTP request to FCM v1
+        var projectId = "your-project-id"; // 🔺 Firebase project ID
+        var url = $"https://fcm.googleapis.com/v1/projects/{projectId}/messages:send";
+
+
+        var message = new
+        {
+            message = new
+            {
+                token = deviceToken,
+                notification = new
+                {
+                    title = title,
+                    body = body
+                },
+                android = new
+                {
+                    priority = "high"
+                },
+                apns = new
+                {
+                    headers = new Dictionary<string, string>
+                    {
+                        { "apns-priority", "10" }
+                    }
+                }
+            }
+        };
+
+        var client = new HttpClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+
+        var content = new StringContent(JsonConvert.SerializeObject(message), System.Text.Encoding.UTF8, "application/json");
+
+        var response = await client.PostAsync(url, content);
+        var responseBody = await response.Content.ReadAsStringAsync();
+
+        Console.WriteLine($"FCM Response: {response.StatusCode} - {responseBody}");
     }
 
 }
