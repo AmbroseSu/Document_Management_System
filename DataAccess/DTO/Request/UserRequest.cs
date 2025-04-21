@@ -15,4 +15,5 @@ public class UserRequest
     public string Position { get; set; }
     public string Address { get; set; }
     public Gender Gender { get; set; }
+    public String? ExtraData { get; set; }
 }

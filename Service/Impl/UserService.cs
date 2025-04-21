@@ -616,6 +616,63 @@ public class UserService : IUserService
         
     }
     
+    public async Task<List<UserRequest>> ReadUsersFromExcelAsync(IFormFile file)
+    {
+        var users = new List<UserRequest>();
+
+        using var stream = new MemoryStream();
+        await file.CopyToAsync(stream);
+        stream.Position = 0;
+
+        using var workbook = new XLWorkbook(stream);
+        var worksheet = workbook.Worksheet(1); // Sheet đầu tiên
+        var rows = worksheet.RangeUsed().RowsUsed().Skip(1); // Bỏ dòng tiêu đề
+
+        foreach (var row in rows)
+        {
+            var fullName = row.Cell(2).GetValue<string>().Trim();
+            var userName = row.Cell(3).GetValue<string>().Trim();
+            var email = row.Cell(4).GetValue<string>().Trim();
+            var phone = row.Cell(5).GetValue<string>().Trim();
+            var idCard = row.Cell(6).GetValue<string>().Trim();
+            var address = row.Cell(7).GetValue<string>().Trim();
+            var genderRaw = row.Cell(8).GetValue<string>().Trim().ToLower();
+            var position = row.Cell(9).GetValue<string>().Trim();
+            var roleName = row.Cell(10).GetValue<string>().Trim();
+
+            if (string.IsNullOrWhiteSpace(fullName))
+                continue;
+
+            Gender gender = genderRaw switch
+            {
+                "nam" => Gender.MALE,
+                "nữ" or "nu" => Gender.FEMALE,
+                _ => Gender.OTHER
+            };
+
+            // Nếu bạn không cần lấy roleId ở đây, có thể bỏ qua
+            var userRequest = new UserRequest
+            {
+                FullName = fullName,
+                UserName = userName,
+                Email = email,
+                PhoneNumber = phone,
+                IdentityCard = idCard,
+                Address = address,
+                Gender = gender,
+                Position = position,
+                // RoleId = ..., // Nếu cần, có thể map sau
+            };
+
+            // Nếu bạn muốn giữ role name để xử lý sau:
+            userRequest.ExtraData = roleName;
+
+            users.Add(userRequest);
+        }
+
+        return users;
+    }
+    
     
     public async Task<ResponseDto> ImportUsersFromCsvAsync(IFormFile file, Guid divisionId)
 {
