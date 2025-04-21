@@ -57,6 +57,7 @@ public class Tasks
     public Step? Step { get; set; }
     [JsonIgnore]
     public Document? Document { get; set; }
+    [JsonIgnore]
     public User? User { get; set; }
     
 

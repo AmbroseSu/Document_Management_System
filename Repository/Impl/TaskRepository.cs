@@ -43,6 +43,16 @@ public class TaskRepository : ITaskRepository
             u => u.Include(s => s.Step).Include(d => d.Document));
     }
     
+    public async Task<IEnumerable<Tasks>> FindTasksByStepIdsAsync(List<Guid> stepIds, Guid? documentId)
+    {
+        if (stepIds == null || stepIds.Count == 0) throw new ArgumentNullException(nameof(stepIds));
+        if (documentId == null) throw new ArgumentNullException(nameof(documentId));
+        
+        return await _taskDao.FindAsync(s => stepIds.Contains(s.StepId) && s.DocumentId == documentId && s.IsDeleted == false, 
+            st => st.Include(st => st.Document));
+    }
+
+    
     
     
     public async Task<Tasks?> FindTaskByIdAsync(Guid? id)
@@ -117,4 +127,6 @@ public class TaskRepository : ITaskRepository
     {
         return await _taskDao.FindAsync(t => t.DocumentId == documentId && t.UserId == userId);
     }
+    
+
 }

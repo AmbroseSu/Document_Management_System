@@ -2,9 +2,9 @@
 
 public enum TasksStatus
 {
-    InProgress,
-    Completed,
     Revised,
     Pending,
     Waiting,
+    InProgress,
+    Completed,
 }

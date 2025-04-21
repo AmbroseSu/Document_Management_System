@@ -86,7 +86,7 @@ public class DocumentRepository : IDocumentRepository
         if (userId == Guid.Empty) throw new ArgumentNullException(nameof(userId));
         return await _documentDao.FindAsync(
             d => !d.IsDeleted && (d.UserId == userId || d.Tasks.Any(t => t.UserId == userId)),
-            q => q.Include(dt => dt.DocumentType).Include(d => d.DocumentWorkflowStatuses)
+            q => q.Include(u => u.User).Include(dt => dt.DocumentType).Include(d => d.DocumentWorkflowStatuses)
                 .ThenInclude(dws => dws.Workflow).Include(d => d.Tasks).ThenInclude(s => s.Step).ThenInclude(f => f.Flow).Include(d => d.DocumentVersions)
         );
     }

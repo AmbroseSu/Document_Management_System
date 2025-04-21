@@ -826,49 +826,96 @@ public partial class DocumentService : IDocumentService
             
             var steps = await _unitOfWork.StepUOW.FindByFlowIdsAsync(flowIds);
             
-            var flowDtoList = workflowFlows
-                .OrderBy(wf => wf.FlowNumber) // 🔹 Thêm dòng này để sắp xếp
-                .Select(workflowFlow =>
-                {
-                    // var isFallbackFlow = transitions.Any(t =>
-                    //     t.NextWorkFlowFlowId == workflowFlow.WorkflowFlowId &&
-                    //     t.Condition == FlowTransitionCondition.Reject
-                    // );
+            // var flowDtoList = workflowFlows
+            //     .OrderBy(wf => wf.FlowNumber) // 🔹 Thêm dòng này để sắp xếp
+            //     .Select(workflowFlow =>
+            //     {
+            //         // var isFallbackFlow = transitions.Any(t =>
+            //         //     t.NextWorkFlowFlowId == workflowFlow.WorkflowFlowId &&
+            //         //     t.Condition == FlowTransitionCondition.Reject
+            //         // );
+            //
+            //         var flow = flows.FirstOrDefault(f => f.FlowId == workflowFlow.FlowId);
+            //         if (flow == null) return null;
+            //
+            //         var stepsInFlow = steps.Where(s => s.FlowId == flow.FlowId).ToList();
+            //         var stepIds = stepsInFlow.Select(s => s.StepId).ToList();
+            //         var tasks = await _unitOfWork.TaskUOW.FindTasksByStepIdsAsync(stepIds);
+            //         var taskDtos = _mapper.Map<List<TaskDto>>(tasks);
+            //         return new FlowDto
+            //         {
+            //             FlowId = flow.FlowId,
+            //             IsFallbackFlow = false,
+            //             RoleStart = flow.RoleStart,
+            //             RoleEnd = flow.RoleEnd,
+            //             Steps = stepsInFlow
+            //                 .OrderBy(s => s.StepNumber) // 🔹 Nếu cần sắp xếp steps theo StepNumber
+            //                 .Select(s => new StepDto
+            //                 {
+            //                     StepId = s.StepId,
+            //                     StepNumber = s.StepNumber,
+            //                     Action = s.Action,
+            //                     RoleId = s.RoleId,
+            //                     Role = new RoleDto
+            //                     {
+            //                         RoleId = s.RoleId,
+            //                         RoleName = s.Role?.RoleName,
+            //                         CreatedDate = s.Role?.CreatedDate
+            //                     },
+            //                     NextStepId = s.NextStepId,
+            //                     RejectStepId = s.RejectStepId,
+            //                     IsFallbackStep = s.RejectStepId == null, // ✅ Gán giá trị ở đây thay vì sửa trong entity
+            //                     TaskDtos = taskDtos // Nếu có TaskId thì lấy từ bảng liên quan
+            //                 }).ToList()
+            //         };
+            //     })
+            //     .Where(flowDto => flowDto != null) // ✅ Loại bỏ flow null
+            //     .ToList();
+            
+            var flowDtoList = new List<FlowDto>();
 
-                    var flow = flows.FirstOrDefault(f => f.FlowId == workflowFlow.FlowId);
-                    if (flow == null) return null;
+            foreach (var workflowFlow in workflowFlows.OrderBy(wf => wf.FlowNumber))
+            {
+                var flow = flows.FirstOrDefault(f => f.FlowId == workflowFlow.FlowId);
+                if (flow == null) continue;
 
-                    var stepsInFlow = steps.Where(s => s.FlowId == flow.FlowId).ToList();
+                var stepsInFlow = steps.Where(s => s.FlowId == flow.FlowId).ToList();
+                var stepIdsInFlow = stepsInFlow.Select(s => s.StepId).ToList();
 
-                    return new FlowDto
+                var tasksInFlow = await _unitOfWork.TaskUOW.FindTasksByStepIdsAsync(stepIdsInFlow, documentId);
+                var taskDtosInFlow = _mapper.Map<List<TaskDto>>(tasksInFlow);
+
+                var stepDtos = stepsInFlow
+                    .OrderBy(s => s.StepNumber)
+                    .Select(s => new StepDto
                     {
-                        FlowId = flow.FlowId,
-                        IsFallbackFlow = false,
-                        RoleStart = flow.RoleStart,
-                        RoleEnd = flow.RoleEnd,
-                        Steps = stepsInFlow
-                            .OrderBy(s => s.StepNumber) // 🔹 Nếu cần sắp xếp steps theo StepNumber
-                            .Select(s => new StepDto
-                            {
-                                StepId = s.StepId,
-                                StepNumber = s.StepNumber,
-                                Action = s.Action,
-                                RoleId = s.RoleId,
-                                Role = new RoleDto
-                                {
-                                    RoleId = s.RoleId,
-                                    RoleName = s.Role?.RoleName,
-                                    CreatedDate = s.Role?.CreatedDate
-                                },
-                                NextStepId = s.NextStepId,
-                                RejectStepId = s.RejectStepId,
-                                IsFallbackStep = s.RejectStepId == null, // ✅ Gán giá trị ở đây thay vì sửa trong entity
-                                TaskDtos = new List<TaskDto>() // Nếu có TaskId thì lấy từ bảng liên quan
-                            }).ToList()
-                    };
-                })
-                .Where(flowDto => flowDto != null) // ✅ Loại bỏ flow null
-                .ToList();
+                        StepId = s.StepId,
+                        StepNumber = s.StepNumber,
+                        Action = s.Action,
+                        RoleId = s.RoleId,
+                        Role = new RoleDto
+                        {
+                            RoleId = s.RoleId,
+                            RoleName = s.Role?.RoleName,
+                            CreatedDate = s.Role?.CreatedDate
+                        },
+                        NextStepId = s.NextStepId,
+                        RejectStepId = s.RejectStepId,
+                        IsFallbackStep = s.RejectStepId == null,
+                        TaskDtos = taskDtosInFlow.Where(t => t.StepId == s.StepId).ToList()
+                    }).ToList();
+
+                var flowDto = new FlowDto
+                {
+                    FlowId = flow.FlowId,
+                    IsFallbackFlow = false,
+                    RoleStart = flow.RoleStart,
+                    RoleEnd = flow.RoleEnd,
+                    Steps = stepDtos
+                };
+
+                flowDtoList.Add(flowDto);
+            }
             
 
             var workflowResponse = new WorkflowRequest

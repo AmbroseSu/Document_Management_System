@@ -7,6 +7,7 @@ public interface ITaskRepository
     Task AddAsync(Tasks entity);
     Task UpdateAsync(Tasks entity);
     Task<IEnumerable<Tasks>> FindTaskByStepIdAsync(Guid? id);
+    Task<IEnumerable<Tasks>> FindTasksByStepIdsAsync(List<Guid> stepIds, Guid? documentId);
     
     Task<IEnumerable<Tasks>> FindTaskByStepIdDocIdAsync(Guid? stepId, Guid? documentId);
     Task<Tasks?> FindTaskByIdAsync(Guid? id);
