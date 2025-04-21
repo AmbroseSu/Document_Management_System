@@ -103,6 +103,9 @@ public class EmailService : IEmailService
         // Nội dung văn bản
         var textPart = new TextPart("plain") { Text = emailRequest.Body };
         multipart.Add(textPart);
+        
+        // TODO: (Minh) Lấy file từ server
+        
         var memoryStream = new MemoryStream();
         // Nếu có file đính kèm thì thêm vào
         if (emailRequest.FilePath != null && emailRequest.FilePath.Length > 0)

@@ -402,7 +402,7 @@ public class TaskService : ITaskService
         try
         {
             var allDocuments = await _unitOfWork.DocumentUOW.FindAllDocumentForTaskAsync(userId);
-
+            
     var now = DateTime.UtcNow;
     
     IEnumerable<Document> filteredDocuments = new List<Document>();
@@ -457,6 +457,10 @@ public class TaskService : ITaskService
                     };
                     versionOfDocResponses.Add(documentVersionRes);
                 }
+                var user = await _unitOfWork.UserUOW.FindUserByIdAsync(allDocument.UserId);
+                if (user == null)
+                    return ResponseUtil.Error(ResponseMessages.UserNotFound, ResponseMessages.OperationFailed,
+                        HttpStatusCode.NotFound);
                 var documentRejectResponse = new DocumentRejectResponse
                 {
                     DocumentId = allDocument.DocumentId,
@@ -627,10 +631,15 @@ public class TaskService : ITaskService
     foreach (var doc in result)
     {
         var workflow = await _unitOfWork.WorkflowUOW.FindWorkflowByIdAsync(doc.DocumentWorkflowStatuses?.FirstOrDefault()?.WorkflowId);
+        var user = await _unitOfWork.UserUOW.FindUserByIdAsync(doc.UserId);
+        if (user == null)
+            return ResponseUtil.Error(ResponseMessages.UserNotFound, ResponseMessages.OperationFailed,
+                HttpStatusCode.NotFound);
         var documentResponse = new DocumentTabResponse
         {
             DocumentDto = doc,
             WorkflowName = workflow?.WorkflowName,
+            FullName = user.FullName,
             Scope = workflow?.Scope,
         };
         documentResponses.Add(documentResponse);
@@ -781,15 +790,16 @@ public class TaskService : ITaskService
                 return result;
         }
         
-        /*case TaskAction.RejectDocument:
+        case TaskAction.RejectDocument:
         {
             if (task.TaskStatus != TasksStatus.InProgress)
                 return ResponseUtil.Error(ResponseMessages.TaskHadNotYourTurn, ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
 
             // 1. Cập nhật trạng thái task hiện tại
-            task.TaskStatus = TasksStatus.Revised;
+            task.TaskStatus = TasksStatus.Completed;
             task.UpdatedDate = DateTime.UtcNow;
-
+            await _unitOfWork.TaskUOW.UpdateAsync(task);
+            await _unitOfWork.SaveChangesAsync();
             // 2. Cập nhật trạng thái tài liệu
             //var document = task.Document;
             if (document == null)
@@ -797,6 +807,16 @@ public class TaskService : ITaskService
 
             document.ProcessingStatus = ProcessingStatus.Rejected;
             document.UpdatedDate = DateTime.UtcNow;
+            await _unitOfWork.DocumentUOW.UpdateAsync(document);
+            await _unitOfWork.SaveChangesAsync();
+            var documentVersions = await _unitOfWork.DocumentVersionUOW.FindDocumentVersionByDocumentIdAsync(document.DocumentId);
+            if (documentVersions != null)
+            {
+                var documentVersion = documentVersions.OrderByDescending(dv => dv.VersionNumber).FirstOrDefault();
+                documentVersion.IsFinalVersion = true;
+                await _unitOfWork.DocumentVersionUOW.UpdateAsync(documentVersion);
+                await _unitOfWork.SaveChangesAsync();
+            }
 
             // 3. Hủy tất cả task còn lại (nếu chưa xử lý)
             var allPendingTasks = await _unitOfWork.TaskUOW.FindAllPendingTaskByDocumentIdAsync(task.DocumentId!.Value);
@@ -805,6 +825,7 @@ public class TaskService : ITaskService
             {
                 pendingTask.TaskStatus = TasksStatus.Revised; // Hoặc đặt là Rejected nếu bạn muốn thể hiện bị từ chối
                 pendingTask.UpdatedDate = DateTime.UtcNow;
+                await _unitOfWork.TaskUOW.UpdateAsync(pendingTask);
             }
 
             foreach (var orderedTask in orderedTasks)
@@ -820,7 +841,7 @@ public class TaskService : ITaskService
             // TODO: Gửi thông báo cho người tạo tài liệu + người liên quan: "Tài liệu đã bị từ chối ở bước XYZ bởi User A"
             await transaction.CommitAsync();
             return ResponseUtil.GetObject(ResponseMessages.DocumentRejected, ResponseMessages.OperationFailed, HttpStatusCode.BadRequest, 1);
-        }*/
+        }
 
     }
         return ResponseUtil.Error(ResponseMessages.InvalidAction, ResponseMessages.OperationFailed,
@@ -1003,14 +1024,7 @@ public class TaskService : ITaskService
         doc.ProcessingStatus = ProcessingStatus.Completed;
         doc.UpdatedDate = DateTime.UtcNow;
         
-        var documentVersions = await _unitOfWork.DocumentVersionUOW.FindDocumentVersionByDocumentIdAsync(documentId);
-        if (documentVersions != null)
-        {
-            var documentVersion = documentVersions.OrderByDescending(dv => dv.VersionNumber).FirstOrDefault();
-            documentVersion.IsFinalVersion = true;
-            await _unitOfWork.DocumentVersionUOW.UpdateAsync(documentVersion);
-            await _unitOfWork.SaveChangesAsync();
-        }
+        
         
         var orderedTasks = await GetOrderedTasks(doc.Tasks, doc.DocumentWorkflowStatuses.FirstOrDefault()?.WorkflowId ?? Guid.Empty);
 
@@ -1021,6 +1035,8 @@ public class TaskService : ITaskService
             await _hubContext.Clients.User(orderedTask.UserId.ToString()).SendAsync("ReceiveMessage", notification);
 
         }
+        
+        // TODO: (Minh) Viết thêm tính nang de luu doc da hoan thanh vao he thong
         
         await _unitOfWork.SaveChangesAsync();
 
