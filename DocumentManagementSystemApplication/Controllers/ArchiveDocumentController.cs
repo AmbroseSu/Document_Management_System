@@ -19,13 +19,15 @@ namespace DocumentManagementSystemApplication.Controllers
     {
         private readonly IArchiveDocumentService _archiveDocumentService;
         private readonly IEmailService _emailService;
+        private readonly INotificationService _notificationService;
         private readonly IHubContext<NotificationHub> _hubContext;
 
-        public ArchiveDocumentController(IArchiveDocumentService archiveDocumentService, IEmailService emailService, IHubContext<NotificationHub> hubContext)
+        public ArchiveDocumentController(IArchiveDocumentService archiveDocumentService, IEmailService emailService, IHubContext<NotificationHub> hubContext, INotificationService notificationService)
         {
             _archiveDocumentService = archiveDocumentService;
             _emailService = emailService;
             _hubContext = hubContext;
+            _notificationService = notificationService;
         }
 
         /*[HttpPost("create-upload-pdf")]
@@ -89,5 +91,14 @@ namespace DocumentManagementSystemApplication.Controllers
 
             return Ok(new { message = $"Notification sent to user {userId}" });
         }*/
+        
+        [HttpPost("create-send-test")]
+        public async Task SendPushNotificationMobileAsync([FromQuery] string deviceToken)
+        {
+            var id = User.FindFirst("userid")?.Value;
+            var noti = _notificationService.TestNotification(Guid.Parse(id));
+            await _notificationService.SendPushNotificationMobileAsync(deviceToken, noti);
+            await _hubContext.Clients.All.SendAsync("ReceiveMessage", noti);
+        }
     }
 }

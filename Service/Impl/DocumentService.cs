@@ -594,8 +594,10 @@ public partial class DocumentService : IDocumentService
                 var taskList = document.Tasks;
                 foreach (var task in taskList)
                 {
+                    var user = await _unitOfWork.UserUOW.FindUserByIdAsync(task.UserId);
                     var notification = _notificationService.CreateTaskAssignNotification(task, task.UserId);
                     await _notificationCollection.CreateNotificationAsync(notification);
+                    await _notificationService.SendPushNotificationMobileAsync(user.FcmToken, notification);
                     await _hubContext.Clients.User(notification.UserId.ToString())
                         .SendAsync("ReceiveMessage", notification);
                 }
