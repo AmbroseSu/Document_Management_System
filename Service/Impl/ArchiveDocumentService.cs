@@ -138,6 +138,7 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
                 CreateDate = x.CreatedDate,
                 Type = x.DocumentType?.DocumentTypeName ?? string.Empty,
                 CreateBy = x.CreatedBy,
+                Statuss = x.ArchivedDocumentStatus.ToString(),
                 x.NumberOfDocument,
                 x.CreatedDate,
                 x.CreatedBy,
