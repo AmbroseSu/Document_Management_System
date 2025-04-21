@@ -57,6 +57,14 @@ namespace DocumentManagementSystemApplication.Controllers
             var documents = await _archiveDocumentService.GetAllArchiveDocuments(Guid.Parse(id),page,pageSize);
             return documents;
         }
+
+        [HttpGet("view-archive-document-detail")]
+        public async Task<ResponseDto> GetArchiveDocumentDetail([FromQuery] Guid documentId)
+        {
+            var userId = User.FindFirst("userid")?.Value;
+            var result = await _archiveDocumentService.GetArchiveDocumentDetail(documentId, Guid.Parse(userId));
+            return result;
+        }
         
         [HttpGet("view-all-templates")]
         public async Task<ResponseDto> GetAllTemplates([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
@@ -64,6 +72,9 @@ namespace DocumentManagementSystemApplication.Controllers
             var templates = await _archiveDocumentService.GetAllArchiveTemplates(page,pageSize);
             return templates;
         }
+        
+        // [HttpPost("create-template")]
+        
         
         // [HttpPost("create-template")]
         
