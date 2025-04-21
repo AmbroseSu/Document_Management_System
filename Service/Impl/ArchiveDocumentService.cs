@@ -137,7 +137,15 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
                 Name = x.ArchivedDocumentName,
                 CreateDate = x.CreatedDate,
                 Type = x.DocumentType?.DocumentTypeName ?? string.Empty,
-                CreateBy = x.CreatedBy
+                CreateBy = x.CreatedBy,
+                x.NumberOfDocument,
+                x.CreatedDate,
+                x.CreatedBy,
+                x.Scope,
+                x.Sender,
+                x.ExternalPartner,
+                x.DateReceived,
+                x.DateSented
             }).ToList();
         var final = response.Skip((page - 1) * pageSize).Take(pageSize).ToList();
         var total = (int)Math.Ceiling((double)(response.Count / pageSize));
