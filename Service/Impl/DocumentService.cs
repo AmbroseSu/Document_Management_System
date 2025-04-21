@@ -263,8 +263,11 @@ public partial class DocumentService : IDocumentService
         var user = await _unitOfWork.UserUOW.FindUserByIdAsync(userId);
         var version = "0";
         var taskStatus = user.Tasks.OrderByDescending(t => t.TaskStatus).ToList()[0].TaskStatus;
-        if(taskStatus is TasksStatus.Completed or TasksStatus.InProgress)
-            version = document.DocumentVersions.FirstOrDefault(t => t.IsFinalVersion).VersionNumber;
+        if (taskStatus is TasksStatus.Completed or TasksStatus.InProgress)
+        {
+            version = document?.DocumentVersions?.Find(t => t.IsFinalVersion)?.VersionNumber??"0";
+        }
+
         var versions = document.DocumentVersions.Where(x => int.Parse(x.VersionNumber) <= int.Parse(version)).ToList();
         var signature = document.DocumentVersions.FirstOrDefault(x => x.IsFinalVersion)?.DocumentSignatures;
         var dateExpires = DateTime.MaxValue;
@@ -345,6 +348,9 @@ public partial class DocumentService : IDocumentService
                 CreateDate = x.CreatedDate,
                 Status = x.ProcessingStatus.ToString(),
                 Type = x.DocumentType?.DocumentTypeName ?? string.Empty,
+                Workflow = x.DocumentWorkflowStatuses.FirstOrDefault().Workflow.WorkflowName,
+                x.DocumentWorkflowStatuses.FirstOrDefault().Workflow.Scope,
+                x.Deadline,
                 SignBy = ExtractSigners(
                     x.DocumentVersions.FirstOrDefault(v => v.IsFinalVersion)?.DocumentSignatures
                         .Select(c => c.DigitalCertificate)
@@ -421,7 +427,7 @@ public partial class DocumentService : IDocumentService
             var user = await _unitOfWork.UserUOW.FindUserByIdAsync(userId);
             var taskStatus = user.Tasks.OrderByDescending(x => x.TaskStatus).ToList()[0].TaskStatus;
             if(taskStatus is TasksStatus.Completed or TasksStatus.InProgress)
-                version = document.DocumentVersions.FirstOrDefault(t => t.IsFinalVersion).VersionNumber;
+                version = document.DocumentVersions.FirstOrDefault(t => t.IsFinalVersion)?.VersionNumber ?? "0";
             var result = new DocumentDetailResponse()
             {
                 DocumentId = document.DocumentId,
