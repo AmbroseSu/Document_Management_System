@@ -397,6 +397,7 @@ public partial class DocumentService : IDocumentService
         if (!isArchive)
         {
             var document = await _unitOfWork.DocumentUOW.FindDocumentByIdAsync(documentId);
+            
             var users = new List<User> { document.User };
             users.AddRange(document.DocumentVersions.FirstOrDefault(t => t.IsFinalVersion).DocumentSignatures
                 .Select(t => t.DigitalCertificate.User)
@@ -411,6 +412,10 @@ public partial class DocumentService : IDocumentService
                 FullName = u.UserName,
                 DivisionName = u.Division.DivisionName
             }).ToList();
+            var version = "0";
+            var user = await _unitOfWork.UserUOW.FindUserByIdAsync(userId);
+            var taskStatus = user.Tasks.OrderBy(x => x.TaskStatus);
+            
             var result = new DocumentDetailResponse()
             {
                 DocumentId = document.DocumentId,

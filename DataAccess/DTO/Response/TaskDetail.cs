@@ -13,4 +13,5 @@ public class TaskDetail
     public string DocumentName { get; set; }
     public string DocumentTypeName { get; set; }
     public string UserNameCreateTask { get; set; }
+    public string FileSize { get; set; }
 }
