@@ -23,14 +23,16 @@ public class TaskService : ITaskService
     private readonly INotificationService _notificationService;
     private readonly MongoDbService _notificationCollection;
     private readonly IHubContext<NotificationHub> _hubContext;
+    private readonly IFileService _fileService;
 
-    public TaskService(IMapper mapper, IUnitOfWork unitOfWork, INotificationService notificationService, MongoDbService notificationCollection , IHubContext<NotificationHub> hubContext)
+    public TaskService(IMapper mapper, IUnitOfWork unitOfWork, INotificationService notificationService, MongoDbService notificationCollection , IHubContext<NotificationHub> hubContext, IFileService fileService)
     {
         _mapper = mapper;
         _unitOfWork = unitOfWork;
         _notificationService = notificationService;
         _notificationCollection = notificationCollection;
         _hubContext = hubContext;
+        _fileService = fileService;
     }
     
     public async Task<ResponseDto> CreateTask(TaskDto taskDto)
@@ -354,6 +356,9 @@ public class TaskService : ITaskService
               var orderedTasks = await GetOrderedTasks(document.Tasks, document.DocumentWorkflowStatuses.FirstOrDefault()?.WorkflowId ?? Guid.Empty);
               
            var taskDto = _mapper.Map<TaskDto>(task);
+           var verion = "0";
+           if (task.TaskStatus is TasksStatus.Completed or TasksStatus.InProgress)
+               verion = task.Document.DocumentVersions.FirstOrDefault(x => x.IsFinalVersion).VersionNumber;
            var result = new TaskDetail();
            result.TaskDto = taskDto;
            result.Scope = task.Document.DocumentWorkflowStatuses.FirstOrDefault().Workflow.Scope;
@@ -363,6 +368,9 @@ public class TaskService : ITaskService
            result.DocumentId = document.DocumentId;
            result.DocumentName = document.DocumentName;
            result.DocumentTypeName = task.Document.DocumentType.DocumentTypeName;
+           result.FileSize = _fileService.GetFileSize(task.Document.DocumentId,
+               task.Document.DocumentVersions.FirstOrDefault(x => x.VersionNumber == verion).DocumentVersionId,
+               task.Document.DocumentName);
            var user = await _unitOfWork.UserUOW.FindUserByIdAsync(orderedTasks.First().UserId);
            result.UserNameCreateTask = user.FullName;
            return ResponseUtil.GetObject(result, ResponseMessages.GetSuccessfully, HttpStatusCode.OK, 1);

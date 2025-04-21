@@ -37,7 +37,10 @@ public class UserRepository : IUserRepository
     public async Task<User?> FindUserByIdAsync(Guid? id)
     {
         if (id == null) throw new ArgumentNullException(nameof(id));
-        return await _userDao.FindByAsync(u => u.UserId == id, ur => ur.Include(urr => urr.UserRoles).ThenInclude(r => r.Role));
+        return await _userDao.FindByAsync(u => u.UserId == id, 
+            ur => ur.Include(urr => urr.UserRoles).ThenInclude(r => r.Role)
+            .Include(d => d.Division)
+            .Include(t => t.Tasks));
     }
 
     public async Task<User?> FindUserByUserNameAsync(string userName)

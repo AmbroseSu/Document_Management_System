@@ -6,6 +6,7 @@ using System.Text.RegularExpressions;
 using AutoMapper;
 using BusinessObject;
 using DataAccess.DTO;
+using DataAccess.DTO.Response;
 using Org.BouncyCastle.X509;
 using Org.BouncyCastle.Security;
 using iText.Signatures;
@@ -120,15 +121,66 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
             }).ToList();
 
         _unitOfWork.RedisCacheUOW.SetData("ArchiveDocumentUserId" + userId, response,TimeSpan.FromMinutes(1));
-        response.Skip((page - 1) * pageSize).Take(pageSize).ToList();
-        return ResponseUtil.GetCollection(response, ResponseMessages.GetSuccessfully, HttpStatusCode.OK, response.Count, page,
-            pageSize, (int)Math.Ceiling((double)(response.Count/pageSize)));
+        var final = response.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+        var total = (int)Math.Ceiling((double)(response.Count / pageSize));
+        return ResponseUtil.GetCollection(final, ResponseMessages.GetSuccessfully, HttpStatusCode.OK, response.Count, page,
+            pageSize, total);
     }
 
     public async Task<ResponseDto> GetAllArchiveTemplates(int page, int pageSize)
     {
         var templates = await _unitOfWork.ArchivedDocumentUOW.GetAllArchiveTemplates();
-        throw new NotImplementedException();
+        var response = templates.Select(x =>
+            new
+            {
+                Id = x.ArchivedDocumentId,
+                Name = x.ArchivedDocumentName,
+                CreateDate = x.CreatedDate,
+                Type = x.DocumentType?.DocumentTypeName ?? string.Empty,
+                CreateBy = x.CreatedBy
+            }).ToList();
+        var final = response.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+        var total = (int)Math.Ceiling((double)(response.Count / pageSize));
+        return ResponseUtil.GetCollection(final, ResponseMessages.GetSuccessfully, HttpStatusCode.OK, response.Count, page,
+            pageSize, total);
+    }
+
+    public async Task<ResponseDto> GetArchiveDocumentDetail(Guid documentId, Guid userId)
+    {
+        var docA = await _unitOfWork.ArchivedDocumentUOW.FindArchivedDocumentByIdAsync(documentId);
+        var result = new DocumentResponse()
+        {
+            DocumentId = docA.ArchivedDocumentId,
+            DocumentName = docA.ArchivedDocumentName,
+            DocumentContent = docA.ArchivedDocumentContent,
+            NumberOfDocument = docA.NumberOfDocument,
+            Sender = docA.Sender,
+            DateReceived = docA.DateReceived,
+            DocumentTypeName = docA.DocumentType?.DocumentTypeName,
+            WorkflowName = string.Empty,
+            Deadline = DateTime.MaxValue,
+            Status = docA.ArchivedDocumentStatus.ToString(),
+            CreatedBy = docA.CreatedBy,
+            DateIssued = docA.DateIssued,
+            DateExpires = DateTime.MaxValue,
+            Signatures = docA.ArchiveDocumentSignatures?.Select(x => new SignatureResponse()
+            {
+                SignerName = ExtractSigners(x.DigitalCertificate?.Subject),
+                SignedDate = x.SignedAt,
+                IsDigital = x.DigitalCertificate is { SerialNumber: not null },
+            }).ToList(),
+            Versions = [
+                new VersionDetailRespone()
+                {
+                    VersionNumber = "0",
+                    CreatedDate = docA.CreatedDate,
+                    Url = docA.ArchivedDocumentUrl,
+                    IsFinal = true
+                }
+            ],
+            Tasks = []
+        };
+        return ResponseUtil.GetObject(result, ResponseMessages.GetSuccessfully, HttpStatusCode.OK,1);
     }
 
     private static string ExtractSigners(string? signature)
