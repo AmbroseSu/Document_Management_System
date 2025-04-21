@@ -143,6 +143,23 @@ public class NotificationService : INotificationService
         };
     }
     
+    public Notification TestNotification(Guid userId)
+    {
+        return new Notification
+        {
+            UserId = userId.ToString(),
+            Title = $"Task Test của Test đã bị từ chối",
+            Content = $"Task Test của Test đã bị từ chối",
+            Type = "Task",
+            TaskId = "fff74cdb-404b-46a5-b5c8-b79cb41d1a9f",
+            DocumentId = "092abc80-61e9-46c3-84c4-91f8d4d19554",
+            WorkflowId = "7dc95e1f-00c5-4791-9435-f7576d430712",
+            RedirectUrl = $"/task/", // frontend sẽ định nghĩa đường dẫn cụ thể
+            CreatedAt = DateTime.UtcNow,
+            IsRead = false
+        };
+    }
+    
     public async Task<ResponseDto> GetNotificationsByUserIdAsync(string userId, int page, int limit)
     {
         
@@ -172,9 +189,9 @@ public class NotificationService : INotificationService
         
     }
     
-    public async Task SendPushNotificationMobileAsync(string deviceToken, string title, string body)
+    public async Task SendPushNotificationMobileAsync(string deviceToken, Notification notification)
     {
-        var base64 = Environment.GetEnvironmentVariable("FIREBASE_CREDENTIAL_JSON_BASE64");
+        var base64 = Environment.GetEnvironmentVariable("FIREBASE_CREDENTIAL_JSON");
         var firebaseJson = Encoding.UTF8.GetString(Convert.FromBase64String(base64));
 
         var credential = GoogleCredential
@@ -184,7 +201,7 @@ public class NotificationService : INotificationService
         var accessToken = await credential.UnderlyingCredential.GetAccessTokenForRequestAsync();
 
         // 3. Construct HTTP request to FCM v1
-        var projectId = "your-project-id"; // 🔺 Firebase project ID
+        var projectId = "dms-system-e835b"; // 🔺 Firebase project ID
         var url = $"https://fcm.googleapis.com/v1/projects/{projectId}/messages:send";
 
 
@@ -195,8 +212,8 @@ public class NotificationService : INotificationService
                 token = deviceToken,
                 notification = new
                 {
-                    title = title,
-                    body = body
+                    title = notification.Title,
+                    body = notification.Content
                 },
                 android = new
                 {
@@ -208,6 +225,17 @@ public class NotificationService : INotificationService
                     {
                         { "apns-priority", "10" }
                     }
+                },
+                data = new Dictionary<string, string>
+                {
+                    { "notificationId", notification.Id.ToString() },
+                    { "type", notification.Type ?? "" },
+                    { "taskId", notification.TaskId ?? "" },
+                    { "isRead", notification.IsRead.ToString() },
+                    { "createAt", notification.CreatedAt.ToString() },
+                    { "documentId", notification.DocumentId ?? "" },
+                    { "workflowId", notification.WorkflowId ?? "" },
+                    { "redirectUrl", notification.RedirectUrl ?? "" }
                 }
             }
         };

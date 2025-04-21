@@ -200,6 +200,7 @@ public class TaskService : ITaskService
         try
         {
             var task = await _unitOfWork.TaskUOW.FindTaskByIdAsync(taskRequest.TaskId);
+            var user = await _unitOfWork.UserUOW.FindUserByIdAsync(taskRequest.UserId.Value);
             if (task == null)
                 return ResponseUtil.Error(ResponseMessages.TaskNotFound, ResponseMessages.OperationFailed,
                     HttpStatusCode.NotFound);
@@ -243,7 +244,7 @@ public class TaskService : ITaskService
             
             if (taskRequest.UserId != null && task.UserId != taskRequest.UserId)
             {
-                var user = await _unitOfWork.UserUOW.FindUserByIdAsync(taskRequest.UserId.Value);
+                
                 if (user == null)
                     return ResponseUtil.Error(ResponseMessages.UserNotFound, ResponseMessages.OperationFailed,
                         HttpStatusCode.NotFound);
@@ -283,6 +284,11 @@ public class TaskService : ITaskService
                     HttpStatusCode.OK, 0);
             await _unitOfWork.TaskUOW.UpdateAsync(task);
             await _unitOfWork.SaveChangesAsync();
+            var notification = _notificationService.CreateTaskAssignNotification(task, task.UserId);
+            await _notificationCollection.CreateNotificationAsync(notification);
+            await _notificationService.SendPushNotificationMobileAsync(user.FcmToken, notification);
+            await _hubContext.Clients.User(notification.UserId.ToString())
+                .SendAsync("ReceiveMessage", notification);
             return ResponseUtil.GetObject(ResponseMessages.TaskHasUpdatedInformation,
                 ResponseMessages.UpdateSuccessfully, HttpStatusCode.OK, 1);
         }
@@ -740,6 +746,7 @@ public class TaskService : ITaskService
             
             var notification = _notificationService.CreateTaskAcceptedNotification(task, user.UserId);
             await _notificationCollection.CreateNotificationAsync(notification);
+            await _notificationService.SendPushNotificationMobileAsync(user.FcmToken, notification);
             await _hubContext.Clients.User(notification.UserId.ToString()).SendAsync("ReceiveMessage", notification);
             
             await transaction.CommitAsync();
@@ -756,6 +763,7 @@ public class TaskService : ITaskService
             
             var notification = _notificationService.CreateTaskRejectedNotification(task, user.UserId);
             await _notificationCollection.CreateNotificationAsync(notification);
+            await _notificationService.SendPushNotificationMobileAsync(user.FcmToken, notification);
             await _hubContext.Clients.User(notification.UserId.ToString()).SendAsync("ReceiveMessage", notification);
 
             await transaction.CommitAsync();
@@ -839,8 +847,10 @@ public class TaskService : ITaskService
 
             foreach (var orderedTask in orderedTasks)
             {
+                var userFinal = await _unitOfWork.UserUOW.FindUserByIdAsync(orderedTask.UserId);
                 var notification = _notificationService.CreateDocRejectedNotification(task, orderedTask.UserId);
                 await _notificationCollection.CreateNotificationAsync(notification);
+                await _notificationService.SendPushNotificationMobileAsync(userFinal.FcmToken, notification);
                 await _hubContext.Clients.User(orderedTask.UserId.ToString()).SendAsync("ReceiveMessage", notification);
 
             }
@@ -882,8 +892,10 @@ public class TaskService : ITaskService
         
         if (previousTask != null)
         {
+            var preUser = await _unitOfWork.UserUOW.FindUserByIdAsync(previousTask.UserId);
             var notification = _notificationService.CreateDocAcceptedNotification(previousTask, previousTask.UserId);
             await _notificationCollection.CreateNotificationAsync(notification);
+            await _notificationService.SendPushNotificationMobileAsync(preUser.FcmToken, notification);
             await _hubContext.Clients.User(notification.UserId.ToString()).SendAsync("ReceiveMessage", notification);
         }
         if (nextTask != null)
@@ -892,9 +904,10 @@ public class TaskService : ITaskService
             nextTask.UpdatedDate = DateTime.UtcNow;
 
             // TODO: Gửi thông báo đến nextTask.UserId
-            
+            var nextUser = await _unitOfWork.UserUOW.FindUserByIdAsync(nextTask.UserId);
             var notification = _notificationService.CreateNextUserDoTaskNotification(nextTask, nextTask.UserId);
             await _notificationCollection.CreateNotificationAsync(notification);
+            await _notificationService.SendPushNotificationMobileAsync(nextUser.FcmToken, notification);
             await _hubContext.Clients.User(notification.UserId.ToString()).SendAsync("ReceiveMessage", notification);
 
             await _unitOfWork.SaveChangesAsync();
@@ -916,8 +929,10 @@ public class TaskService : ITaskService
             var finalTaskInCurrentStep = tasksInStep.OrderByDescending(t => t.TaskNumber).FirstOrDefault();
             if (finalTaskInCurrentStep != null)
             {
+                var finalTaskUser = await _unitOfWork.UserUOW.FindUserByIdAsync(finalTaskInCurrentStep.UserId);
                 var notification = _notificationService.CreateDocAcceptedNotification(finalTaskInCurrentStep, finalTaskInCurrentStep.UserId);
                 await _notificationCollection.CreateNotificationAsync(notification);
+                await _notificationService.SendPushNotificationMobileAsync(finalTaskUser.FcmToken, notification);
                 await _hubContext.Clients.User(notification.UserId.ToString()).SendAsync("ReceiveMessage", notification);
             }
             if (firstTaskInNextStep != null)
@@ -925,9 +940,11 @@ public class TaskService : ITaskService
                 firstTaskInNextStep.TaskStatus = TasksStatus.InProgress;
                 firstTaskInNextStep.UpdatedDate = DateTime.UtcNow;
 
+                var firstTaskUser = await _unitOfWork.UserUOW.FindUserByIdAsync(firstTaskInNextStep.UserId);
                 // TODO: Gửi thông báo
                 var notification = _notificationService.CreateNextUserDoTaskNotification(firstTaskInNextStep, firstTaskInNextStep.UserId);
                 await _notificationCollection.CreateNotificationAsync(notification);
+                await _notificationService.SendPushNotificationMobileAsync(firstTaskUser.FcmToken, notification);
                 await _hubContext.Clients.User(notification.UserId.ToString()).SendAsync("ReceiveMessage", notification);
                 await _unitOfWork.SaveChangesAsync();
 
@@ -971,8 +988,10 @@ public class TaskService : ITaskService
                 .FirstOrDefault();
             if (finalTask != null)
             {
+                var finalUser = await _unitOfWork.UserUOW.FindUserByIdAsync(finalTask.UserId);
                 var notification = _notificationService.CreateDocAcceptedNotification(finalTask, finalTask.UserId);
                 await _notificationCollection.CreateNotificationAsync(notification);
+                await _notificationService.SendPushNotificationMobileAsync(finalUser.FcmToken, notification);
                 await _hubContext.Clients.User(notification.UserId.ToString()).SendAsync("ReceiveMessage", notification);
             }
         }
@@ -1013,8 +1032,10 @@ public class TaskService : ITaskService
                     await _unitOfWork.DocumentWorkflowStatusUOW.AddAsync(nextDocumentWorkflowflowStatus);
                     await _unitOfWork.SaveChangesAsync();
                 }
+                var firstUser = await _unitOfWork.UserUOW.FindUserByIdAsync(firstTask.UserId);
                 var notification = _notificationService.CreateNextUserDoTaskNotification(firstTask, firstTask.UserId);
                 await _notificationCollection.CreateNotificationAsync(notification);
+                await _notificationService.SendPushNotificationMobileAsync(firstUser.FcmToken, notification);
                 await _hubContext.Clients.User(notification.UserId.ToString()).SendAsync("ReceiveMessage", notification);
                 
                 return ResponseUtil.GetObject($"Chuyển sang Flow tiếp theo: {firstTask.UserId}", ResponseMessages.CreatedSuccessfully,
@@ -1039,8 +1060,10 @@ public class TaskService : ITaskService
 
         foreach (var orderedTask in orderedTasks)
         {
+            var orUser = await _unitOfWork.UserUOW.FindUserByIdAsync(orderedTask.UserId);
             var notification = _notificationService.CreateDocCompletedNotification(task, task.UserId);
             await _notificationCollection.CreateNotificationAsync(notification);
+            await _notificationService.SendPushNotificationMobileAsync(orUser.FcmToken, notification);
             await _hubContext.Clients.User(orderedTask.UserId.ToString()).SendAsync("ReceiveMessage", notification);
 
         }
