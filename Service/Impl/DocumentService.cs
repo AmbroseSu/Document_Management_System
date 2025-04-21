@@ -260,7 +260,12 @@ public partial class DocumentService : IDocumentService
 
         var document = await _unitOfWork.DocumentUOW.FindDocumentByIdAsync(documentId);
         var task = await _unitOfWork.TaskUOW.FindTaskByDocumentIdAndUserIdAsync(documentId, userId);
-        var versions = document.DocumentVersions.ToList();
+        var user = await _unitOfWork.UserUOW.FindUserByIdAsync(userId);
+        var version = "0";
+        var taskStatus = user.Tasks.OrderByDescending(t => t.TaskStatus).ToList()[0].TaskStatus;
+        if(taskStatus is TasksStatus.Completed or TasksStatus.InProgress)
+            version = document.DocumentVersions.FirstOrDefault(t => t.IsFinalVersion).VersionNumber;
+        var versions = document.DocumentVersions.Where(x => int.Parse(x.VersionNumber) <= int.Parse(version)).ToList();
         var signature = document.DocumentVersions.FirstOrDefault(x => x.IsFinalVersion)?.DocumentSignatures;
         var dateExpires = DateTime.MaxValue;
         if (signature != null)
@@ -414,8 +419,9 @@ public partial class DocumentService : IDocumentService
             }).ToList();
             var version = "0";
             var user = await _unitOfWork.UserUOW.FindUserByIdAsync(userId);
-            var taskStatus = user.Tasks.OrderBy(x => x.TaskStatus);
-            
+            var taskStatus = user.Tasks.OrderByDescending(x => x.TaskStatus).ToList()[0].TaskStatus;
+            if(taskStatus is TasksStatus.Completed or TasksStatus.InProgress)
+                version = document.DocumentVersions.FirstOrDefault(t => t.IsFinalVersion).VersionNumber;
             var result = new DocumentDetailResponse()
             {
                 DocumentId = document.DocumentId,
@@ -429,9 +435,9 @@ public partial class DocumentService : IDocumentService
                 CreatedBy = document.User.UserName,
                 DivisionList = divisions,
                 UserList = userList,
-                SignBys = ExtractSigners(document.DocumentVersions.FirstOrDefault(x => x.IsFinalVersion)
+                SignBys = ExtractSigners(document.DocumentVersions.FirstOrDefault(x => x.VersionNumber == version)
                     .DocumentSignatures),
-                DocumentUrl = document.DocumentVersions.FirstOrDefault(x => x.IsFinalVersion).DocumentVersionUrl
+                DocumentUrl = document.DocumentVersions.FirstOrDefault(x => x.VersionNumber == version).DocumentVersionUrl
             };
             return ResponseUtil.GetObject(result, ResponseMessages.GetSuccessfully, HttpStatusCode.OK, 1);
         }
