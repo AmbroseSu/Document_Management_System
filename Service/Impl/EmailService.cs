@@ -96,6 +96,23 @@ public class EmailService : IEmailService
         message.From.Add(new MailboxAddress(emailRequest.YourEmail, emailRequest.YourEmail));
         message.To.Add(new MailboxAddress(emailRequest.ReceiverEmail, emailRequest.ReceiverEmail));
         message.Subject = emailRequest.Subject;
+        
+        
+        if (emailRequest.CcEmails != null && emailRequest.CcEmails.Any())
+        {
+            foreach (var cc in emailRequest.CcEmails)
+            {
+                message.Cc.Add(new MailboxAddress(cc, cc));
+            }
+        }
+        
+        if (emailRequest.BccEmails != null && emailRequest.BccEmails.Any())
+        {
+            foreach (var bcc in emailRequest.BccEmails)
+            {
+                message.Bcc.Add(new MailboxAddress(bcc, bcc));
+            }
+        }
 
         // Tạo phần thân dạng Multipart (nội dung + file)
         var multipart = new Multipart("mixed");
@@ -108,7 +125,7 @@ public class EmailService : IEmailService
         
         var memoryStream = new MemoryStream();
         // Nếu có file đính kèm thì thêm vào
-        if (emailRequest.FilePath != null && emailRequest.FilePath.Length > 0)
+        /*if (emailRequest.FilePath != null && emailRequest.FilePath.Length > 0)
         {
             
             await emailRequest.FilePath.CopyToAsync(memoryStream);
@@ -121,7 +138,7 @@ public class EmailService : IEmailService
                 FileName = emailRequest.FilePath.FileName
             };
             multipart.Add(attachment);
-        }
+        }*/
 
         message.Body = multipart;
 

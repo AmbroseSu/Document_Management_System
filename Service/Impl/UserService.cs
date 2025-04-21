@@ -11,7 +11,7 @@ using Service.Response;
 using Service.Utilities;
 // using Task = System.Threading.Tasks.Task;
 using System.Linq.Dynamic.Core;
-
+using System.Text;
 using BusinessObject.Enums;
 using BusinessObject.Option;
 using ClosedXML.Excel;
@@ -615,6 +615,88 @@ public class UserService : IUserService
         }
         
     }
+    
+    
+    public async Task<ResponseDto> ImportUsersFromCsvAsync(IFormFile file, Guid divisionId)
+{
+    using var transaction = await _unitOfWork.BeginTransactionAsync();
+    try
+    {
+        var users = new List<UserRequest>();
+
+        using var stream = new StreamReader(file.OpenReadStream(), Encoding.UTF8); // hoặc Encoding.Default nếu bị lỗi
+        string? line;
+        int rowIndex = 0;
+
+        while ((line = await stream.ReadLineAsync()) != null)
+        {
+            rowIndex++;
+
+            if (rowIndex == 1) continue; // Bỏ qua dòng tiêu đề
+
+            var columns = line.Split(',');
+
+            if (columns.Length < 10)
+            {
+                await transaction.RollbackAsync();
+                return ResponseUtil.Error($"Dòng {rowIndex}: Thiếu dữ liệu.", ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
+            }
+
+            var fullName = columns[1].Trim();
+            var userName = columns[2].Trim();
+            var email = columns[3].Trim();
+            var phone = columns[4].Trim();
+            var idCard = columns[5].Trim();
+            var address = columns[6].Trim();
+            var genderRaw = columns[7].Trim().ToLower();
+            var position = columns[8].Trim();
+            var roleName = columns[9].Trim();
+
+            if (string.IsNullOrWhiteSpace(fullName))
+                continue;
+
+            Gender gender = genderRaw switch
+            {
+                "nam" => Gender.MALE,
+                "nữ" or "nu" => Gender.FEMALE,
+                _ => Gender.OTHER
+            };
+
+            Guid roleId = await GetRoleIdByName(roleName);
+
+            var userRequest = new UserRequest
+            {
+                FullName = fullName,
+                UserName = userName,
+                Email = email,
+                PhoneNumber = phone,
+                IdentityCard = idCard,
+                Address = address,
+                Gender = gender,
+                Position = position,
+                RoleId = roleId,
+                DivisionId = divisionId
+            };
+
+            var result = await CreateUserByForm(userRequest);
+            if (result.StatusCode != (int)HttpStatusCode.Created)
+            {
+                await transaction.RollbackAsync();
+                return ResponseUtil.Error($"Dòng {rowIndex}: {result.Message}", ResponseMessages.OperationFailed,
+                    HttpStatusCode.BadRequest);
+            }
+        }
+
+        await transaction.CommitAsync();
+        return ResponseUtil.GetObject(ResponseMessages.ImportSuccessfully, ResponseMessages.CreatedSuccessfully, HttpStatusCode.Created, 1);
+    }
+    catch (Exception e)
+    {
+        await transaction.RollbackAsync();
+        return ResponseUtil.Error(e.Message, ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
+    }
+}
+
     
     
     
