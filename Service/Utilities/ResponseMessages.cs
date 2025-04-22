@@ -122,6 +122,7 @@ public static class ResponseMessages
     public const string TaskHasUpdatedInformation = "Task has updated information";
     public const string TaskCanNotDelete = "Task 1 has completed, cannot delete";
     public const string TaskCanNotCreate = "Task 1 has completed, cannot create";
+    public const string OnlyOneCreateTaskAllowed = "Only one task can be created at a time";
     
     //Step
     public const string StepIdNull = "Step id cannot be null";
