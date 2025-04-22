@@ -414,7 +414,8 @@ public partial class DocumentService : IDocumentService
             var document = await _unitOfWork.DocumentUOW.FindDocumentByIdAsync(documentId);
             
             var users = new List<User> { document.User };
-            users.AddRange(document.DocumentVersions.FirstOrDefault(t => t.IsFinalVersion).DocumentSignatures
+            if(document.DocumentVersions.FirstOrDefault(t => t.IsFinalVersion) != null)
+                users.AddRange(document.DocumentVersions.FirstOrDefault(t => t.IsFinalVersion).DocumentSignatures
                 .Select(t => t.DigitalCertificate.User)
                 .ToList());
             users.AddRange(document.Tasks.Select(x => x.User).ToList());
