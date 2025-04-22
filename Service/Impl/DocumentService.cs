@@ -908,7 +908,7 @@ public partial class DocumentService : IDocumentService
 
                 var tasksInFlow = await _unitOfWork.TaskUOW.FindTasksByStepIdsAsync(stepIdsInFlow, documentId);
                 var taskDtosInFlow = _mapper.Map<List<TaskDto>>(tasksInFlow);
-
+                
                 var stepDtos = stepsInFlow
                     .OrderBy(s => s.StepNumber)
                     .Select(s => new StepDto
