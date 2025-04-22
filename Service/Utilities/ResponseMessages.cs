@@ -118,7 +118,10 @@ public static class ResponseMessages
     public const string TaskHadRejected = "Task has been rejected";
     public const string TaskHadNotCompleted = "It's not your turn to approve yet.";
     public const string TaskIdInvalid = "Invalid task id";
+    public const string TaskCanNotUpdate = "Task not Waiting cannot be updated";
     public const string TaskHasUpdatedInformation = "Task has updated information";
+    public const string TaskCanNotDelete = "Task 1 has completed, cannot delete";
+    public const string TaskCanNotCreate = "Task 1 has completed, cannot create";
     
     //Step
     public const string StepIdNull = "Step id cannot be null";

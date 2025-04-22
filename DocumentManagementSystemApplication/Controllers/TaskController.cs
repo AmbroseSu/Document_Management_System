@@ -3,6 +3,7 @@ using BusinessObject.Enums;
 using DataAccess.DTO;
 using DataAccess.DTO.Request;
 using DocumentManagementSystemApplication.Middleware;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
@@ -14,6 +15,7 @@ namespace DocumentManagementSystemApplication.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class TaskController : ControllerBase
     {
         private readonly ITaskService _taskService;
@@ -26,7 +28,8 @@ namespace DocumentManagementSystemApplication.Controllers
         [HttpPost("create-task")]
         public async Task<ResponseDto> CreateTask([FromBody] TaskDto taskDto)
         {
-            return await _taskService.CreateTask(taskDto);
+            var id = User.FindFirst("userid")?.Value;
+            return await _taskService.CreateTask(Guid.Parse(id),taskDto);
         }
         
         [HttpPost("delete-task")]

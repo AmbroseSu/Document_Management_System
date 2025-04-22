@@ -434,6 +434,7 @@ public class DocumentManagementSystemDbContext : DbContext
             entity.Property(e => e.CreatedDate);
             entity.Property(e => e.UpdatedDate);
             entity.Property(e => e.TaskNumber);
+            entity.Property(e => e.CreatedBy);
             entity.Property(e => e.IsDeleted);
             entity.Property(e => e.IsActive);
 
