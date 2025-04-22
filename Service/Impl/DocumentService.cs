@@ -326,9 +326,9 @@ public partial class DocumentService : IDocumentService
 
     public async Task<ResponseDto> GetMySelfDocument(Guid userId, string? searchText,int page,int pageSize)
     {
-        IEnumerable<Document> doc;
+        List<DocumentJsonDto> doc;
         searchText ??= "";
-        var cache = _unitOfWork.RedisCacheUOW.GetData<IEnumerable<Document>>(
+        var cache = _unitOfWork.RedisCacheUOW.GetData<List<DocumentJsonDto>>(
             "GetAllMySeflDoc_userId_" + userId);
         if (cache != null)
         {
@@ -336,7 +336,9 @@ public partial class DocumentService : IDocumentService
         }
         else
         { 
-            doc = await _unitOfWork.DocumentUOW.FindAllDocumentMySelf(userId);
+            var tmp = (await _unitOfWork.DocumentUOW.FindAllDocumentMySelf(userId)).ToList();
+            doc = _mapper.Map<List<DocumentJsonDto>>(tmp);
+            // doc.ToList();
             _unitOfWork.RedisCacheUOW.SetData("GetAllMySeflDoc_userId_" + userId, doc, TimeSpan.FromMinutes(2)); 
             
         }
@@ -350,8 +352,9 @@ public partial class DocumentService : IDocumentService
                 Status = x.ProcessingStatus.ToString(),
                 Type = x.DocumentType?.DocumentTypeName ?? string.Empty,
                 Workflow = x.DocumentWorkflowStatuses.FirstOrDefault().Workflow.WorkflowName,
-                x.DocumentWorkflowStatuses.FirstOrDefault().Workflow.Scope,
+                Scope =  x.DocumentWorkflowStatuses.FirstOrDefault().Workflow.Scope.ToString(),
                 x.Deadline,
+                x.NumberOfDocument,
                 SignBy = ExtractSigners(
                     x.DocumentVersions.FirstOrDefault(v => v.IsFinalVersion)?.DocumentSignatures
                         .Select(c => c.DigitalCertificate)

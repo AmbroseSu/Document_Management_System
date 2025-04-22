@@ -75,13 +75,13 @@ namespace DocumentManagementSystemApplication.Controllers
             return templates;
         }
         
-        // [HttpPost("create-template")]
-        // public async Task<ResponseDto> CreateTemplate([FromBody] ArchiveDocumentRequest archiveDocumentRequest)
-        // {
-        //     var userId = User.FindFirst("userid")?.Value;
-        //     var result = await _archiveDocumentService.CreateArchiveTemplate(archiveDocumentRequest, Guid.Parse(userId));
-        //     return Ok(result);
-        // }
+        [HttpPost("create-template")]
+        public async Task<ResponseDto> CreateTemplate([FromBody] ArchiveDocumentRequest archiveDocumentRequest)
+        {
+            var userId = User.FindFirst("userid")?.Value;
+            var result = await _archiveDocumentService.CreateArchiveTemplate(archiveDocumentRequest, Guid.Parse(userId));
+            return result;
+        }
         
         // [HttpPost("create-template")]
         

@@ -122,7 +122,15 @@ IConfiguration configuration = new ConfigurationBuilder().AddJsonFile("appsettin
 
 builder.Services.AddStackExchangeRedisCache(options =>
 {
-    options.Configuration = configuration.GetConnectionString("Cache");
+    // options.Configuration = configuration.GetConnectionString("Cache");
+    options.ConfigurationOptions = new StackExchange.Redis.ConfigurationOptions
+    {
+        EndPoints = { configuration.GetConnectionString("Cache") },
+        ConnectTimeout = 10000,
+        SyncTimeout = 10000,
+        AbortOnConnectFail = false
+
+    };
 });
 // Add logging configuration
 builder.Logging.ClearProviders();
