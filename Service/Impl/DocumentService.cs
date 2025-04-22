@@ -290,6 +290,7 @@ public partial class DocumentService : IDocumentService
             CreatedBy = document.User.FullName,
             DateReceived = document.DateReceived,
             WorkflowName = document.DocumentWorkflowStatuses.FirstOrDefault().Workflow.WorkflowName,
+            Scope = document.DocumentWorkflowStatuses.FirstOrDefault().Workflow.Scope.ToString(),
             Deadline = document.Deadline,
             Status = document.ProcessingStatus.ToString(),
             DocumentTypeName = document.DocumentType.DocumentTypeName,
