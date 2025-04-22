@@ -21,11 +21,7 @@ namespace DocumentManagementSystemApplication.Controllers
             _documentService = documentService;
         }
 
-        [HttpPost("create-test")]
-        public async Task<string> Test([FromForm] ArchiveDocumentRequest archiveDocumentRequest)
-        {
-            return archiveDocumentRequest.Name;
-        }
+   
 
 
         [HttpPost("create-upload-document")]

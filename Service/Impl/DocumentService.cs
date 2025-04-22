@@ -354,6 +354,7 @@ public partial class DocumentService : IDocumentService
                 Workflow = x.DocumentWorkflowStatuses.FirstOrDefault().Workflow.WorkflowName,
                 Scope =  x.DocumentWorkflowStatuses.FirstOrDefault().Workflow.Scope.ToString(),
                 x.Deadline,
+                x.NumberOfDocument,
                 SignBy = ExtractSigners(
                     x.DocumentVersions.FirstOrDefault(v => v.IsFinalVersion)?.DocumentSignatures
                         .Select(c => c.DigitalCertificate)

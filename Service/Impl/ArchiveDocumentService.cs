@@ -6,6 +6,7 @@ using System.Text.RegularExpressions;
 using AutoMapper;
 using BusinessObject;
 using DataAccess.DTO;
+using DataAccess.DTO.Request;
 using DataAccess.DTO.Response;
 using DocumentFormat.OpenXml.Office.CustomXsn;
 using Org.BouncyCastle.X509;
@@ -192,6 +193,11 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
             Tasks = []
         };
         return ResponseUtil.GetObject(result, ResponseMessages.GetSuccessfully, HttpStatusCode.OK,1);
+    }
+
+    public Task<ResponseDto> CreateArchiveTemplate(ArchiveDocumentRequest archiveDocumentRequest, Guid userId)
+    {
+        throw new NotImplementedException();
     }
 
     private static string ExtractSigners(string? signature)
