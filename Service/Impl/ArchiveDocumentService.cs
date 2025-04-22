@@ -5,6 +5,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using AutoMapper;
 using BusinessObject;
+using BusinessObject.Enums;
 using DataAccess.DTO;
 using DataAccess.DTO.Request;
 using DataAccess.DTO.Response;
@@ -195,8 +196,23 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
         return ResponseUtil.GetObject(result, ResponseMessages.GetSuccessfully, HttpStatusCode.OK,1);
     }
 
-    public Task<ResponseDto> CreateArchiveTemplate(ArchiveDocumentRequest archiveDocumentRequest, Guid userId)
+    public async Task<ResponseDto> CreateArchiveTemplate(ArchiveDocumentRequest archiveDocumentRequest, Guid userId)
     {
+        var user = await _unitOfWork.UserUOW.FindUserByIdAsync(userId);
+        var template = new ArchivedDocument()
+        {
+            ArchivedDocumentName = archiveDocumentRequest.TemplateName,
+            CreatedBy = user.UserName,
+            CreatedDate = DateTime.Now,
+            DocumentTypeId = archiveDocumentRequest.DocumentTypeId,
+            ArchivedDocumentStatus = ArchivedDocumentStatus.Archived,
+            IsTemplate = true,
+            Llx = archiveDocumentRequest.Llx,
+            Lly = archiveDocumentRequest.Lly,
+            Urx = archiveDocumentRequest.Urx,
+            Ury = archiveDocumentRequest.Ury,
+            Page = archiveDocumentRequest.Page,
+        };
         throw new NotImplementedException();
     }
 

@@ -21,7 +21,12 @@ namespace DocumentManagementSystemApplication.Controllers
             _documentService = documentService;
         }
 
-   
+        [HttpGet("view-test")]
+        public IActionResult GetViewTest()
+        {
+            _documentService.AddFooterToPdf("","");
+            return Ok("Test");
+        }
 
 
         [HttpPost("create-upload-document")]
