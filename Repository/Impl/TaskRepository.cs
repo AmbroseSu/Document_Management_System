@@ -49,7 +49,7 @@ public class TaskRepository : ITaskRepository
         if (documentId == null) throw new ArgumentNullException(nameof(documentId));
         
         return await _taskDao.FindAsync(s => stepIds.Contains(s.StepId) && s.DocumentId == documentId && s.IsDeleted == false, 
-            st => st.Include(st => st.Document));
+            st => st.Include(u => u.User).Include(st => st.Document));
     }
 
     

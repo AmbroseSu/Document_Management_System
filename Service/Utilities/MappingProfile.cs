@@ -119,7 +119,8 @@ public class MappingProfile : Profile
         CreateMap<WorkflowDto, Workflow>();
         CreateMap<Step, StepDto>();
         CreateMap<StepDto, Step>();
-        CreateMap<Tasks, TaskDto>();
+        CreateMap<Tasks, TaskDto>()
+            .ForMember(dest => dest.User, opt => opt.MapFrom(src => src.User));
         CreateMap<TaskDto, Tasks>();
         CreateMap<DocumentDto, Document>();
         CreateMap<Document, DocumentDto>();

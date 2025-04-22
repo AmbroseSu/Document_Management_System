@@ -347,7 +347,8 @@ public class TaskService : ITaskService
                 taskDetail.DocumentId = document.DocumentId;
                 taskDetail.DocumentName = document.DocumentName;
                taskDetail.DocumentTypeName = task.Document.DocumentType.DocumentTypeName;
-               var user = await _unitOfWork.UserUOW.FindUserByIdAsync(orderedTasks.First().UserId);
+               var user = await _unitOfWork.UserUOW.FindUserByIdAsync(task.UserId);
+               taskDetail.UserDoTask = user?.FullName;
                taskDetail.UserNameCreateTask = task.CreatedBy;
                taskDetails.Add(taskDetail);
            }
@@ -404,7 +405,9 @@ public class TaskService : ITaskService
            result.FileSize = _fileService.GetFileSize(task.Document.DocumentId,
                task.Document.DocumentVersions.FirstOrDefault(x => x.VersionNumber == verion).DocumentVersionId,
                task.Document.DocumentName);
-           var user = await _unitOfWork.UserUOW.FindUserByIdAsync(orderedTasks.First().UserId);
+           
+           var user = await _unitOfWork.UserUOW.FindUserByIdAsync(task.UserId);
+           result.UserDoTask = user?.FullName;
            result.UserNameCreateTask = task.CreatedBy;
            return ResponseUtil.GetObject(result, ResponseMessages.GetSuccessfully, HttpStatusCode.OK, 1);
        }
