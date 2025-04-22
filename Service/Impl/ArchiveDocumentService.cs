@@ -5,15 +5,20 @@ using System.Text;
 using System.Text.RegularExpressions;
 using AutoMapper;
 using BusinessObject;
+using BusinessObject.Enums;
+using BusinessObject.Option;
 using DataAccess.DTO;
 using DataAccess.DTO.Request;
 using DataAccess.DTO.Response;
 using DocumentFormat.OpenXml.Office.CustomXsn;
+using DocumentFormat.OpenXml.Packaging;
 using Org.BouncyCastle.X509;
 using Org.BouncyCastle.Security;
 using iText.Signatures;
 //using iTextSharp.text.pdf;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 using Repository;
 using Service.Response;
 using Service.Utilities;
@@ -27,11 +32,16 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
 {
     private readonly IMapper _mapper;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly string _host;
+    private readonly IFileService _fileService;
 
-    public ArchiveDocumentService(IMapper mapper, IUnitOfWork unitOfWork)
+    public ArchiveDocumentService(IMapper mapper, IUnitOfWork unitOfWork,IOptions<AppsetingOptions> options, IFileService fileService)
     {
         _mapper = mapper;
         _unitOfWork = unitOfWork;
+        _fileService = fileService;
+        _host = options.Value.Host;
+
     }
     
     /*public string ExtractSignatures(IFormFile file)
@@ -195,9 +205,56 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
         return ResponseUtil.GetObject(result, ResponseMessages.GetSuccessfully, HttpStatusCode.OK,1);
     }
 
-    public Task<ResponseDto> CreateArchiveTemplate(ArchiveDocumentRequest archiveDocumentRequest, Guid userId)
+    public async Task<ResponseDto> CreateArchiveTemplate(ArchiveDocumentRequest archiveDocumentRequest, Guid userId)
     {
-        throw new NotImplementedException();
+        var user = await _unitOfWork.UserUOW.FindUserByIdAsync(userId);
+        var templateId = Guid.NewGuid();
+        var template = new ArchivedDocument()
+        {
+            ArchivedDocumentId = templateId,
+            ArchivedDocumentName = archiveDocumentRequest.TemplateName,
+            CreatedBy = user.UserName,
+            CreatedDate = DateTime.Now,
+            DocumentTypeId = archiveDocumentRequest.DocumentTypeId,
+            ArchivedDocumentStatus = ArchivedDocumentStatus.Archived,
+            IsTemplate = true,
+            Llx = archiveDocumentRequest.Llx,
+            Lly = archiveDocumentRequest.Lly,
+            Urx = archiveDocumentRequest.Urx,
+            Ury = archiveDocumentRequest.Ury,
+            Page = archiveDocumentRequest.Page,
+        };
+        // Save the file to a specified path
+        var originalPath = Path.Combine(Directory.GetCurrentDirectory(), "data", "storage","template");
+        if (!Directory.Exists(originalPath))
+        {
+            Directory.CreateDirectory(originalPath);
+        }
+        var filePath = Path.Combine(originalPath, $"{templateId}.{archiveDocumentRequest.Template.FileName.Split('.').Last()}");
+        var extension = Path.GetExtension(archiveDocumentRequest.Template.FileName);
+        template.ArchivedDocumentUrl = _host + "/api/ArchiveDocument/view-download-template?templateId=" + templateId +"."+ extension;
+        using (var stream = new FileStream(filePath, FileMode.Create))
+        {
+            await archiveDocumentRequest.Template.CopyToAsync(stream);
+        }
+
+        // Add metadata to the .docx file
+        using (var wordDoc = WordprocessingDocument.Open(filePath, true))
+        {
+            var packageProperties = wordDoc.PackageProperties;
+            packageProperties.Identifier = templateId.ToString();
+        }
+
+        await _unitOfWork.ArchivedDocumentUOW.AddAsync(template);
+        await _unitOfWork.SaveChangesAsync();
+        return ResponseUtil.GetObject("hehe", ResponseMessages.CreatedSuccessfully, HttpStatusCode.OK, 1);
+    }
+
+    public Task<IActionResult> DownloadTemplate(string templateId, Guid userId)
+    {
+
+        var filePath = Path.Combine(Directory.GetCurrentDirectory(), "data", "storage","template", $"{templateId}");
+        return _fileService.GetPdfFile(filePath);
     }
 
     private static string ExtractSigners(string? signature)

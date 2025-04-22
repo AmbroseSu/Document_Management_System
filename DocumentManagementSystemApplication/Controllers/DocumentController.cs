@@ -15,13 +15,28 @@ namespace DocumentManagementSystemApplication.Controllers
     public class DocumentController : ControllerBase
     {
         private readonly IDocumentService _documentService;
+        private readonly IFileService _fileService;
 
-        public DocumentController(IDocumentService documentService)
+        public DocumentController(IDocumentService documentService, IFileService fileService)
         {
             _documentService = documentService;
+            _fileService = fileService;
+        }
+        
+        [AllowAnonymous]
+        [HttpGet("view-test")]
+        public  IActionResult GetViewTest([FromQuery]string pathFile,[FromQuery]string output)
+        {
+              _fileService.ConvertDocToDocx(pathFile, output);
+              return Ok();
         }
 
-   
+        [AllowAnonymous]
+        [HttpPost("create-convert-doc-to-pdf")]
+        public async Task<IActionResult> GetViewTest(IFormFile file)
+        {
+            return await _fileService.ConvertDocToPdf(file);
+        }
 
 
         [HttpPost("create-upload-document")]

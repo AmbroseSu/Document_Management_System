@@ -14,12 +14,15 @@ using Repository.Impl;
 using Service;
 using Service.Impl;
 using Service.SignalRHub;
+using Syncfusion.Licensing;
 
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 DotNetEnv.Env.Load();
+var syncfusionLicenseKey = Environment.GetEnvironmentVariable("SYNCFUSION_LICENSE_KEY");
+SyncfusionLicenseProvider.RegisterLicense(syncfusionLicenseKey);
 
 builder.Services.AddControllers()
     .AddJsonOptions(options => { options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()); });
