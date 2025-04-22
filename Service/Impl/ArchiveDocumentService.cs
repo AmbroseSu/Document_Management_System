@@ -232,11 +232,14 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
         }
         var filePath = Path.Combine(originalPath, $"{templateId}.{archiveDocumentRequest.Template.FileName.Split('.').Last()}");
         var extension = Path.GetExtension(archiveDocumentRequest.Template.FileName);
-        template.ArchivedDocumentUrl = _host + "/api/ArchiveDocument/view-download-template?templateId=" + templateId +"."+ extension;
         using (var stream = new FileStream(filePath, FileMode.Create))
         {
             await archiveDocumentRequest.Template.CopyToAsync(stream);
         }
+        if(extension == ".doc")
+            _fileService.ConvertDocToDocx(filePath,originalPath);
+        File.Delete(filePath);
+        filePath = Path.Combine(originalPath, $"{templateId}.docx");
 
         // Add metadata to the .docx file
         using (var wordDoc = WordprocessingDocument.Open(filePath, true))
@@ -244,6 +247,8 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
             var packageProperties = wordDoc.PackageProperties;
             packageProperties.Identifier = templateId.ToString();
         }
+        extension = Path.GetExtension(filePath);
+        template.ArchivedDocumentUrl = _host + "/api/ArchiveDocument/view-download-template?templateId=" + templateId + extension;
 
         await _unitOfWork.ArchivedDocumentUOW.AddAsync(template);
         await _unitOfWork.SaveChangesAsync();
