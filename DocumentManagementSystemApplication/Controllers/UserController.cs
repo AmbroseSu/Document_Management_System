@@ -1,5 +1,6 @@
 using DataAccess.DTO;
 using DataAccess.DTO.Request;
+using DataAccess.DTO.Response;
 using Microsoft.AspNetCore.Mvc;
 using Service;
 
@@ -54,15 +55,21 @@ public class UserController : ControllerBase
     }
     
     [HttpPost("create-import-users-from-excel")]
-    public async Task<ResponseDto> CreateImportUsersFromExcel([FromForm] IFormFile file, [FromForm] Guid divisionId)
+    public async Task<ResponseDto> CreateImportUsersFromExcel([FromBody] List<FileImportData> fileImportDatas, [FromQuery] Guid divisionId)
     {
-        return await _userService.ImportUsersFromExcelAsync(file, divisionId);
+        return await _userService.ImportUsersFromFileAsync(fileImportDatas, divisionId);
     }
     
-    [HttpGet("view-users-from-excel")]
-    public async Task<List<UserRequest>> ViewUsersFromExcel([FromForm] IFormFile file)
+    [HttpPost("view-users-from-excel")]
+    public async Task<List<FileImportData>> ViewUsersFromExcel([FromForm] IFormFile file)
     {
         return await _userService.ReadUsersFromExcelAsync(file);
+    }
+    
+    [HttpPost("view-users-from-csv")]
+    public async Task<List<FileImportData>> ViewUsersFromCsv([FromForm] IFormFile file)
+    {
+        return await _userService.ReadUsersFromCsvAsync(file);
     }
     
     [HttpPost("update-avatar/{userId}")]
