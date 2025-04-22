@@ -22,9 +22,9 @@ namespace DocumentManagementSystemApplication.Controllers
         }
 
         [HttpPost("create-test")]
-        public async Task<string> Test([FromForm] TestDto testDto)
+        public async Task<string> Test([FromForm] ArchiveDocumentRequest archiveDocumentRequest)
         {
-            return testDto.Name;
+            return archiveDocumentRequest.Name;
         }
 
 

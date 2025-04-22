@@ -613,7 +613,7 @@ public partial class DocumentService : IDocumentService
                     Sender = document.Sender,
                     CreatedBy = document.User.UserName,
                     ExternalPartner = document.Sender,
-                    ArchivedDocumentStatus = ArchivedDocumentStatus.Completed,
+                    ArchivedDocumentStatus = ArchivedDocumentStatus.Archived,
                     DateIssued = document.DateIssued,
                     DateReceived = document.DateReceived,
                     DateSented = document.DateReceived,

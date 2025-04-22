@@ -2,5 +2,7 @@ namespace BusinessObject.Enums;
 
 public enum ArchivedDocumentStatus
 {
-    Completed
+    Archived,
+    Sent,
+    Withdrawn
 }
