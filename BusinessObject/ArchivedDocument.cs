@@ -52,7 +52,7 @@ public class ArchivedDocument
 
     public Guid? DocumentRevokeId { get; set; }
     public Guid? DocumentReplaceId { get; set; }
-    public Scope Scope { get; set; }
+    public Scope? Scope { get; set; }
     public int? Llx { get; set; }
     public int? Lly { get; set; }
     public int? Urx { get; set; }
@@ -63,7 +63,7 @@ public class ArchivedDocument
 
     public Guid DocumentTypeId { get; set; }
     public DocumentType? DocumentType { get; set; }
-    public Guid FinalDocumentId { get; set; }
+    public Guid? FinalDocumentId { get; set; }
     public Document? FinalDocument { get; set; }
 
     public List<UserDocumentPermission>? UserDocumentPermissions { get; set; }
