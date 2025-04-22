@@ -42,7 +42,7 @@
 
 # Base image for runtime
 # ---- Runtime base image ----
-FROM mcr.microsoft.com/dotnet/aspnet:8.0-alpine AS base
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
 WORKDIR /app
 
 # Cài thư viện native cần cho SkiaSharp
