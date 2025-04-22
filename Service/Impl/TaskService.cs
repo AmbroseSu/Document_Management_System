@@ -245,7 +245,7 @@ public class TaskService : ITaskService
             taskDto.CreatedDate = DateTime.Now;
             taskDto.IsDeleted = false;
             taskDto.IsActive = true;
-            var userCreate = await _unitOfWork.UserUOW.FindUserByIdAsync(userId);
+            var userCreate = await _unitOfWork.UserUOW.FindUserByIdAsync(taskDto.UserId.Value);
             taskDto.TaskId = Guid.NewGuid();
             var task = new Tasks
             {
