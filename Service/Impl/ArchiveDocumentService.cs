@@ -10,6 +10,7 @@ using DataAccess.DTO;
 using DataAccess.DTO.Request;
 using DataAccess.DTO.Response;
 using DocumentFormat.OpenXml.Office.CustomXsn;
+using DocumentFormat.OpenXml.Packaging;
 using Org.BouncyCastle.X509;
 using Org.BouncyCastle.Security;
 using iText.Signatures;
@@ -199,8 +200,10 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
     public async Task<ResponseDto> CreateArchiveTemplate(ArchiveDocumentRequest archiveDocumentRequest, Guid userId)
     {
         var user = await _unitOfWork.UserUOW.FindUserByIdAsync(userId);
+        var templateId = Guid.NewGuid();
         var template = new ArchivedDocument()
         {
+            ArchivedDocumentId = templateId,
             ArchivedDocumentName = archiveDocumentRequest.TemplateName,
             CreatedBy = user.UserName,
             CreatedDate = DateTime.Now,
@@ -213,6 +216,19 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
             Ury = archiveDocumentRequest.Ury,
             Page = archiveDocumentRequest.Page,
         };
+        // Save the file to a specified path
+        var filePath = Path.Combine(Path.Combine(Directory.GetCurrentDirectory(), "data", "storage"), $"{templateId}.{archiveDocumentRequest.Template.FileName.Split('.').Last()}");
+        using (var stream = new FileStream(filePath, FileMode.Create))
+        {
+            await archiveDocumentRequest.Template.CopyToAsync(stream);
+        }
+
+        // Add metadata to the .docx file
+        using (var wordDoc = WordprocessingDocument.Open(filePath, true))
+        {
+            var packageProperties = wordDoc.PackageProperties;
+            packageProperties.Identifier = templateId.ToString();
+        }
         throw new NotImplementedException();
     }
 
