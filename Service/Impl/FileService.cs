@@ -160,7 +160,19 @@ public class FileService : IFileService
     {
         var path = Path.Combine(_storagePath, filePath);
         var extension = Path.GetExtension(path);
-
+        var tmp = extension;
+        switch (extension)
+        {
+            case ".pdf":
+                extension = "pdf";
+                break;
+            case ".docx":
+                extension = "openxmlformats-officedocument.wordprocessingml.document";
+                break;
+            case "doc":
+                extension = "vnd.ms-word";
+                break;
+        }
         if (!File.Exists(path))
         {
             throw new FileNotFoundException("File not found", path);
@@ -169,7 +181,11 @@ public class FileService : IFileService
         var contentType = $"application/{extension}";
         var bytes = await File.ReadAllBytesAsync(path);
 
-        return new FileContentResult(bytes, contentType);
+        return new FileContentResult(bytes, contentType)
+            {
+                FileDownloadName = Guid.NewGuid() + tmp
+            }
+            ;
     }
 
     public async Task<IActionResult> GetAvatar(string fileName)
@@ -197,23 +213,15 @@ public class FileService : IFileService
         }
     
         // Convert Word to PDF directly from the file stream
-        using (var inputStream = file.OpenReadStream())
-        {
-            using (WordDocument wordDocument = new WordDocument(inputStream, FormatType.Automatic))
-            {
-                using (DocIORenderer renderer = new DocIORenderer())
-                {
-                    PdfDocument pdfDocument = renderer.ConvertToPDF(wordDocument);
-                    using (MemoryStream pdfStream = new MemoryStream())
-                    {
-                        pdfDocument.Save(pdfStream);
-                        pdfStream.Position = 0;
-                        return new FileContentResult(pdfStream.ToArray(), "application/pdf")
-                        ;
-                    }
-                }
-            }
-        }
+        await using var inputStream = file.OpenReadStream();
+        using var wordDocument = new WordDocument(inputStream, FormatType.Automatic);
+        using var renderer = new DocIORenderer();
+        var pdfDocument = renderer.ConvertToPDF(wordDocument);
+        using var pdfStream = new MemoryStream();
+        pdfDocument.Save(pdfStream);
+        pdfStream.Position = 0;
+        return new FileContentResult(pdfStream.ToArray(), "application/pdf")
+            ;
     }
     
     public void ConvertDocToDocx(string inputPath, string outputDir)
