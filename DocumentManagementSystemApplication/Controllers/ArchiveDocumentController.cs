@@ -83,6 +83,14 @@ namespace DocumentManagementSystemApplication.Controllers
             return result;
         }
         
+        [HttpGet("view-download-template")]
+        public async Task<IActionResult> DownloadTemplate([FromQuery] string templateId)
+        {
+            var userId = User.FindFirst("userid")?.Value;
+            var result = await _archiveDocumentService.DownloadTemplate(templateId, Guid.Parse(userId));
+            return result;
+        }
+        
         // [HttpPost("create-template")]
         
         
