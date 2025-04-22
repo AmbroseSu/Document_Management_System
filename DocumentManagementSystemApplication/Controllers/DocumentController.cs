@@ -22,6 +22,16 @@ namespace DocumentManagementSystemApplication.Controllers
             _documentService = documentService;
             _fileService = fileService;
         }
+        
+        [AllowAnonymous]
+        [HttpGet("view-test")]
+        public  IActionResult GetViewTest()
+        {
+              _fileService.ConvertDocToDocx(
+                "/home/wiramin/Data/project/Capstone_2025/Document_Management_System/DocumentManagementSystemApplication/data/storage/template/306c29a0-53f0-484d-b5e3-6f126705832e.doc",
+                "/home/wiramin/Data/project/Capstone_2025/Document_Management_System/DocumentManagementSystemApplication/data/storage/template");
+              return Ok();
+        }
 
         [AllowAnonymous]
         [HttpPost("create-convert-doc-to-pdf")]

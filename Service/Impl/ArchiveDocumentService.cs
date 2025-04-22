@@ -6,6 +6,7 @@ using System.Text.RegularExpressions;
 using AutoMapper;
 using BusinessObject;
 using BusinessObject.Enums;
+using BusinessObject.Option;
 using DataAccess.DTO;
 using DataAccess.DTO.Request;
 using DataAccess.DTO.Response;
@@ -16,6 +17,8 @@ using Org.BouncyCastle.Security;
 using iText.Signatures;
 //using iTextSharp.text.pdf;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 using Repository;
 using Service.Response;
 using Service.Utilities;
@@ -29,11 +32,16 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
 {
     private readonly IMapper _mapper;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly string _host;
+    private readonly IFileService _fileService;
 
-    public ArchiveDocumentService(IMapper mapper, IUnitOfWork unitOfWork)
+    public ArchiveDocumentService(IMapper mapper, IUnitOfWork unitOfWork,IOptions<AppsetingOptions> options, IFileService fileService)
     {
         _mapper = mapper;
         _unitOfWork = unitOfWork;
+        _fileService = fileService;
+        _host = options.Value.Host;
+
     }
     
     /*public string ExtractSignatures(IFormFile file)
@@ -217,7 +225,14 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
             Page = archiveDocumentRequest.Page,
         };
         // Save the file to a specified path
-        var filePath = Path.Combine(Path.Combine(Directory.GetCurrentDirectory(), "data", "storage"), $"{templateId}.{archiveDocumentRequest.Template.FileName.Split('.').Last()}");
+        var originalPath = Path.Combine(Directory.GetCurrentDirectory(), "data", "storage","template");
+        if (!Directory.Exists(originalPath))
+        {
+            Directory.CreateDirectory(originalPath);
+        }
+        var filePath = Path.Combine(originalPath, $"{templateId}.{archiveDocumentRequest.Template.FileName.Split('.').Last()}");
+        var extension = Path.GetExtension(archiveDocumentRequest.Template.FileName);
+        template.ArchivedDocumentUrl = _host + "/api/ArchiveDocument/view-download-template?templateId=" + templateId +"."+ extension;
         using (var stream = new FileStream(filePath, FileMode.Create))
         {
             await archiveDocumentRequest.Template.CopyToAsync(stream);
@@ -229,7 +244,17 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
             var packageProperties = wordDoc.PackageProperties;
             packageProperties.Identifier = templateId.ToString();
         }
-        throw new NotImplementedException();
+
+        await _unitOfWork.ArchivedDocumentUOW.AddAsync(template);
+        await _unitOfWork.SaveChangesAsync();
+        return ResponseUtil.GetObject("hehe", ResponseMessages.CreatedSuccessfully, HttpStatusCode.OK, 1);
+    }
+
+    public Task<IActionResult> DownloadTemplate(string templateId, Guid userId)
+    {
+
+        var filePath = Path.Combine(Directory.GetCurrentDirectory(), "data", "storage","template", $"{templateId}");
+        return _fileService.GetPdfFile(filePath);
     }
 
     private static string ExtractSigners(string? signature)

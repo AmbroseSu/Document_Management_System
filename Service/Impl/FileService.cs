@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Globalization;
 using BusinessObject.Option;
 using Microsoft.AspNetCore.Http;
@@ -158,14 +159,14 @@ public class FileService : IFileService
     public async Task<IActionResult> GetPdfFile(string filePath)
     {
         var path = Path.Combine(_storagePath, filePath);
-        ;
+        var extension = Path.GetExtension(path);
 
         if (!File.Exists(path))
         {
             throw new FileNotFoundException("File not found", path);
         }
 
-        const string contentType = "application/pdf";
+        var contentType = $"application/{extension}";
         var bytes = await File.ReadAllBytesAsync(path);
 
         return new FileContentResult(bytes, contentType);
@@ -208,14 +209,41 @@ public class FileService : IFileService
                         pdfDocument.Save(pdfStream);
                         pdfStream.Position = 0;
                         return new FileContentResult(pdfStream.ToArray(), "application/pdf")
-                        {
-                            FileDownloadName = Path.ChangeExtension(file.FileName, ".pdf")
-                        };
+                        ;
                     }
                 }
             }
         }
     }
+    
+    public void ConvertDocToDocx(string inputPath, string outputDir)
+    {
+        var process = new Process
+        {
+            StartInfo = new ProcessStartInfo
+            {
+                FileName = "libreoffice",
+                Arguments = $"--headless --convert-to docx --outdir \"{outputDir}\" \"{inputPath}\"",
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            }
+        };
+
+        process.Start();
+        string stdout = process.StandardOutput.ReadToEnd();
+        string stderr = process.StandardError.ReadToEnd();
+        process.WaitForExit();
+
+        if (process.ExitCode != 0)
+        {
+            throw new Exception($"LibreOffice failed: {stderr}");
+        }
+    }
+
+    
+    
 
 
     private static string GetContentType(string path)

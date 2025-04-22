@@ -87,6 +87,7 @@ RUN dotnet publish DocumentManagementSystemApplication.csproj -c $BUILD_CONFIGUR
 # Final runtime stage
 FROM base AS final
 WORKDIR /app
+RUN apt-get update && apt-get install -y libreoffice && rm -rf /var/lib/apt/lists/*
 COPY --from=build /app/publish .
 EXPOSE 5290 5291
 
