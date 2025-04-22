@@ -125,5 +125,11 @@ public class MappingProfile : Profile
         CreateMap<Document, DocumentDto>();
         CreateMap<DocumentVersion, DocumentVersionDto>();
         CreateMap<DocumentVersionDto, DocumentVersion>();
+        CreateMap<DocumentJsonDto, Document>();
+        CreateMap<Document, DocumentJsonDto>();
+        CreateMap<DocumentWorkflowStatusJsonDto, DocumentWorkflowStatus>();
+        CreateMap<DocumentWorkflowStatus, DocumentWorkflowStatusJsonDto>();
+
+
     }
 }
