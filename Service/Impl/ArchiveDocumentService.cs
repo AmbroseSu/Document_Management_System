@@ -7,6 +7,7 @@ using AutoMapper;
 using BusinessObject;
 using DataAccess.DTO;
 using DataAccess.DTO.Response;
+using DocumentFormat.OpenXml.Office.CustomXsn;
 using Org.BouncyCastle.X509;
 using Org.BouncyCastle.Security;
 using iText.Signatures;
@@ -117,7 +118,17 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
                     x.ArchiveDocumentSignatures?
                         .Select(c => c.DigitalCertificate)
                         .FirstOrDefault()?.Subject ?? string.Empty
-                )
+                ),
+                CreateBy = x.CreatedBy,
+                Statuss = x.ArchivedDocumentStatus.ToString(),
+                x.NumberOfDocument,
+                x.CreatedDate,
+                x.CreatedBy,
+                Scope = x.Scope.ToString(),
+                x.Sender,
+                x.ExternalPartner,
+                x.DateReceived,
+                x.DateSented
             }).ToList();
 
         _unitOfWork.RedisCacheUOW.SetData("ArchiveDocumentUserId" + userId, response,TimeSpan.FromMinutes(1));
@@ -137,7 +148,7 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
                 Name = x.ArchivedDocumentName,
                 CreateDate = x.CreatedDate,
                 Type = x.DocumentType?.DocumentTypeName ?? string.Empty,
-                CreateBy = x.CreatedBy
+                
             }).ToList();
         var final = response.Skip((page - 1) * pageSize).Take(pageSize).ToList();
         var total = (int)Math.Ceiling((double)(response.Count / pageSize));

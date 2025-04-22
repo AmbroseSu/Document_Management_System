@@ -18,6 +18,7 @@ public class DocumentResponse
     public string? CreatedBy { get; set; }
     public DateTime? DateIssued { get; set; }
     public DateTime? DateExpires { get; set; }
+    public string? Scope { get; set; }
     public List<SignatureResponse>? Signatures { get; set; } = [];
     public List<VersionDetailRespone>? Versions { get; set; } = [];  
     public List<TasksResponse>? Tasks { get; set; } = [];
