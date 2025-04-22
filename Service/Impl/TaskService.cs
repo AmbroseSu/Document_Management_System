@@ -57,7 +57,7 @@ public class TaskService : ITaskService
             if (taskDto.StartDate < DateTime.Now || taskDto.EndDate < DateTime.Now)
                 return ResponseUtil.Error(ResponseMessages.TaskStartdayEndDayFailed, ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
 
-            if (taskDto.EndDate >= taskDto.StartDate)
+            if (taskDto.EndDate <= taskDto.StartDate)
                 return ResponseUtil.Error(ResponseMessages.TaskEndDayFailed, ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
             
             var existingTasks = await _unitOfWork.TaskUOW.FindTaskByStepIdDocIdAsync(taskDto.StepId, taskDto.DocumentId);
@@ -111,7 +111,7 @@ public class TaskService : ITaskService
             var orderedTasks = await GetOrderedTasks(document.Tasks, document.DocumentWorkflowStatuses.FirstOrDefault()?.WorkflowId ?? Guid.Empty);
             if(orderedTasks[orderedTasks.Count - 1].EndDate > taskDto.StartDate)
                 return ResponseUtil.Error(ResponseMessages.TaskStartdayLowerEndDaypreviousStepFailed, ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
-            if (orderedTasks[1].TaskStatus == TasksStatus.Completed)
+            if (orderedTasks[0].TaskStatus == TasksStatus.Completed)
             {
                 var taskOfUser = orderedTasks.Where(t => t.UserId == userId && t.TaskType == TaskType.Create).ToList();
                 if (taskOfUser.Any())
@@ -120,6 +120,14 @@ public class TaskService : ITaskService
                 }
 
                 return ResponseUtil.Error(ResponseMessages.TaskCanNotCreate, ResponseMessages.OperationFailed,
+                    HttpStatusCode.BadRequest);
+            }
+            var createTasks = orderedTasks.Where(t => t.TaskType == TaskType.Create).ToList();
+            if (createTasks.Any())
+            {
+                return ResponseUtil.Error(
+                    ResponseMessages.OnlyOneCreateTaskAllowed,
+                    ResponseMessages.OperationFailed,
                     HttpStatusCode.BadRequest);
             }
                 
@@ -170,6 +178,103 @@ public class TaskService : ITaskService
         }
     }
     
+        public async Task<ResponseDto> CreateFirstTask(TaskDto taskDto)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(taskDto.Title) || string.IsNullOrWhiteSpace(taskDto.Description))
+                return ResponseUtil.Error(ResponseMessages.ValueNull, ResponseMessages.OperationFailed,
+                    HttpStatusCode.BadRequest);
+            if (taskDto.UserId == null)
+                return ResponseUtil.Error(ResponseMessages.UserIdNull, ResponseMessages.OperationFailed,
+                    HttpStatusCode.BadRequest);
+            if (taskDto.DocumentId == null)
+                return ResponseUtil.Error(ResponseMessages.DocumentIdNull, ResponseMessages.OperationFailed,
+                    HttpStatusCode.BadRequest);
+
+            
+            if (taskDto.StartDate < DateTime.Now || taskDto.EndDate < DateTime.Now)
+                return ResponseUtil.Error(ResponseMessages.TaskStartdayEndDayFailed, ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
+
+            if (taskDto.EndDate <= taskDto.StartDate)
+                return ResponseUtil.Error(ResponseMessages.TaskEndDayFailed, ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
+            var document = await _unitOfWork.DocumentUOW.FindDocumentByIdAsync(taskDto.DocumentId.Value);
+            if (document == null)
+                return ResponseUtil.Error(ResponseMessages.DocumentNotFound, ResponseMessages.OperationFailed,
+                    HttpStatusCode.NotFound);
+            
+            var workflowId = document.DocumentWorkflowStatuses.FirstOrDefault()?.WorkflowId ?? Guid.Empty;
+            var workflowFlow = await _unitOfWork.WorkflowFlowUOW.FindWorkflowFlowByWorkflowIdAsync(workflowId);
+            var firstFlowInWorkflow = workflowFlow!.OrderBy(wf => wf.FlowNumber).FirstOrDefault();
+            var stepAllOfFlow = await _unitOfWork.StepUOW.FindStepByFlowIdAsync(firstFlowInWorkflow!.FlowId);
+            var firstStepInFlow = stepAllOfFlow!.OrderBy(s => s.StepNumber).FirstOrDefault();
+            
+            var existingTasks = await _unitOfWork.TaskUOW.FindTaskByStepIdDocIdAsync(firstStepInFlow.StepId, taskDto.DocumentId);
+            var nextTaskNumber = existingTasks.Count() + 1;
+            
+            var user = await _unitOfWork.UserUOW.FindUserByIdAsync(taskDto.UserId.Value);
+            if (user == null)
+                return ResponseUtil.Error(ResponseMessages.UserNotFound, ResponseMessages.OperationFailed,
+                    HttpStatusCode.NotFound);
+            var userRoles = user.UserRoles
+                .Select(ur => ur.Role.RoleName)
+                .ToList();
+            var primaryRoles = userRoles
+                .Select(name =>
+                {
+                    // Nếu role có chứa "_", lấy phần cuối sau dấu "_"
+                    if (name.Contains("_"))
+                    {
+                        var parts = name.Split('_');
+                        return parts[^1].Trim().ToLower(); // phần cuối cùng
+                    }
+                    return name.Trim().ToLower();
+                })
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+            
+            var matchedRoles = primaryRoles.Where(role => role.Equals(firstStepInFlow.Role.RoleName.ToLower())).ToList();
+            if (!matchedRoles.Any())
+            {
+                return ResponseUtil.Error(ResponseMessages.UserNotRoleWithStep, ResponseMessages.OperationFailed,
+                    HttpStatusCode.BadRequest);
+            }
+
+            taskDto.TaskStatus = TasksStatus.InProgress;
+            taskDto.TaskNumber = nextTaskNumber;
+            taskDto.CreatedDate = DateTime.Now;
+            taskDto.IsDeleted = false;
+            taskDto.IsActive = true;
+            var userCreate = await _unitOfWork.UserUOW.FindUserByIdAsync(taskDto.UserId.Value);
+            taskDto.TaskId = Guid.NewGuid();
+            var task = new Tasks
+            {
+                Title = taskDto.Title,
+                Description = taskDto.Description,
+                StartDate = taskDto.StartDate,
+                EndDate = taskDto.EndDate,
+                TaskStatus = taskDto.TaskStatus ?? TasksStatus.Waiting,
+                TaskType = taskDto.TaskType,
+                CreatedDate = DateTime.Now,
+                TaskNumber = taskDto.TaskNumber,
+                IsDeleted = taskDto.IsDeleted ?? false,
+                IsActive = taskDto.IsActive ?? true,
+                StepId = firstStepInFlow.StepId,
+                DocumentId = taskDto.DocumentId ?? null,
+                UserId = taskDto.UserId ?? Guid.Empty,
+                CreatedBy = userCreate!.FullName,
+            };
+            await _unitOfWork.TaskUOW.AddAsync(task);
+            await _unitOfWork.SaveChangesAsync();
+            return ResponseUtil.GetObject(taskDto, ResponseMessages.CreatedSuccessfully, HttpStatusCode.Created, 1);
+            
+        }
+        catch (Exception e)
+        {
+            return ResponseUtil.Error(e.Message, ResponseMessages.OperationFailed, HttpStatusCode.InternalServerError);
+        }
+    }
+    
     public async Task<ResponseDto> DeleteTaskAsync(Guid id)
     {
         try
@@ -186,7 +291,7 @@ public class TaskService : ITaskService
             var workflowId = task.Document!.DocumentWorkflowStatuses.FirstOrDefault()?.WorkflowId;
             var document = await _unitOfWork.DocumentUOW.FindDocumentByIdAsync(task.DocumentId!.Value);
             var orderedTasks = await GetOrderedTasks(document.Tasks, workflowId ?? Guid.Empty);
-            if (orderedTasks[1].TaskStatus == TasksStatus.Completed)
+            if (orderedTasks[0].TaskStatus == TasksStatus.Completed)
                 return ResponseUtil.Error(ResponseMessages.TaskCanNotDelete, ResponseMessages.OperationFailed,
                     HttpStatusCode.BadRequest);
             var stepId = task.StepId;
