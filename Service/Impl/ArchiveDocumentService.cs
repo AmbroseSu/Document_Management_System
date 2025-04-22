@@ -152,7 +152,7 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
     public async Task<ResponseDto> GetAllArchiveTemplates(int page, int pageSize)
     {
         var templates = await _unitOfWork.ArchivedDocumentUOW.GetAllArchiveTemplates();
-        var response = templates.Select(x =>
+        var response = templates.Where(p => p.ArchivedDocumentStatus==ArchivedDocumentStatus.Archived).Select(x =>
             new
             {
                 Id = x.ArchivedDocumentId,
