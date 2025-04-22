@@ -7,6 +7,7 @@ namespace Service;
 public interface ITaskService
 {
     Task<ResponseDto> CreateTask(Guid userId, TaskDto taskDto);
+    Task<ResponseDto> CreateFirstTask(TaskDto taskDto);
     Task<ResponseDto> DeleteTaskAsync(Guid id);
     Task<ResponseDto> UpdateTaskAsync(TaskRequest taskRequest);
     Task<ResponseDto> FindAllTaskByDocumentIdAsync(Guid documentId);

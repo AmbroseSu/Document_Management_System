@@ -32,6 +32,12 @@ namespace DocumentManagementSystemApplication.Controllers
             return await _taskService.CreateTask(Guid.Parse(id),taskDto);
         }
         
+        [HttpPost("create-first-task")]
+        public async Task<ResponseDto> CreateFirstTask([FromBody] TaskDto taskDto)
+        {
+            return await _taskService.CreateFirstTask(taskDto);
+        }
+        
         [HttpPost("delete-task")]
         public async Task<ResponseDto> DeleteTask([FromQuery] Guid taskId)
         {
