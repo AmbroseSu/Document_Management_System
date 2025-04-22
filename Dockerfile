@@ -68,6 +68,13 @@ COPY DataAccess/*.csproj DataAccess/
 COPY Repository/*.csproj Repository/
 COPY Service/*.csproj Service/
 COPY *.sln ./
+RUN apt-get update && apt-get install -y \
+    libfontconfig1 \
+    libfreetype6 \
+    libpng16-16 \
+    libjpeg62-turbo \
+    libicu72 \
+    && rm -rf /var/lib/apt/lists/*
 RUN dotnet restore DocumentManagementSystemApplication/DocumentManagementSystemApplication.csproj
 #RUN dotnet restore Service/Service.csproj
 
