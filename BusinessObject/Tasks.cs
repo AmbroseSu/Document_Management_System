@@ -46,6 +46,7 @@ public class Tasks
         set => _updatedDate = value.ToUniversalTime();
     }
     public int TaskNumber { get; set; }
+    public String CreatedBy { get; set; }
 
     public bool IsDeleted { get; set; }
     public bool IsActive { get; set; }

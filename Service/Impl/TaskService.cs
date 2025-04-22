@@ -1,3 +1,4 @@
+using System.Linq.Dynamic;
 using System.Net;
 using AutoMapper;
 using BusinessObject;
@@ -35,7 +36,7 @@ public class TaskService : ITaskService
         _fileService = fileService;
     }
     
-    public async Task<ResponseDto> CreateTask(TaskDto taskDto)
+    public async Task<ResponseDto> CreateTask(Guid userId, TaskDto taskDto)
     {
         try
         {
@@ -70,6 +71,7 @@ public class TaskService : ITaskService
             var workflowFlow = await _unitOfWork.WorkflowFlowUOW.FindWorkflowFlowByFlowIdAsync(currentFlow);
             
             var workflowId = workflowFlow!.WorkflowId;
+            
             
             var workflowFlowAll = await _unitOfWork.WorkflowFlowUOW.FindWorkflowFlowByWorkflowIdAsync(workflowId);
             var firstFlowInWorkflow = workflowFlowAll!.OrderBy(wf => wf.FlowNumber).FirstOrDefault();
@@ -109,10 +111,21 @@ public class TaskService : ITaskService
             var orderedTasks = await GetOrderedTasks(document.Tasks, document.DocumentWorkflowStatuses.FirstOrDefault()?.WorkflowId ?? Guid.Empty);
             if(orderedTasks[orderedTasks.Count - 1].EndDate > taskDto.StartDate)
                 return ResponseUtil.Error(ResponseMessages.TaskStartdayLowerEndDaypreviousStepFailed, ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
-            
+            if (orderedTasks[1].TaskStatus == TasksStatus.Completed)
+            {
+                var taskOfUser = orderedTasks.Where(t => t.UserId == userId && t.TaskType == TaskType.Create).ToList();
+                if (taskOfUser.Any())
+                {
+                    
+                }
+
+                return ResponseUtil.Error(ResponseMessages.TaskCanNotCreate, ResponseMessages.OperationFailed,
+                    HttpStatusCode.BadRequest);
+            }
+                
             if (taskDto.StepId == firstStepInFlow!.StepId)
             {
-                taskDto.TaskStatus = TasksStatus.Pending;
+                taskDto.TaskStatus = TasksStatus.InProgress;
                 // if (taskDto.DocumentId == null)
                 // {
                 //     return ResponseUtil.Error(ResponseMessages.DocumentIdNull, ResponseMessages.OperationFailed,
@@ -121,12 +134,13 @@ public class TaskService : ITaskService
             }
             else
             {
-                taskDto.TaskStatus = TasksStatus.Pending;
+                taskDto.TaskStatus = TasksStatus.Waiting;
             }
             taskDto.TaskNumber = nextTaskNumber;
             taskDto.CreatedDate = DateTime.Now;
             taskDto.IsDeleted = false;
             taskDto.IsActive = true;
+            var userCreate = await _unitOfWork.UserUOW.FindUserByIdAsync(userId);
             taskDto.TaskId = Guid.NewGuid();
             var task = new Tasks
             {
@@ -134,7 +148,7 @@ public class TaskService : ITaskService
                 Description = taskDto.Description,
                 StartDate = taskDto.StartDate,
                 EndDate = taskDto.EndDate,
-                TaskStatus = taskDto.TaskStatus ?? TasksStatus.Pending,
+                TaskStatus = taskDto.TaskStatus ?? TasksStatus.Waiting,
                 TaskType = taskDto.TaskType,
                 CreatedDate = DateTime.Now,
                 TaskNumber = taskDto.TaskNumber,
@@ -143,6 +157,7 @@ public class TaskService : ITaskService
                 StepId = taskDto.StepId ?? Guid.Empty,
                 DocumentId = taskDto.DocumentId ?? null,
                 UserId = taskDto.UserId ?? Guid.Empty,
+                CreatedBy = userCreate!.FullName,
             };
             await _unitOfWork.TaskUOW.AddAsync(task);
             await _unitOfWork.SaveChangesAsync();
@@ -168,7 +183,12 @@ public class TaskService : ITaskService
                 return ResponseUtil.Error(ResponseMessages.TaskAlreadyDeleted, ResponseMessages.OperationFailed,
                     HttpStatusCode.BadRequest);
             }
-            
+            var workflowId = task.Document!.DocumentWorkflowStatuses.FirstOrDefault()?.WorkflowId;
+            var document = await _unitOfWork.DocumentUOW.FindDocumentByIdAsync(task.DocumentId!.Value);
+            var orderedTasks = await GetOrderedTasks(document.Tasks, workflowId ?? Guid.Empty);
+            if (orderedTasks[1].TaskStatus == TasksStatus.Completed)
+                return ResponseUtil.Error(ResponseMessages.TaskCanNotDelete, ResponseMessages.OperationFailed,
+                    HttpStatusCode.BadRequest);
             var stepId = task.StepId;
             var deletedTaskNumber = task.TaskNumber;
             
@@ -207,6 +227,10 @@ public class TaskService : ITaskService
             if (task.IsDeleted)
                 return ResponseUtil.Error(ResponseMessages.TaskAlreadyDeleted, ResponseMessages.OperationFailed,
                     HttpStatusCode.NotFound);
+            if (task.TaskStatus != TasksStatus.Waiting)
+                return ResponseUtil.Error(ResponseMessages.TaskCanNotUpdate, ResponseMessages.OperationFailed,
+                    HttpStatusCode.NotFound);
+
             if (taskRequest.StartDate < DateTime.Now || taskRequest.EndDate < DateTime.Now)
                 return ResponseUtil.Error(ResponseMessages.TaskStartdayEndDayFailed, ResponseMessages.OperationFailed,
                     HttpStatusCode.BadRequest);
@@ -317,11 +341,14 @@ public class TaskService : ITaskService
                var taskDetail = new TaskDetail();
                taskDetail.TaskDto = taskDto;
                taskDetail.Scope = task.Document.DocumentWorkflowStatuses.FirstOrDefault().Workflow.Scope;
+               taskDetail.WorkflowId = task.Document.DocumentWorkflowStatuses.FirstOrDefault().WorkflowId;
                taskDetail.WorkflowName = task.Document.DocumentWorkflowStatuses.FirstOrDefault().Workflow.WorkflowName;
                taskDetail.StepAction = task.Step.Action;
+                taskDetail.DocumentId = document.DocumentId;
+                taskDetail.DocumentName = document.DocumentName;
                taskDetail.DocumentTypeName = task.Document.DocumentType.DocumentTypeName;
                var user = await _unitOfWork.UserUOW.FindUserByIdAsync(orderedTasks.First().UserId);
-                taskDetail.UserNameCreateTask = user.FullName;
+               taskDetail.UserNameCreateTask = task.CreatedBy;
                taskDetails.Add(taskDetail);
            }
            
@@ -378,7 +405,7 @@ public class TaskService : ITaskService
                task.Document.DocumentVersions.FirstOrDefault(x => x.VersionNumber == verion).DocumentVersionId,
                task.Document.DocumentName);
            var user = await _unitOfWork.UserUOW.FindUserByIdAsync(orderedTasks.First().UserId);
-           result.UserNameCreateTask = user.FullName;
+           result.UserNameCreateTask = task.CreatedBy;
            return ResponseUtil.GetObject(result, ResponseMessages.GetSuccessfully, HttpStatusCode.OK, 1);
        }
        catch (Exception e)
@@ -436,7 +463,7 @@ public class TaskService : ITaskService
         {
             filteredDocuments = allDocuments
                 .Where(d => d.Tasks.Any(t => t.UserId == userId &&
-                                             t.TaskStatus == TasksStatus.Pending &&
+                                             t.TaskStatus == TasksStatus.Waiting &&
                                              d.Deadline < now))
                 .ToList();
             break;

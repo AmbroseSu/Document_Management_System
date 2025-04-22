@@ -101,6 +101,7 @@ public class UserService : IUserService
                 var userRole = new UserRole();
                 userRole.UserId = user.UserId;
                 userRole.RoleId = userRequest.RoleId;
+                userRole.IsPrimary = true;
                 await _unitOfWork.UserRoleUOW.AddAsync(userRole);
                 var saveChange1 = await _unitOfWork.SaveChangesAsync();
                 if (saveChange1 > 0)
@@ -496,6 +497,7 @@ public class UserService : IUserService
                 var userRole = new UserRole();
                 userRole.UserId = user.UserId;
                 userRole.RoleId = adminUpdateUserRequest.SubRoleId.Value;
+                userRole.IsPrimary = false;
                 await _unitOfWork.UserRoleUOW.AddAsync(userRole);
                 await _unitOfWork.SaveChangesAsync();
                 hasChanges = true;

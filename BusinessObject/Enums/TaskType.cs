@@ -4,7 +4,8 @@ public enum TaskType
 {
     Create,
     Browse,
-    Sign
+    Sign,
+    View,
     
     
 }
