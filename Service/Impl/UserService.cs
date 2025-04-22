@@ -15,6 +15,7 @@ using System.Text;
 using BusinessObject.Enums;
 using BusinessObject.Option;
 using ClosedXML.Excel;
+using DataAccess.DTO.Response;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
@@ -521,78 +522,32 @@ public class UserService : IUserService
     }
     
     
-    public async Task<ResponseDto> ImportUsersFromExcelAsync(IFormFile file, Guid divisionId)
+    public async Task<ResponseDto> ImportUsersFromFileAsync(List<FileImportData> fileImportDatas, Guid divisionId)
     {
         using var transaction = await _unitOfWork.BeginTransactionAsync();
         try
         {
-            var users = new List<UserRequest>();
+            
 
         //OfficeOpenXml.ExcelPackage.LicenseContext = OfficeOpenXml.LicenseContext.NonCommercial;
 
-        using var stream = new MemoryStream();
-        await file.CopyToAsync(stream);
-        stream.Position = 0;
+        
 
-        using var workbook = new XLWorkbook(stream);
-        var worksheet = workbook.Worksheet(1); // Sheet đầu tiên
-        var rows = worksheet.RangeUsed().RowsUsed().Skip(1); // Bỏ qua dòng tiêu đề
-
-        int rowIndex = 2;
-
-        foreach (var row in rows)
+        foreach (var row in fileImportDatas)
         {
-            var fullName = row.Cell(2).GetValue<string>().Trim();
-            var userName = row.Cell(3).GetValue<string>().Trim();
-            var email = row.Cell(4).GetValue<string>().Trim();
-            var phone = row.Cell(5).GetValue<string>().Trim();
-            var idCard = row.Cell(6).GetValue<string>().Trim();
-            //var dobRaw = row.Cell(7).GetValue<string>().Trim();
-            var address = row.Cell(7).GetValue<string>().Trim();
-            var genderRaw = row.Cell(8).GetValue<string>().Trim().ToLower();
-            var position = row.Cell(9).GetValue<string>().Trim();
-            var roleName = row.Cell(10).GetValue<string>().Trim();
-
-            if (string.IsNullOrWhiteSpace(fullName))
-            {
-                rowIndex++;
-                continue;
-            }
-
-            // if (!DateTime.TryParse(dobRaw, new CultureInfo("vi-VN"), DateTimeStyles.None, out DateTime dob))
-            // {
-            //     throw new Exception($"Dòng {row}: Ngày sinh không đúng định dạng.");
-            // }
-            
-            /*
-            string[] formats = {"dd-MMM-yyyy hh:mm:ss tt", "dd-MMM-yy hh:mm:ss tt", "dd/MM/yyyy", "d/M/yyyy", "dd-MM-yyyy", "yyyy-MM-dd", "MM-dd-yyyy", "yyyy/MM/dd", "dd/MM/yy", "d/M/yy", "dd-MM-yy", "yyyy-MM-dd", "MM-dd-yy", "yyyy/MM/yy", "dd-MMM-yy",
-                "dd-MMM-yyyy" };
-
-            if (!DateTime.TryParseExact(dobRaw, formats, CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime dob))
-            {
-                throw new Exception($"Dòng {rowIndex}: Ngày sinh không đúng định dạng.");
-            }*/
-
-            Gender gender = genderRaw switch
-            {
-                "nam" => Gender.MALE,
-                "nữ" or "nu" => Gender.FEMALE,
-                _ => Gender.OTHER
-            };
-
-            Guid roleId = await GetRoleIdByName(roleName); // Bạn có thể dùng repo lấy role theo tên
+            Guid roleId = await GetRoleIdByName(row.RoleName!); // Bạn có thể dùng repo lấy role theo tên
 
             var userRequest = new UserRequest
             {
-                FullName = fullName,
-                UserName = userName,
-                Email = email,
-                PhoneNumber = phone,
-                IdentityCard = idCard,
+                FullName = row.FullName!,
+                UserName = row.UserName!,
+                Email = row.Email!,
+                PhoneNumber = row.PhoneNumber!,
+                IdentityCard = row.IdentityCard!,
                 //DateOfBirth = dob,
-                Address = address,
-                Gender = gender,
-                Position = position,
+                Address = row.Address!,
+                Gender = row.Gender,
+                Position = row.Position!,
                 RoleId = roleId,
                 DivisionId = divisionId
             };
@@ -618,9 +573,9 @@ public class UserService : IUserService
         
     }
     
-    public async Task<List<UserRequest>> ReadUsersFromExcelAsync(IFormFile file)
+    public async Task<List<FileImportData>> ReadUsersFromExcelAsync(IFormFile file)
     {
-        var users = new List<UserRequest>();
+        var users = new List<FileImportData>();
 
         using var stream = new MemoryStream();
         await file.CopyToAsync(stream);
@@ -653,7 +608,7 @@ public class UserService : IUserService
             };
 
             // Nếu bạn không cần lấy roleId ở đây, có thể bỏ qua
-            var userRequest = new UserRequest
+            var fileImportData = new FileImportData
             {
                 FullName = fullName,
                 UserName = userName,
@@ -663,27 +618,21 @@ public class UserService : IUserService
                 Address = address,
                 Gender = gender,
                 Position = position,
-                // RoleId = ..., // Nếu cần, có thể map sau
+                RoleName = roleName
             };
 
-            // Nếu bạn muốn giữ role name để xử lý sau:
-            userRequest.ExtraData = roleName;
-
-            users.Add(userRequest);
+            users.Add(fileImportData);
         }
 
         return users;
     }
     
     
-    public async Task<ResponseDto> ImportUsersFromCsvAsync(IFormFile file, Guid divisionId)
-{
-    using var transaction = await _unitOfWork.BeginTransactionAsync();
-    try
+    public async Task<List<FileImportData>> ReadUsersFromCsvAsync(IFormFile file)
     {
-        var users = new List<UserRequest>();
+        var users = new List<FileImportData>();
 
-        using var stream = new StreamReader(file.OpenReadStream(), Encoding.UTF8); // hoặc Encoding.Default nếu bị lỗi
+        using var stream = new StreamReader(file.OpenReadStream(), Encoding.UTF8); // Hoặc Encoding.Default nếu bị lỗi
         string? line;
         int rowIndex = 0;
 
@@ -697,8 +646,8 @@ public class UserService : IUserService
 
             if (columns.Length < 10)
             {
-                await transaction.RollbackAsync();
-                return ResponseUtil.Error($"Dòng {rowIndex}: Thiếu dữ liệu.", ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
+                // Thêm thông báo lỗi vào danh sách nếu dòng thiếu dữ liệu
+                continue;
             }
 
             var fullName = columns[1].Trim();
@@ -721,9 +670,8 @@ public class UserService : IUserService
                 _ => Gender.OTHER
             };
 
-            Guid roleId = await GetRoleIdByName(roleName);
-
-            var userRequest = new UserRequest
+            // Tạo đối tượng FileImportData tương tự như trong code đọc Excel
+            var fileImportData = new FileImportData
             {
                 FullName = fullName,
                 UserName = userName,
@@ -733,28 +681,14 @@ public class UserService : IUserService
                 Address = address,
                 Gender = gender,
                 Position = position,
-                RoleId = roleId,
-                DivisionId = divisionId
+                RoleName = roleName
             };
 
-            var result = await CreateUserByForm(userRequest);
-            if (result.StatusCode != (int)HttpStatusCode.Created)
-            {
-                await transaction.RollbackAsync();
-                return ResponseUtil.Error($"Dòng {rowIndex}: {result.Message}", ResponseMessages.OperationFailed,
-                    HttpStatusCode.BadRequest);
-            }
+            users.Add(fileImportData);
         }
 
-        await transaction.CommitAsync();
-        return ResponseUtil.GetObject(ResponseMessages.ImportSuccessfully, ResponseMessages.CreatedSuccessfully, HttpStatusCode.Created, 1);
+        return users;
     }
-    catch (Exception e)
-    {
-        await transaction.RollbackAsync();
-        return ResponseUtil.Error(e.Message, ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
-    }
-}
 
     
     

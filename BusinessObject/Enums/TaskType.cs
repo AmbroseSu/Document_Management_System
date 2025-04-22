@@ -6,6 +6,8 @@ public enum TaskType
     Browse,
     Sign,
     View,
+    Upload,
+    CreateUpload,
     
     
 }
