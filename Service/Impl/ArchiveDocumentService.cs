@@ -7,6 +7,7 @@ using AutoMapper;
 using BusinessObject;
 using DataAccess.DTO;
 using DataAccess.DTO.Response;
+using DocumentFormat.OpenXml.Office.CustomXsn;
 using Org.BouncyCastle.X509;
 using Org.BouncyCastle.Security;
 using iText.Signatures;
@@ -123,7 +124,7 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
                 x.NumberOfDocument,
                 x.CreatedDate,
                 x.CreatedBy,
-                x.Scope,
+                Scope = x.Scope.ToString(),
                 x.Sender,
                 x.ExternalPartner,
                 x.DateReceived,
