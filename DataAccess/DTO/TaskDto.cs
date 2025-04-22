@@ -1,4 +1,5 @@
-﻿using BusinessObject.Enums;
+﻿using BusinessObject;
+using BusinessObject.Enums;
 
 
 namespace DataAccess.DTO;
@@ -20,4 +21,5 @@ public class TaskDto
     public Guid? StepId { get; set; }
     public Guid? DocumentId { get; set; }
     public Guid? UserId { get; set; }
+    public UserDto? User { get; set; }
 }
