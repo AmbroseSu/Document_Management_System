@@ -76,7 +76,7 @@ namespace DocumentManagementSystemApplication.Controllers
         }
         
         [HttpPost("create-template")]
-        public async Task<ResponseDto> CreateTemplate([FromBody] ArchiveDocumentRequest archiveDocumentRequest)
+        public async Task<ResponseDto> CreateTemplate([FromForm] ArchiveDocumentRequest archiveDocumentRequest)
         {
             var userId = User.FindFirst("userid")?.Value;
             var result = await _archiveDocumentService.CreateArchiveTemplate(archiveDocumentRequest, Guid.Parse(userId));
