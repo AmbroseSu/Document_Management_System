@@ -157,8 +157,10 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
             {
                 Id = x.ArchivedDocumentId,
                 Name = x.ArchivedDocumentName,
+                CreateBy = x.CreatedBy,
                 CreateDate = x.CreatedDate,
                 Type = x.DocumentType?.DocumentTypeName ?? string.Empty,
+                Url = x.ArchivedDocumentUrl
                 
             }).ToList();
         var final = response.Skip((page - 1) * pageSize).Take(pageSize).ToList();

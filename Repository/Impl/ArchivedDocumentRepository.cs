@@ -63,7 +63,9 @@ public class ArchivedDocumentRepository : IArchivedDocumentRepository
 
     public async Task<IEnumerable<ArchivedDocument>> GetAllArchiveTemplates()
     {
-        return await _archivedDocumentDao.FindAsync(d => d.IsTemplate);
+        return await _archivedDocumentDao.FindAsync(d => d.IsTemplate,
+            q => q
+                .Include(a => a.DocumentType));
     }
 
     public async Task<IEnumerable<ArchivedDocument>> FindArchivedDocumentsByIdsAsync(List<Guid> archivedDocumentIds)
