@@ -9,7 +9,7 @@ public interface IFileService
     Task<string> SaveAvatar(IFormFile file,string id);
     // Task<IActionResult> GetPdfFile(Guid id);
     Task<IActionResult> GetPdfFile(string path);
-
+    Task<(byte[] FileBytes, string FileName, string ContentType)> GetFileBytes(string filePath);
     Task<IActionResult> GetAvatar(string fileName);
     string CreateAVersionFromUpload(string fileName, Guid versionId, Guid documentId,string versionName);
     string ArchiveDocument(string fileName, Guid documentId, Guid versionId, Guid archiveId);
