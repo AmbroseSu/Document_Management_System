@@ -7,5 +7,6 @@ public class SignRequest
     public int Lly { get; set; }
     public int Urx { get; set; }
     public int Ury { get; set; }
+    public int PageNumber { get; set; }
     public Guid DocumentId { get; set; }
 }

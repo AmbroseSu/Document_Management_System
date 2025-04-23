@@ -1,6 +1,7 @@
 using BusinessObject;
 using DataAccess;
 using DataAccess.DAO;
+using Microsoft.EntityFrameworkCore;
 using Task = System.Threading.Tasks.Task;
 
 namespace Repository.Impl;
@@ -42,4 +43,11 @@ public class DigitalCertificateRepository : IDigitalCertificateRepository
         if (string.IsNullOrWhiteSpace(serialNumber)) throw new ArgumentNullException(nameof(serialNumber));
         return await _digitalCetificateDao.FindByAsync(dc => dc.SerialNumber == serialNumber);
     }
+    
+    public async Task<IEnumerable<DigitalCertificate>?> FindDigitalCertificateByUserIdAsync(Guid? userId)
+    {
+        if (userId == null) throw new ArgumentNullException(nameof(userId));
+        return await _digitalCetificateDao.FindAsync(dc => dc.UserId == userId, dg => dg.Include(u => u.User));
+    }
+    
 }

@@ -221,6 +221,7 @@ public class FileService : IFileService
         string contentType = extension switch
         {
             ".pdf" => "application/pdf",
+            ".png" => "image/png",
             _ => "application/octet-stream"
         };
 
