@@ -47,8 +47,8 @@
     <ItemGroup>
       <Folder Include="data\storage\avatar\" />
       <Folder Include="data\storage\doc\" />
+      <Folder Include="data\storage\output\" />
       <Folder Include="data\storage\signature\" />
-      <Folder Include="data\storage\template\" />
       <Folder Include="data\tmp\" />
     </ItemGroup>
 

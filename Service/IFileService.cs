@@ -18,5 +18,9 @@ public interface IFileService
     Task<string> SaveSignature(IFormFile file, string userId);
     Task<IActionResult> GetSignature(string userId);
     Task<IActionResult> ConvertDocToPdf(IFormFile file);
+    Task<IActionResult> ConvertDocToPdf(string path);
+
     void ConvertDocToDocx(string inputPath, string outputDir);
+
+    void InsertTextAsImageToPdf(string pdfPath,string outPath, string text, float llx, float lly, float urx, float ury);
 }
