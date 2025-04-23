@@ -9,4 +9,5 @@ public interface IUserRoleRepository
     Task DeleteAsync(UserRole userRole);
     Task<IEnumerable<UserRole>> FindRolesByUserIdAsync(Guid? userId);
     Task<IEnumerable<UserRole>> FindUserRolesByUserIdsAsync(List<Guid> userIds);
+    Task<IEnumerable<UserRole>> FindUserRolesMainByUserIdsAsync(List<Guid> userIds);
 }

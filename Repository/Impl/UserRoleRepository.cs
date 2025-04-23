@@ -44,5 +44,16 @@ public class UserRoleRepository : IUserRoleRepository
         );
     }
     
+    public async Task<IEnumerable<UserRole>> FindUserRolesMainByUserIdsAsync(List<Guid> userIds)
+    {
+        if (userIds == null || !userIds.Any())
+            return new List<UserRole>();
+
+        return await _userRoleDao.FindAsync(
+            ur => userIds.Contains(ur.UserId) && ur.IsPrimary == true,
+            q => q.Include(ur => ur.Role)
+        );
+    }
+    
     
 }
