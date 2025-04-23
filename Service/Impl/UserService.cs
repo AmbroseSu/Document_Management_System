@@ -237,7 +237,7 @@ public class UserService : IUserService
                 query = query.Where(u => u.Position!.ToLower().Contains(userFilterRequest.Filters.Position.ToLower()));
             if (!string.IsNullOrEmpty(userFilterRequest.Filters.Role))
                 query = query.Where(u =>
-                    u.UserRoles!.Any(ur => ur.Role!.RoleName.ToLower().Contains(userFilterRequest.Filters.Role.ToLower())));
+                    u.UserRoles!.Any(ur => ur.Role!.RoleName.ToLower().Contains(userFilterRequest.Filters.Role.ToLower()) && ur.IsPrimary == true));
             if (!string.IsNullOrEmpty(userFilterRequest.Sort?.Field))
             {
                 var sortField = userFilterRequest.Sort.Field;
@@ -262,7 +262,7 @@ public class UserService : IUserService
             var divisionIds = userResults.Where(u => u.DivisionId != null).Select(u => u.DivisionId!.Value).Distinct().ToList();
 
             // 1. Lấy tất cả UserRoles
-            var userRoles = await _unitOfWork.UserRoleUOW.FindUserRolesByUserIdsAsync(userIds);
+            var userRoles = await _unitOfWork.UserRoleUOW.FindUserRolesMainByUserIdsAsync(userIds);
 
             // 2. Lấy tất cả Roles
             var roleIds = userRoles.Select(ur => ur.RoleId).Distinct().ToList();
