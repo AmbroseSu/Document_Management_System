@@ -104,7 +104,7 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
 
     public async Task<ResponseDto> GetAllArchiveDocuments(Guid userId, int page, int pageSize)
     {
-        var cache = _unitOfWork.RedisCacheUOW.GetData<List<object>>("ArchiveDocumentUserId" + userId);
+        var cache = _unitOfWork.RedisCacheUOW.GetData<List<ArchiveResponseDto>>("ArchiveDocumentUserId" + userId);
         IEnumerable<ArchivedDocument> aDoc;
         if (cache == null)
         {
@@ -118,7 +118,7 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
 
         
         var response = aDoc.Select(x =>
-            new
+            new ArchiveResponseDto()
             {
                 Id = x.ArchivedDocumentId,
                 Name = x.ArchivedDocumentName,
@@ -131,15 +131,13 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
                         .FirstOrDefault()?.Subject ?? string.Empty
                 ),
                 CreateBy = x.CreatedBy,
-                Statuss = x.ArchivedDocumentStatus.ToString(),
-                x.NumberOfDocument,
-                x.CreatedDate,
-                x.CreatedBy,
+                NumberOfDocument = x.NumberOfDocument,
+                CreatedDate = x.CreatedDate,
                 Scope = x.Scope.ToString(),
-                x.Sender,
-                x.ExternalPartner,
-                x.DateReceived,
-                x.DateSented
+                Sender = x.Sender,
+                ExternalPartner = x.ExternalPartner,
+                DateReceived = x.DateReceived,
+                DateSented = x.DateSented
             }).ToList();
 
         _unitOfWork.RedisCacheUOW.SetData("ArchiveDocumentUserId" + userId, response,TimeSpan.FromMinutes(1));
@@ -149,9 +147,17 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
             pageSize, total);
     }
 
-    public async Task<ResponseDto> GetAllArchiveTemplates(int page, int pageSize)
+    public async Task<ResponseDto> GetAllArchiveTemplates(string? documentType,string? name,int page, int pageSize)
     {
-        var templates = await _unitOfWork.ArchivedDocumentUOW.GetAllArchiveTemplates();
+        var templates = (await _unitOfWork.ArchivedDocumentUOW.GetAllArchiveTemplates()).AsQueryable();
+        if (!string.IsNullOrWhiteSpace(name))
+        {
+            templates = templates.Where(x => x.ArchivedDocumentName.ToLower().Contains(name.ToLower()));
+        }
+        if (!string.IsNullOrWhiteSpace(documentType))
+        {
+            templates = templates.Where(x => x.DocumentType.DocumentTypeName.ToLower().Contains(documentType.ToLower()));
+        }
         var response = templates.Where(p => p.ArchivedDocumentStatus==ArchivedDocumentStatus.Archived).Select(x =>
             new
             {
@@ -159,7 +165,7 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
                 Name = x.ArchivedDocumentName,
                 CreateBy = x.CreatedBy,
                 CreateDate = x.CreatedDate,
-                Type = x.DocumentType?.DocumentTypeName ?? string.Empty,
+                Type = x.DocumentType.DocumentTypeName ?? string.Empty,
                 Url = x.ArchivedDocumentUrl
                 
             }).ToList();
@@ -261,10 +267,12 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
         return ResponseUtil.GetObject("hehe", ResponseMessages.CreatedSuccessfully, HttpStatusCode.OK, 1);
     }
 
-    public Task<IActionResult> DownloadTemplate(string templateId, Guid userId)
+    public Task<IActionResult> DownloadTemplate(string templateId, Guid userId,bool? isPdf)
     {
 
         var filePath = Path.Combine(Directory.GetCurrentDirectory(), "data", "storage","template", $"{templateId}");
+        if (isPdf.HasValue && isPdf.Value)
+            return _fileService.ConvertDocToPdf(filePath);
         return _fileService.GetPdfFile(filePath);
     }
 

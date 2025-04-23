@@ -1,4 +1,5 @@
 using System.Diagnostics;
+
 using System.Globalization;
 using BusinessObject.Option;
 using Microsoft.AspNetCore.Http;
@@ -8,6 +9,27 @@ using Syncfusion.DocIO;
 using Syncfusion.DocIO.DLS;
 using Syncfusion.DocIORenderer;
 using Syncfusion.Pdf;
+using Syncfusion.Pdf.Graphics;
+using Syncfusion.Pdf.Parsing;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.PixelFormats;
+using SixLabors.ImageSharp.Drawing.Processing;
+using SixLabors.ImageSharp.Processing;
+using SixLabors.Fonts;
+using Syncfusion.Pdf.Parsing;
+using Syncfusion.Pdf.Graphics;
+using Syncfusion.Drawing;
+using Syncfusion.Pdf;
+using Syncfusion.Pdf.Graphics;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Drawing.Processing;
+using SixLabors.Fonts;
+using SixLabors.ImageSharp.PixelFormats;
+using System.IO;
+using Color = SixLabors.ImageSharp.Color;
+using FontStyle = SixLabors.Fonts.FontStyle;
+using HorizontalAlignment = SixLabors.Fonts.HorizontalAlignment;
+using VerticalAlignment = SixLabors.Fonts.VerticalAlignment;
 
 namespace Service.Impl;
 
@@ -216,10 +238,10 @@ public class FileService : IFileService
         {
             throw new FileNotFoundException("File not found", filePath);
         }
-
+        
         var contentType = GetContentType(filePath);
         var bytes = await File.ReadAllBytesAsync(filePath);
-
+        
         return new FileContentResult(bytes, contentType);
     }
 
@@ -241,6 +263,30 @@ public class FileService : IFileService
         pdfDocument.Save(pdfStream);
         pdfStream.Position = 0;
         return new FileContentResult(pdfStream.ToArray(), "application/pdf")
+            ;
+    }
+    
+    public async Task<IActionResult> ConvertDocToPdf(string path)
+    {
+        // Ensure the file is a .doc or .docx
+        var fileExtension = Path.GetExtension(path).ToLower();
+        if (fileExtension != ".doc" && fileExtension != ".docx")
+        {
+            throw new ArgumentException("Invalid file format. Only .doc and .docx are supported.");
+        }
+    
+        // Convert Word to PDF directly from the file stream
+        await using var inputStream = new FileStream(path, FileMode.Open, FileAccess.Read);
+        using var wordDocument = new WordDocument(inputStream, FormatType.Automatic);
+        using var renderer = new DocIORenderer();
+        var pdfDocument = renderer.ConvertToPDF(wordDocument);
+        using var pdfStream = new MemoryStream();
+        pdfDocument.Save(pdfStream);
+        pdfStream.Position = 0;
+        return new FileContentResult(pdfStream.ToArray(), "application/pdf")
+            {
+                FileDownloadName = Guid.NewGuid() + ".pdf"
+            }
             ;
     }
     
@@ -269,9 +315,46 @@ public class FileService : IFileService
             throw new Exception($"LibreOffice failed: {stderr}");
         }
     }
+    
+    public void InsertTextAsImageToPdf(string pdfPath,string outPath, string text, float llx, float lly, float urx, float ury)
+    {
+        // Generate an image from the string
+        using var image = new Image<Rgba32>(1, 1);
+        var font = SystemFonts.CreateFont("Times New Roman", 30, FontStyle.Regular);
+        var textOptions = new RichTextOptions(font)
+        {
+            HorizontalAlignment = HorizontalAlignment.Left,
+            VerticalAlignment = VerticalAlignment.Top
+        };
 
-    
-    
+        var textSize = TextMeasurer.MeasureSize(text, textOptions);
+        image.Mutate(ctx => ctx.Resize((int)textSize.Width + 10, (int)textSize.Height + 10));
+        image.Mutate(ctx => ctx.DrawText(textOptions, text, Color.Black));
+
+        // Save the image to a memory stream
+        using var imageStream = new MemoryStream();
+        image.SaveAsPng(imageStream);
+        imageStream.Position = 0;
+
+        // Load the PDF document
+        using var pdfDocument = new PdfLoadedDocument(pdfPath);
+        var page = pdfDocument.Pages[0];
+
+        // Calculate the width and height of the image based on the coordinates
+        var width = urx - llx;
+        var height = ury - lly;
+
+        // Load the image into the PDF
+        var pdfImage = new PdfBitmap(imageStream);
+        page.Graphics.DrawImage(pdfImage, llx, page.Size.Height - ury, width, height);
+
+        // Save the updated PDF
+        outPath = Path.Combine(outPath,Path.GetFileName(pdfPath));
+        pdfDocument.Save(outPath);
+        pdfDocument.Close(true);
+    }
+
+
 
 
     private static string GetContentType(string path)

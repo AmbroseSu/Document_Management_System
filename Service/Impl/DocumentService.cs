@@ -341,8 +341,9 @@ public partial class DocumentService : IDocumentService
         { 
             var tmp = (await _unitOfWork.DocumentUOW.FindAllDocumentMySelf(userId)).ToList();
             doc = _mapper.Map<List<DocumentJsonDto>>(tmp);
+            // var docCA = await _unitOfWork.DocumentUOW.
             // doc.ToList();
-            _unitOfWork.RedisCacheUOW.SetData("GetAllMySeflDoc_userId_" + userId, doc, TimeSpan.FromMinutes(2)); 
+            // _unitOfWork.RedisCacheUOW.SetData("GetAllMySeflDoc_userId_" + userId, doc, TimeSpan.FromMinutes(2)); 
             
         }
         var result = doc.Where(x => x.DocumentName.Contains(searchText)).Select(x =>
@@ -693,7 +694,7 @@ public partial class DocumentService : IDocumentService
             { "NewSignerName", null },
             {"validTo", metaData?.MaxBy(x => x.ExpirationDate).ExpirationDate},
             {"validFrom", metaData?.MinBy(x => x.ValidFrom).ValidFrom},
-            {"signerName", metaData.Select(x => ExtractSigners(x.SignerName)).ToList()},
+            {"signerName", metaData?.Select(x => ExtractSigners(x.SignerName)).ToList()},
             {"url", _host+"/api/document/view-file-by-name?documentName=" + fileName}
 
         };
