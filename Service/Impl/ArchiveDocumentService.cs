@@ -238,10 +238,14 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
         {
             await archiveDocumentRequest.Template.CopyToAsync(stream);
         }
-        if(extension == ".doc")
-            _fileService.ConvertDocToDocx(filePath,originalPath);
-        File.Delete(filePath);
-        filePath = Path.Combine(originalPath, $"{templateId}.docx");
+
+        if (extension == ".doc")
+        {
+            _fileService.ConvertDocToDocx(filePath, originalPath);
+            File.Delete(filePath);
+            filePath = Path.Combine(originalPath, $"{templateId}.docx");
+        }
+
 
         // Add metadata to the .docx file
         using (var wordDoc = WordprocessingDocument.Open(filePath, true))
