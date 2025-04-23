@@ -109,6 +109,9 @@ public class TaskService : ITaskService
             
             var document = await _unitOfWork.DocumentUOW.FindDocumentByIdAsync(taskDto.DocumentId.Value);
             var orderedTasks = await GetOrderedTasks(document.Tasks, document.DocumentWorkflowStatuses.FirstOrDefault()?.WorkflowId ?? Guid.Empty);
+            if (orderedTasks.Count == 0)
+                return ResponseUtil.Error(ResponseMessages.TaskFirstNotFound, ResponseMessages.OperationFailed,
+                    HttpStatusCode.NotFound);
             if(orderedTasks[orderedTasks.Count - 1].EndDate > taskDto.StartDate)
                 return ResponseUtil.Error(ResponseMessages.TaskStartdayLowerEndDaypreviousStepFailed, ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
             if (orderedTasks[0].TaskStatus == TasksStatus.Completed)

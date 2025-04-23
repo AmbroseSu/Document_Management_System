@@ -123,6 +123,7 @@ public static class ResponseMessages
     public const string TaskCanNotDelete = "Task 1 has completed, cannot delete";
     public const string TaskCanNotCreate = "Task 1 has completed, cannot create";
     public const string OnlyOneCreateTaskAllowed = "Only one task can be created at a time";
+    public const string TaskFirstNotFound = "Task 1 not found. Please create task 1 first.";
     
     //Step
     public const string StepIdNull = "Step id cannot be null";
