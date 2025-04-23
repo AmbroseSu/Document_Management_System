@@ -81,7 +81,15 @@ public class DocumentRepository : IDocumentRepository
 
     public async Task<IEnumerable<Document>> FindAllDocumentAsync()
     {
-        return await _documentDao.FindAsync(u => true);
+        return await _documentDao.FindAsync(u => true,
+            q => q
+                .Include(d => d.DocumentWorkflowStatuses)
+                .ThenInclude(dws => dws.Workflow)
+                .Include(d => d.Tasks)
+                .ThenInclude(t => t.User)
+
+                
+            );
     }
     
     public async Task<IEnumerable<Document>> FindAllDocumentForTaskAsync(Guid userId)

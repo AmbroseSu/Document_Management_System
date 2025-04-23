@@ -268,6 +268,7 @@ public class FileService : IFileService
     
     public async Task<IActionResult> ConvertDocToPdf(string path)
     {
+        
         // Ensure the file is a .doc or .docx
         var fileExtension = Path.GetExtension(path).ToLower();
         if (fileExtension != ".doc" && fileExtension != ".docx")
