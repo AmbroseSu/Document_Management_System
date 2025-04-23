@@ -68,6 +68,13 @@ public class WorkflowService : IWorkflowService
                     {
                         workflow.RequiredRolesJson = JsonConvert.SerializeObject(new List<string> { "Leader", "Chief" });
                     }
+                    else
+                    {
+                        if (workflowRequest.Scope.Equals(Scope.Division))
+                        {
+                            workflow.RequiredRolesJson = JsonConvert.SerializeObject(new List<string> {});
+                        }
+                    }
                 }
 
             }

@@ -1,8 +1,14 @@
+using System.Linq.Dynamic;
 using System.Net;
+using System.Net.Http.Headers;
 using System.Text;
+using BusinessObject;
+using BusinessObject.Enums;
 using DataAccess.DTO;
 using DataAccess.DTO.Request;
+using MongoDB.Driver.Linq;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Repository;
 using Service.Response;
 using Service.Utilities;
@@ -13,6 +19,7 @@ public class SignApiService
 {
     private readonly IFileService _fileService;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly string _storagePath = Path.Combine(Directory.GetCurrentDirectory(), "data", "storage");
 
     public SignApiService(IFileService fileService, IUnitOfWork unitOfWork)
     {
@@ -109,10 +116,82 @@ public class SignApiService
             var coordinateString = GetCoordinateString(signRequest.Llx, signRequest.Lly,
                 signRequest.Urx, signRequest.Ury);
             var document = await _unitOfWork.DocumentUOW.FindDocumentByIdAsync(signRequest.DocumentId);
+            if (document == null)
+            {
+                return ResponseUtil.Error(ResponseMessages.DocumentNotFound, ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
+            }
+            var listTasks = document.Tasks;
+            var task = listTasks.Where(t =>
+                t.UserId == userId && t.TaskType == TaskType.Sign && t.TaskStatus == TasksStatus.InProgress).FirstOrDefault();
+            if (task == null)
+            {
+                return ResponseUtil.Error(ResponseMessages.NotYourTurnOrSign, ResponseMessages.OperationFailed,
+                    HttpStatusCode.BadRequest);
+            }
+            var version = document?.DocumentVersions?.Find(t => t.IsFinalVersion);
+            var docFile = await _fileService.GetFileBytes(Path.Combine("document", document.DocumentId.ToString(),
+                version.DocumentVersionId.ToString(),
+                document.DocumentName + ".pdf"));
+            var docFileBytes = docFile.FileBytes;
+            string fileData = Convert.ToBase64String(docFileBytes);
+
+            var listDigitalCertificates =
+                await _unitOfWork.DigitalCertificateUOW.FindDigitalCertificateByUserIdAsync(userId);
+            var digitalCertificate = listDigitalCertificates.Where(dc => dc.SerialNumber != null).FirstOrDefault();
+            var signFile = await _fileService.GetFileBytes(Path.Combine("signature", digitalCertificate.DigitalCertificateId + ".png"));
+            var signFileBytes = signFile.FileBytes;
+            string signData = Convert.ToBase64String(signFileBytes);
             
             
+            var signOptions = new SignOptions
+            {
+                PageNo = signRequest.PageNumber,
+                Coordinate = coordinateString,
+                VisibleSignature = true,
+                VisualStatus = false,
+                ShowSignerInfo = false,
+                SignerInfoPrefix = "",
+                ShowReason = false,
+                SignReasonPrefix = "Lý do:",
+                SignReason = "Tôi Đồng Ý",
+                ShowDateTime = false,
+                DateTimePrefix = "",
+                ShowLocation = false,
+                LocationPrefix = "",
+                Location = "",
+                TextDirection = "OVERLAP",
+                TextColor = "Black",
+                ImageAndText = false,
+                BackgroundImage = "",
+                SignatureImage = signData
+            };
+
+            var signApiRequest = new SignApiRequest
+            {
+                Options = signOptions,
+                FileData = fileData
+            };
             
-            return null;
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            var jsonBody = JsonConvert.SerializeObject(signApiRequest);
+            var contentRequest = new StringContent(jsonBody, Encoding.UTF8, "application/json");
+            
+            var responseSign = await client.PostAsync("https://demohsm.wgroup.vn/hsm/pdf", contentRequest);
+            if (!responseSign.IsSuccessStatusCode)
+            {
+                throw new Exception($"API ký lỗi: {response.StatusCode} - {responseContent}");
+            }
+            
+            var jsonSign = JObject.Parse(responseContent);
+            var fileDataBase64 = jsonSign["result"]?["file_data"]?.ToString();
+            if (string.IsNullOrWhiteSpace(fileDataBase64))
+                throw new Exception("Không tìm thấy trường file_data trong response");
+            var fileBytes = Convert.FromBase64String(fileDataBase64);
+            var filePath = Path.Combine(_storagePath, Path.Combine("document", document.DocumentId.ToString(),
+                version.DocumentVersionId.ToString(),
+                document.DocumentName + ".pdf"));
+            File.WriteAllBytesAsync(filePath, fileBytes);
+            return ResponseUtil.GetObject(ResponseMessages.SignatureSuccessfully, ResponseMessages.CreatedSuccessfully, HttpStatusCode.Created,1);
         }
         catch (Exception e)
         {

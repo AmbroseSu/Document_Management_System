@@ -61,7 +61,7 @@ public class StepRepository : IStepRepository
     public async Task<IEnumerable<Step>?> FindStepByFlowIdAsync(Guid? id)
     {
         if (id == null) throw new ArgumentNullException(nameof(id));
-        return await _stepDao.FindAsync(s => s.FlowId == id, st => st.Include(st => st.Tasks));
+        return await _stepDao.FindAsync(s => s.FlowId == id && s.IsDeleted == false, st => st.Include(st => st.Tasks));
     }
     
     public async Task<IEnumerable<Step>> FindAllStepsInFlowAsync(Guid flowId)

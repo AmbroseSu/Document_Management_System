@@ -124,10 +124,15 @@ public static class ResponseMessages
     public const string TaskCanNotCreate = "Task 1 has completed, cannot create";
     public const string OnlyOneCreateTaskAllowed = "Only one task can be created at a time";
     public const string TaskFirstNotFound = "Task 1 not found. Please create task 1 first.";
+    public const string NotYourTurnOrSign = "It is not your turn to sign or it is not your turn to sign.";
     
     //Step
     public const string StepIdNull = "Step id cannot be null";
     
     //Notification
     public const string NotificationNotFound = "Notification not found";
+    
+    
+    //Signature
+    public const string SignatureSuccessfully = "";
 }

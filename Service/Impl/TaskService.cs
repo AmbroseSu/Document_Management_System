@@ -235,8 +235,9 @@ public class TaskService : ITaskService
                 })
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .ToList();
+            var stepInFlowFirst = await _unitOfWork.StepUOW.FindStepByIdAsync(firstStepInFlow.StepId);
             
-            var matchedRoles = primaryRoles.Where(role => role.Equals(firstStepInFlow.Role.RoleName.ToLower())).ToList();
+            var matchedRoles = primaryRoles.Where(role => role.Equals(stepInFlowFirst.Role.RoleName.ToLower())).ToList();
             if (!matchedRoles.Any())
             {
                 return ResponseUtil.Error(ResponseMessages.UserNotRoleWithStep, ResponseMessages.OperationFailed,
