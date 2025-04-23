@@ -187,6 +187,26 @@ public class FileService : IFileService
             }
             ;
     }
+    
+    public async Task<(byte[] FileBytes, string FileName, string ContentType)> GetFileBytes(string filePath)
+    {
+        var path = Path.Combine(_storagePath, filePath);
+
+        if (!File.Exists(path))
+            throw new FileNotFoundException("File not found", path);
+
+        var extension = Path.GetExtension(path).ToLower();
+        string contentType = extension switch
+        {
+            ".pdf" => "application/pdf",
+            _ => "application/octet-stream"
+        };
+
+        var bytes = await File.ReadAllBytesAsync(path);
+        var fileName = Path.GetFileName(path);
+
+        return (bytes, fileName, contentType);
+    }
 
     public async Task<IActionResult> GetAvatar(string fileName)
     {

@@ -19,13 +19,14 @@ public class EmailService : IEmailService
 {
     private readonly IConfiguration _config;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IFileService _fileService;
 
 
-    public EmailService(IConfiguration config, IUnitOfWork unitOfWork)
+    public EmailService(IConfiguration config, IUnitOfWork unitOfWork, IFileService fileService)
     {
         _config = config;
         _unitOfWork = unitOfWork;
-
+        _fileService = fileService;
     }
 
     public async Task<ResponseDto> SendEmail(string emailResponse, string subject, string content)
@@ -97,7 +98,9 @@ public class EmailService : IEmailService
         message.To.Add(new MailboxAddress(emailRequest.ReceiverEmail, emailRequest.ReceiverEmail));
         message.Subject = emailRequest.Subject;
         
-        
+        emailRequest.CcEmails = emailRequest.CcEmails?
+            .Where(cc => !string.IsNullOrWhiteSpace(cc))
+            .ToList();
         if (emailRequest.CcEmails != null && emailRequest.CcEmails.Any())
         {
             foreach (var cc in emailRequest.CcEmails)
@@ -105,6 +108,9 @@ public class EmailService : IEmailService
                 message.Cc.Add(new MailboxAddress(cc, cc));
             }
         }
+        emailRequest.BccEmails = emailRequest.BccEmails?
+            .Where(cc => !string.IsNullOrWhiteSpace(cc))
+            .ToList();
         
         if (emailRequest.BccEmails != null && emailRequest.BccEmails.Any())
         {
@@ -121,9 +127,20 @@ public class EmailService : IEmailService
         var textPart = new TextPart("plain") { Text = emailRequest.Body };
         multipart.Add(textPart);
         
-        // TODO: (Minh) Lấy file từ server
+        var document = await _unitOfWork.ArchivedDocumentUOW.FindArchivedDocumentByIdAsync(emailRequest.DocumentId);
+        var (bytes, fileName, contentType) = await _fileService.GetFileBytes(Path.Combine("archive_document", emailRequest.DocumentId.ToString(),
+            document.ArchivedDocumentName + ".pdf"));
         
-        var memoryStream = new MemoryStream();
+        var attachment = new MimePart()
+        {
+            Content = new MimeContent(new MemoryStream(bytes)),
+            ContentDisposition = new ContentDisposition(ContentDisposition.Attachment),
+            ContentTransferEncoding = ContentEncoding.Base64,
+            FileName = fileName
+        };
+
+        multipart.Add(attachment);
+        //var memoryStream = new MemoryStream();
         // Nếu có file đính kèm thì thêm vào
         /*if (emailRequest.FilePath != null && emailRequest.FilePath.Length > 0)
         {
@@ -156,10 +173,10 @@ public class EmailService : IEmailService
         {
             return ResponseUtil.Error(ex.Message, ResponseMessages.OperationFailed, HttpStatusCode.InternalServerError);
         }
-        finally
+        /*finally
         {
             memoryStream.Dispose();
-        }
+        }*/
         return ResponseUtil.GetObject(ResponseMessages.SendEmailSuccessfully, ResponseMessages.CreatedSuccessfully, HttpStatusCode.OK, 1);
     }
     
