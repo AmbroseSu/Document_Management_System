@@ -69,9 +69,9 @@ namespace DocumentManagementSystemApplication.Controllers
         }
         
         [HttpGet("view-all-templates")]
-        public async Task<ResponseDto> GetAllTemplates([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+        public async Task<ResponseDto> GetAllTemplates([FromQuery]string? documentName, [FromQuery]string? name,[FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
-            var templates = await _archiveDocumentService.GetAllArchiveTemplates(page,pageSize);
+            var templates = await _archiveDocumentService.GetAllArchiveTemplates(documentName,name,page,pageSize);
             return templates;
         }
         
@@ -84,10 +84,10 @@ namespace DocumentManagementSystemApplication.Controllers
         }
         
         [HttpGet("view-download-template")]
-        public async Task<IActionResult> DownloadTemplate([FromQuery] string templateId)
+        public async Task<IActionResult> DownloadTemplate([FromQuery] string templateId,[FromQuery]bool? isPdf = false)
         {
             var userId = User.FindFirst("userid")?.Value;
-            var result = await _archiveDocumentService.DownloadTemplate(templateId, Guid.Parse(userId));
+            var result = await _archiveDocumentService.DownloadTemplate(templateId, Guid.Parse(userId),isPdf);
             return result;
         }
         
