@@ -8,6 +8,7 @@ public enum TaskType
     View,
     Upload,
     CreateUpload,
+    Submit
     
     
 }

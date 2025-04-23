@@ -999,6 +999,30 @@ public class TaskService : ITaskService
             await transaction.CommitAsync();
             return ResponseUtil.GetObject(ResponseMessages.DocumentRejected, ResponseMessages.OperationFailed, HttpStatusCode.BadRequest, 1);
         }
+        
+        case TaskAction.SubmitDocument:
+        {
+            if (task.TaskStatus != TasksStatus.InProgress)
+                return ResponseUtil.Error(ResponseMessages.TaskHadNotYourTurn, ResponseMessages.OperationFailed,
+                    HttpStatusCode.BadRequest);
+
+            var tasksInSameStep = task.Step.Tasks.OrderBy(t => t.TaskNumber).ToList();
+            var isMyTurn = tasksInSameStep
+                .Where(t => t.TaskNumber < task.TaskNumber)
+                .All(t => t.TaskStatus == TasksStatus.Completed);
+
+            if (!isMyTurn)
+                return ResponseUtil.Error(ResponseMessages.TaskHadNotCompleted, ResponseMessages.OperationFailed,
+                    HttpStatusCode.BadRequest);
+
+            task.TaskStatus = TasksStatus.Completed;
+            task.UpdatedDate = DateTime.UtcNow;
+            await _unitOfWork.SaveChangesAsync();
+
+            var result = await ActivateNextTaskSubmit(task);
+            await transaction.CommitAsync();
+            return result;
+        }
 
     }
         return ResponseUtil.Error(ResponseMessages.InvalidAction, ResponseMessages.OperationFailed,
@@ -1213,6 +1237,156 @@ public class TaskService : ITaskService
         // TODO: Gửi thông báo cho người tạo
         return ResponseUtil.GetObject("Tài liệu đã duyệt xong", ResponseMessages.CreatedSuccessfully,
             HttpStatusCode.OK, 1);
+    }
+
+    return ResponseUtil.Error("Không tìm thấy tài liệu", ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
+}
+   
+       private async Task<ResponseDto> ActivateNextTaskSubmit(Tasks currentTask)
+    {
+        var currentStep = currentTask.Step;
+        var stepp = await _unitOfWork.StepUOW.FindStepByIdAsync(currentStep.StepId);
+        var currentFlow = await _unitOfWork.FlowUOW.FindFlowByIdAsync(stepp.FlowId);
+        var documentId = currentTask.DocumentId;
+
+        // 🔍 Tìm task kế tiếp trong cùng Step
+        var tasksInStep = stepp.Tasks.OrderBy(t => t.TaskNumber).ToList();
+        var nextTask = tasksInStep.FirstOrDefault(t => t.TaskNumber > currentTask.TaskNumber);
+        var previousTask = tasksInStep
+            .Where(t => t.TaskNumber < currentTask.TaskNumber)
+            .OrderByDescending(t => t.TaskNumber)
+            .FirstOrDefault();
+        
+        if (previousTask != null)
+        {
+            var preUser = await _unitOfWork.UserUOW.FindUserByIdAsync(previousTask.UserId);
+            var notification = _notificationService.CreateDocAcceptedNotification(previousTask, previousTask.UserId);
+            await _notificationCollection.CreateNotificationAsync(notification);
+            await _notificationService.SendPushNotificationMobileAsync(preUser.FcmToken, notification);
+            await _hubContext.Clients.User(notification.UserId.ToString()).SendAsync("ReceiveMessage", notification);
+        }
+        if (nextTask != null)
+        {
+            nextTask.TaskStatus = TasksStatus.InProgress;
+            nextTask.UpdatedDate = DateTime.UtcNow;
+
+            // TODO: Gửi thông báo đến nextTask.UserId
+            var nextUser = await _unitOfWork.UserUOW.FindUserByIdAsync(nextTask.UserId);
+            var notification = _notificationService.CreateNextUserDoTaskNotification(nextTask, nextTask.UserId);
+            await _notificationCollection.CreateNotificationAsync(notification);
+            await _notificationService.SendPushNotificationMobileAsync(nextUser.FcmToken, notification);
+            await _hubContext.Clients.User(notification.UserId.ToString()).SendAsync("ReceiveMessage", notification);
+
+            await _unitOfWork.SaveChangesAsync();
+
+            return ResponseUtil.GetObject($"Đến lượt duyệt tiếp theo:{nextTask.UserId}", ResponseMessages.CreatedSuccessfully,
+                HttpStatusCode.OK, 1);
+        }
+
+        // Không còn task trong Step hiện tại — kiểm tra Step tiếp theo
+        var stepsInFlow = currentFlow.Steps.OrderBy(s => s.StepNumber).ToList();
+        var currentStepIndex = stepsInFlow.FindIndex(s => s.StepId == currentStep.StepId);
+        
+        if (currentStepIndex < stepsInFlow.Count - 1)
+        {
+            var nextStep = stepsInFlow[currentStepIndex + 1];
+            var nextStepTasks = (await _unitOfWork.TaskUOW.GetTasksByStepAndDocumentAsync(nextStep.StepId, documentId.Value))
+                .OrderBy(t => t.TaskNumber).ToList();
+            var firstTaskInNextStep = nextStepTasks.FirstOrDefault();
+            var finalTaskInCurrentStep = tasksInStep.OrderByDescending(t => t.TaskNumber).FirstOrDefault();
+            if (finalTaskInCurrentStep != null)
+            {
+                var finalTaskUser = await _unitOfWork.UserUOW.FindUserByIdAsync(finalTaskInCurrentStep.UserId);
+                var notification = _notificationService.CreateDocAcceptedNotification(finalTaskInCurrentStep, finalTaskInCurrentStep.UserId);
+                await _notificationCollection.CreateNotificationAsync(notification);
+                await _notificationService.SendPushNotificationMobileAsync(finalTaskUser.FcmToken, notification);
+                await _hubContext.Clients.User(notification.UserId.ToString()).SendAsync("ReceiveMessage", notification);
+            }
+            if (firstTaskInNextStep != null)
+            {
+                firstTaskInNextStep.TaskStatus = TasksStatus.InProgress;
+                firstTaskInNextStep.UpdatedDate = DateTime.UtcNow;
+
+                var firstTaskUser = await _unitOfWork.UserUOW.FindUserByIdAsync(firstTaskInNextStep.UserId);
+                // TODO: Gửi thông báo
+                var notification = _notificationService.CreateNextUserDoTaskNotification(firstTaskInNextStep, firstTaskInNextStep.UserId);
+                await _notificationCollection.CreateNotificationAsync(notification);
+                await _notificationService.SendPushNotificationMobileAsync(firstTaskUser.FcmToken, notification);
+                await _hubContext.Clients.User(notification.UserId.ToString()).SendAsync("ReceiveMessage", notification);
+                await _unitOfWork.SaveChangesAsync();
+
+                return ResponseUtil.GetObject($"Chuyển sang bước tiếp theo: {firstTaskInNextStep.UserId}", ResponseMessages.CreatedSuccessfully,
+                    HttpStatusCode.OK, 1);
+            }
+        }
+        
+        var workflowFlow = await _unitOfWork.WorkflowFlowUOW
+            .FindWorkflowFlowByFlowIdAsync(currentFlow.FlowId); // Hoặc FlowId thôi nếu đủ
+
+        if (workflowFlow == null)
+            return ResponseUtil.Error("Không tìm thấy WorkflowFlow", ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
+
+        var workflowId = workflowFlow.WorkflowId;
+        
+        // Step hiện tại là cuối cùng của Flow — kiểm tra Flow kế tiếp
+        return await ActivateFirstTaskOfNextFlowSubmit(workflowId, currentFlow, documentId.Value);
+    }
+    
+   private async Task<ResponseDto> ActivateFirstTaskOfNextFlowSubmit(Guid workflowId, Flow currentFlow, Guid documentId)
+{
+    // Lấy tất cả WorkflowFlow của Workflow hiện tại, theo thứ tự
+    var workflowFlows = await _unitOfWork.WorkflowFlowUOW.FindWorkflowFlowByWorkflowIdAsync(workflowId);
+    var orderedWorkflowFlows = workflowFlows.OrderBy(wf => wf.FlowNumber).ToList();
+    var task = new Tasks();
+    var currentWorkflowFlowIndex = orderedWorkflowFlows.FindIndex(wf => wf.FlowId == currentFlow.FlowId);
+    var currentWorkflowFlow = orderedWorkflowFlows.Where(wf => wf.FlowId == currentFlow.FlowId ).FirstOrDefault();
+    if (currentWorkflowFlowIndex < orderedWorkflowFlows.Count - 1)
+    {
+        var nextWorkflowFlow = orderedWorkflowFlows[currentWorkflowFlowIndex + 1];
+        var nextFlow = nextWorkflowFlow.Flow;
+        var nextSteps = nextFlow.Steps.OrderBy(s => s.StepNumber).ToList();
+        var firstStep = nextSteps.FirstOrDefault();
+        var finalSteps = currentWorkflowFlow.Flow.Steps.OrderByDescending(s => s.StepNumber).ToList();
+        var finalStep = finalSteps.FirstOrDefault();
+        if (finalStep != null)
+        {
+            var finalTask = (await _unitOfWork.TaskUOW.GetTasksByStepAndDocumentAsync(finalStep.StepId, documentId))
+                .OrderByDescending(t => t.TaskNumber)
+                .FirstOrDefault();
+            if (finalTask != null)
+            {
+                var finalUser = await _unitOfWork.UserUOW.FindUserByIdAsync(finalTask.UserId);
+                var notification = _notificationService.CreateDocAcceptedNotification(finalTask, finalTask.UserId);
+                await _notificationCollection.CreateNotificationAsync(notification);
+                await _notificationService.SendPushNotificationMobileAsync(finalUser.FcmToken, notification);
+                await _hubContext.Clients.User(notification.UserId.ToString()).SendAsync("ReceiveMessage", notification);
+            }
+        }
+        
+        if (firstStep != null)
+        {
+            var firstTask = (await _unitOfWork.TaskUOW.GetTasksByStepAndDocumentAsync(firstStep.StepId, documentId))
+                            .OrderBy(t => t.TaskNumber)
+                            .FirstOrDefault();
+            task = firstTask;
+            if (firstTask != null)
+            {
+                firstTask.TaskStatus = TasksStatus.InProgress;
+                firstTask.UpdatedDate = DateTime.UtcNow;
+
+                // TODO: Gửi thông báo
+                await _unitOfWork.SaveChangesAsync();
+                
+                var firstUser = await _unitOfWork.UserUOW.FindUserByIdAsync(firstTask.UserId);
+                var notification = _notificationService.CreateNextUserDoTaskNotification(firstTask, firstTask.UserId);
+                await _notificationCollection.CreateNotificationAsync(notification);
+                await _notificationService.SendPushNotificationMobileAsync(firstUser.FcmToken, notification);
+                await _hubContext.Clients.User(notification.UserId.ToString()).SendAsync("ReceiveMessage", notification);
+                
+                return ResponseUtil.GetObject($"Chuyển sang Flow tiếp theo: {firstTask.UserId}", ResponseMessages.CreatedSuccessfully,
+                    HttpStatusCode.OK, 1);
+            }
+        }
     }
 
     return ResponseUtil.Error("Không tìm thấy tài liệu", ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);

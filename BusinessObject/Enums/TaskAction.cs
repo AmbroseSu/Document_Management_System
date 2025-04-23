@@ -5,5 +5,6 @@ public enum TaskAction
     AcceptTask,
     RejectTask,
     ApproveDocument,
-    RejectDocument 
+    RejectDocument,
+    SubmitDocument
 }
