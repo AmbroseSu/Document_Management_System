@@ -21,6 +21,8 @@
         <PackageReference Include="Microsoft.AspNetCore.Mvc" Version="2.2.0" />
         <PackageReference Include="Microsoft.AspNetCore.SignalR" Version="1.2.0" />
         <PackageReference Include="payOS" Version="1.0.8" />
+        <PackageReference Include="SixLabors.ImageSharp" Version="3.1.7" />
+        <PackageReference Include="SixLabors.ImageSharp.Drawing" Version="2.1.5" />
         <PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="3.116.1" />
         <PackageReference Include="Syncfusion.DocIO.Net.Core" Version="29.1.39" />
         <PackageReference Include="Syncfusion.DocIORenderer.Net.Core" Version="29.1.39" />
