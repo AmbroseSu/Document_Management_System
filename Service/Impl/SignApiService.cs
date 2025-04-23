@@ -108,6 +108,8 @@ public class SignApiService
             }
             var coordinateString = GetCoordinateString(signRequest.Llx, signRequest.Lly,
                 signRequest.Urx, signRequest.Ury);
+            var document = await _unitOfWork.DocumentUOW.FindDocumentByIdAsync(signRequest.DocumentId);
+            
             
             
             return null;
