@@ -163,6 +163,13 @@ namespace DocumentManagementSystemApplication.Controllers
             var result = await _documentService.ShowProcessDocumentDetail(documentId);
             return result;
         }
+        // [HttpPost("create-document-by-template")]
+        // public async Task<ResponseDto> CreateDocumentByTemplate([FromBody] DocumentUploadDto documentUploadDto)
+        // {
+        //     var id = User.FindFirst("userid")?.Value;
+        //     var result = await _documentService.CreateDocumentByTemplate(documentUploadDto, Guid.Parse(id));
+        //     return result;
+        // }
     
 }
 }
