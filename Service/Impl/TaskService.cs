@@ -126,7 +126,7 @@ public class TaskService : ITaskService
                     HttpStatusCode.BadRequest);
             }
             var createTasks = orderedTasks.Where(t => t.TaskType == TaskType.Create).ToList();
-            if (createTasks.Any())
+            if (createTasks.Any() && taskDto.TaskType == TaskType.Create)
             {
                 return ResponseUtil.Error(
                     ResponseMessages.OnlyOneCreateTaskAllowed,
@@ -134,7 +134,7 @@ public class TaskService : ITaskService
                     HttpStatusCode.BadRequest);
             }
                 
-            if (taskDto.StepId == firstStepInFlow!.StepId)
+            if (taskDto.StepId == firstStepInFlow!.StepId && orderedTasks.Count == 0)
             {
                 taskDto.TaskStatus = TasksStatus.InProgress;
                 // if (taskDto.DocumentId == null)
