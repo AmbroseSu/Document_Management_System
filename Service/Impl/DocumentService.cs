@@ -693,7 +693,7 @@ public partial class DocumentService : IDocumentService
             { "NewSignerName", null },
             {"validTo", metaData?.MaxBy(x => x.ExpirationDate).ExpirationDate},
             {"validFrom", metaData?.MinBy(x => x.ValidFrom).ValidFrom},
-            {"signerName", metaData.Select(x => ExtractSigners(x.SignerName)).ToList()},
+            {"signerName", metaData?.Select(x => ExtractSigners(x.SignerName)).ToList()},
             {"url", _host+"/api/document/view-file-by-name?documentName=" + fileName}
 
         };

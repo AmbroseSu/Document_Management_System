@@ -27,7 +27,7 @@ namespace DocumentManagementSystemApplication.Controllers
         [HttpGet("view-test")]
         public  IActionResult GetViewTest([FromQuery]string pathFile,[FromQuery]string output)
         {
-              _fileService.ConvertDocToDocx(pathFile, output);
+              _fileService.InsertTextAsImageToPdf("/home/wiramin/Downloads/Mau to trinh(1) (2).pdf","/home/wiramin/Data/project/Capstone_2025/Document_Management_System/DocumentManagementSystemApplication/data/storage/output","Số:09/2025/TT-TNABC",89+20,659+20,209+10,679+15);
               return Ok();
         }
 
