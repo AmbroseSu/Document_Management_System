@@ -28,6 +28,7 @@ public class DigitalCertificate
     }
     
     public string? Subject { get; set; }
+    public Boolean? IsUsb { get; set; }
     public string? SignatureImageUrl { get; set; }
 
     public Guid? UserId { get; set; }

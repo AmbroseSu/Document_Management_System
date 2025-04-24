@@ -180,6 +180,7 @@ public class DocumentManagementSystemDbContext : DbContext
             entity.Property(e => e.ValidFrom);
             entity.Property(e => e.ValidTo);
             entity.Property(e => e.Subject);
+            entity.Property(e => e.IsUsb);
             entity.Property(e => e.SignatureImageUrl);
 
             entity.HasMany(e => e.ArchiveDocumentSignatures)

@@ -121,9 +121,13 @@ public class TaskService : ITaskService
                 {
                     
                 }
+                else
+                {
+                    return ResponseUtil.Error(ResponseMessages.TaskCanNotCreate, ResponseMessages.OperationFailed,
+                        HttpStatusCode.BadRequest);
+                }
 
-                return ResponseUtil.Error(ResponseMessages.TaskCanNotCreate, ResponseMessages.OperationFailed,
-                    HttpStatusCode.BadRequest);
+                
             }
             var createTasks = orderedTasks.Where(t => t.TaskType == TaskType.Create).ToList();
             if (createTasks.Any() && taskDto.TaskType == TaskType.Create)
@@ -1231,7 +1235,7 @@ public class TaskService : ITaskService
 
         }
         
-        // TODO: (Minh) Viết thêm tính nang de luu doc da hoan thanh vao he thong
+        // TODO: (Minh) Viết check document
         
         await _unitOfWork.SaveChangesAsync();
 
