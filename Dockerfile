@@ -107,36 +107,57 @@
 # ENTRYPOINT ["dotnet", "DocumentManagementSystemApplication.dll"]
 
 # ----- STAGE 1: Build ứng dụng .NET -----
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
-WORKDIR /src
-COPY . .
-RUN dotnet publish -c Release -o /app/publish
-
-# ----- STAGE 2: Base image có libreoffice-core -----
+# Base image for runtime
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
+WORKDIR /app
 
-# Cài các gói tối thiểu để chạy LibreOffice ở chế độ headless
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-    libreoffice-core \
+# Cài đặt những gói cần thiết cho LibreOffice
+RUN apt-get update && apt-get install -y --no-install-recommends \
     libreoffice-common \
+    libreoffice-core \
     libreoffice-writer \
     libreoffice-calc \
     fonts-dejavu \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*
 
-# Thêm file chứng chỉ nếu cần HTTPS
+# Copy HTTPS certificate
+USER root
 RUN mkdir -p /https
 COPY https/aspnetapp.pfx /https/aspnetapp.pfx
 RUN chmod 644 /https/aspnetapp.pfx
 
-# ----- STAGE 3: Final image chạy app -----
+# Thiết lập biến môi trường
+ENV ASPNETCORE_ENVIRONMENT="Production"
+ENV ASPNETCORE_URLS="http://+:8080;https://+:8443"
+ENV ASPNETCORE_Kestrel__Certificates__Default__Path="/https/aspnetapp.pfx"
+ENV ASPNETCORE_Kestrel__Certificates__Default__Password="ambrosezen"
+
+# ---- Build image ----
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+ARG BUILD_CONFIGURATION=Release
+WORKDIR /src
+
+# Copy solution file & restore
+COPY DocumentManagementSystemApplication/*.csproj DocumentManagementSystemApplication/
+COPY BusinessObject/*.csproj BusinessObject/
+COPY DataAccess/*.csproj DataAccess/
+COPY Repository/*.csproj Repository/
+COPY Service/*.csproj Service/
+COPY *.sln ./
+
+RUN dotnet restore DocumentManagementSystemApplication/DocumentManagementSystemApplication.csproj
+
+# Copy full source
+COPY . .
+WORKDIR /src/DocumentManagementSystemApplication
+RUN dotnet publish DocumentManagementSystemApplication.csproj -c $BUILD_CONFIGURATION -o /app/publish
+
+# ---- Final runtime ----
 FROM base AS final
 WORKDIR /app
 COPY --from=build /app/publish .
+EXPOSE 5290 5291
 
-EXPOSE 80
-EXPOSE 443
+ENTRYPOINT ["dotnet", "DocumentManagementSystemApplication.dll"]
 
-ENTRYPOINT ["dotnet", "YourApp.dll"]
 
