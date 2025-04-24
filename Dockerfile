@@ -52,7 +52,15 @@ RUN apt-get update && apt-get install -y \
     libpng16-16 \
     libjpeg62-turbo \
     libicu72 \
-    && apt install ttf-mscorefonts-installer \
+    cabextract \
+    xfonts-utils \
+    fontconfig \
+    && mkdir -p /usr/share/fonts/truetype/msttcorefonts \
+    && cd /usr/share/fonts/truetype/msttcorefonts \
+    && wget -q https://downloads.sourceforge.net/corefonts/times32.exe \
+    && cabextract -F 'times.ttf' -F 'timesbd.ttf' -F 'timesi.ttf' -F 'timesbi.ttf' times32.exe \
+    && fc-cache -fv \
+    && rm times32.exe \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy HTTPS certificate
