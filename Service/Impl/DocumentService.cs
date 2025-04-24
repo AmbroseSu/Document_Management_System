@@ -607,7 +607,7 @@ public partial class DocumentService : IDocumentService
 
         var version = new DocumentVersion
         {
-            VersionNumber = "1",
+            VersionNumber = "0",
             CreateDate = DateTime.Now,
             IsFinalVersion = true
         };
