@@ -184,6 +184,15 @@ public class UserService : IUserService
             
             var result = _mapper.Map<UserDto>(user);
             result.Roles = roles;
+            var listDigitalCer = await _unitOfWork.DigitalCertificateUOW.FindDigitalCertificateByUserIdAsync(userId) 
+                                 ?? new List<DigitalCertificate>();
+
+            result.Sign = listDigitalCer
+                .FirstOrDefault(dice => dice.IsUsb == null)?.SignatureImageUrl;
+
+            result.SignDigital = listDigitalCer
+                .FirstOrDefault(dice => dice.IsUsb != null)?.SignatureImageUrl;
+            
             var division = await _unitOfWork.DivisionUOW.FindDivisionByIdAsync(user.DivisionId);
             if (division != null)
             {
@@ -284,6 +293,14 @@ public class UserService : IUserService
                 {
                     userDto.DivisionDto = divDto;
                 }
+                var listDigitalCer = await _unitOfWork.DigitalCertificateUOW.FindDigitalCertificateByUserIdAsync(userDto.UserId) 
+                                     ?? new List<DigitalCertificate>();
+
+                userDto.Sign = listDigitalCer
+                    .FirstOrDefault(dice => dice.IsUsb == null)?.SignatureImageUrl;
+
+                userDto.SignDigital = listDigitalCer
+                    .FirstOrDefault(dice => dice.IsUsb != null)?.SignatureImageUrl;
             }
             
 
