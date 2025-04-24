@@ -61,7 +61,7 @@ namespace DocumentManagementSystemApplication.Controllers
         }
 
         [HttpGet("view-archive-document-detail")]
-        public async Task<ResponseDto> GetArchiveDocumentDetail([FromQuery] Guid documentId)
+        public async Task<ResponseDto> GetArchiveDocumentDetail([FromBody] Guid documentId)
         {
             var userId = User.FindFirst("userid")?.Value;
             var result = await _archiveDocumentService.GetArchiveDocumentDetail(documentId, Guid.Parse(userId));

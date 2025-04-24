@@ -247,7 +247,7 @@ public class TaskService : ITaskService
                 return false; // Không cho phép Submit ở đầu Flow này
             }
 
-            if (lastTask?.User.UserId != currentUserOfTask)
+            if (lastTask?.UserId != currentUserOfTask)
             {
                 return false;
             }
@@ -430,9 +430,24 @@ public class TaskService : ITaskService
                     HttpStatusCode.BadRequest);
             var document = await _unitOfWork.DocumentUOW.FindDocumentByIdAsync(task.DocumentId);
             var orderedTasks = await GetOrderedTasks(document.Tasks, document.DocumentWorkflowStatuses.FirstOrDefault()?.WorkflowId ?? Guid.Empty);
-            if(orderedTasks[orderedTasks.Count - 1].EndDate > taskRequest.StartDate)
-                return ResponseUtil.Error(ResponseMessages.TaskStartdayLowerEndDaypreviousStepFailed, ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
+            // if(orderedTasks[orderedTasks.Count - 1].EndDate > taskRequest.StartDate)
+            //     return ResponseUtil.Error(ResponseMessages.TaskStartdayLowerEndDaypreviousStepFailed, ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
 
+            var currentIndex = orderedTasks.FindIndex(t => t.TaskId == taskRequest.TaskId);
+
+            if (currentIndex > 0)
+            {
+                var previousTask = orderedTasks[currentIndex - 1];
+                if (previousTask.EndDate > taskRequest.StartDate)
+                {
+                    return ResponseUtil.Error(
+                        ResponseMessages.TaskStartdayLowerEndDaypreviousStepFailed,
+                        ResponseMessages.OperationFailed,
+                        HttpStatusCode.BadRequest
+                    );
+                }
+            }
+            
             if (orderedTasks[0].TaskId == taskRequest.TaskId)
             {
                 return ResponseUtil.Error(ResponseMessages.TaskFirstCanNotUpdate, ResponseMessages.OperationFailed,
@@ -447,7 +462,7 @@ public class TaskService : ITaskService
                 task.Title = taskRequest.Title;
                 hasChanges = true;
             }
-            if (!string.IsNullOrWhiteSpace(taskRequest.Description) && !task.Title.Equals(taskRequest.Description))
+            if (!string.IsNullOrWhiteSpace(taskRequest.Description) && !task.Description.Equals(taskRequest.Description))
             {
                 task.Description = taskRequest.Description;
                 hasChanges = true;
