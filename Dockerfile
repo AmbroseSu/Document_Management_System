@@ -52,6 +52,7 @@ RUN apt-get update && apt-get install -y \
     libpng16-16 \
     libjpeg62-turbo \
     libicu72 \
+    && apt install ttf-mscorefonts-installer \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy HTTPS certificate
