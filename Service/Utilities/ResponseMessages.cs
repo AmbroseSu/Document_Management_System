@@ -122,6 +122,8 @@ public static class ResponseMessages
     public const string TaskHasUpdatedInformation = "Task has updated information";
     public const string TaskCanNotDelete = "Task 1 has completed, cannot delete";
     public const string TaskCanNotCreate = "Task 1 has completed, cannot create";
+    public const string TaskFirstCanNotUpdate = "Task 1 cannot update";
+    public const string TaskFirstCanNotDelete = "Task 1 cannot delete";
     public const string OnlyOneCreateTaskAllowed = "Only one task can be created at a time";
     public const string TaskFirstNotFound = "Task 1 not found. Please create task 1 first.";
     public const string NotYourTurnOrSign = "It is not your turn to sign or it is not your turn to sign.";

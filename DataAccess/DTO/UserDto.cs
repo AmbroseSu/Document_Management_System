@@ -25,6 +25,8 @@ public class UserDto
     public List<RoleDto>? Roles { get; set; }  
     public bool IsDeleted { get; set; }
     public bool IsEnable { get; set; }
+    public string? Sign { get; set; }
+    public string? SignDigital { get; set; }
 
     public Guid? DivisionId { get; set; }
     public DivisionDto? DivisionDto { get; set; }
