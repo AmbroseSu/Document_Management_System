@@ -26,7 +26,7 @@ jobs:
             docker-compose down || true
 
             echo "🔧 Building new image..."
-            docker-compose build --no-cache
+            docker-compose build
 
             echo "🚀 Starting app..."
             docker-compose up -d --remove-orphans
