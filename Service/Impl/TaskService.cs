@@ -91,6 +91,14 @@ public class TaskService : ITaskService
             var stepAllOfFlow = await _unitOfWork.StepUOW.FindStepByFlowIdAsync(firstFlowInWorkflow!.FlowId);
             var firstStepInFlow = stepAllOfFlow!.OrderBy(s => s.StepNumber).FirstOrDefault();
 
+            var allWorkflowFlows = workflowFlowAll.OrderBy(wf => wf.FlowNumber)
+                .ToList();
+            var currentIndex = allWorkflowFlows.FindIndex(wf => wf.FlowId == currentFlow);
+            var previousWorkflowFlow = currentIndex > 0 ? allWorkflowFlows[currentIndex - 1] : null;
+            
+            
+            
+            
             var user = await _unitOfWork.UserUOW.FindUserByIdAsync(taskDto.UserId.Value);
             if (user == null)
                 return ResponseUtil.Error(ResponseMessages.UserNotFound, ResponseMessages.OperationFailed,
@@ -314,6 +322,12 @@ public class TaskService : ITaskService
             if (orderedTasks[0].TaskStatus == TasksStatus.Completed)
                 return ResponseUtil.Error(ResponseMessages.TaskCanNotDelete, ResponseMessages.OperationFailed,
                     HttpStatusCode.BadRequest);
+            if (orderedTasks[0].TaskId == id)
+            {
+                return ResponseUtil.Error(ResponseMessages.TaskFirstCanNotDelete, ResponseMessages.OperationFailed,
+                    HttpStatusCode.BadRequest);
+                
+            }
             var stepId = task.StepId;
             var deletedTaskNumber = task.TaskNumber;
             
@@ -367,6 +381,13 @@ public class TaskService : ITaskService
             if(orderedTasks[orderedTasks.Count - 1].EndDate > taskRequest.StartDate)
                 return ResponseUtil.Error(ResponseMessages.TaskStartdayLowerEndDaypreviousStepFailed, ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
 
+            if (orderedTasks[0].TaskId == taskRequest.TaskId)
+            {
+                return ResponseUtil.Error(ResponseMessages.TaskFirstCanNotUpdate, ResponseMessages.OperationFailed,
+                    HttpStatusCode.BadRequest);
+                
+            }
+            
             var hasChanges = false;
             
             if (!string.IsNullOrWhiteSpace(taskRequest.Title) && !task.Title.Equals(taskRequest.Title))
