@@ -90,7 +90,7 @@ public class FileService : IFileService
 
         // Di chuyển file
         File.Move(path, targetPath);
-        var url = _host + "/api/Document/view-file/" + documentId + "?version=1&isArchive=false";
+        var url = _host + "/api/Document/view-file/" + documentId + "?version=0&isArchive=false";
         // Trả về đường dẫn mới của file (hoặc bạn có thể trả về tên file tùy mục đích)
         return url;
     }
@@ -269,6 +269,7 @@ public class FileService : IFileService
     
     public async Task<IActionResult> ConvertDocToPdf(string path)
     {
+        
         // Ensure the file is a .doc or .docx
         var fileExtension = Path.GetExtension(path).ToLower();
         if (fileExtension != ".doc" && fileExtension != ".docx")

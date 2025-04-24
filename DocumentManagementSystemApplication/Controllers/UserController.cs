@@ -1,6 +1,7 @@
 using DataAccess.DTO;
 using DataAccess.DTO.Request;
 using DataAccess.DTO.Response;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Service;
 
@@ -8,7 +9,7 @@ namespace DocumentManagementSystemApplication.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-//[Authorize]
+[Authorize]
 public class UserController : ControllerBase
 {
     private readonly IUserService _userService;
@@ -71,13 +72,14 @@ public class UserController : ControllerBase
     {
         return await _userService.ReadUsersFromCsvAsync(file);
     }
-    
+
     [HttpPost("update-avatar/{userId}")]
     public async Task<ResponseDto> UpdateAvatar([FromForm] IFormFile file,string userId)
     {
         return await _userService.UpdateAvatarAsync(file,userId);
     }
     
+    [AllowAnonymous]
     [HttpGet("view-avatar/{fileName}")]
     public async Task<IActionResult> GetAvatar(string fileName)
     {
@@ -87,11 +89,14 @@ public class UserController : ControllerBase
     }
     
     [HttpPost("update-signature-img/{userId:guid}")]
-    public async Task<ResponseDto> UploadSignatureImg([FromForm] IFormFile file,[FromRoute] Guid userId)
+    public async Task<ResponseDto> UploadSignatureImg(IFormFile file,[FromQuery] bool isDigital = false)
     {
-        return await _userService.UploadSignatureImgAsync(file, userId);
+        var userId = User.FindFirst("userid")?.Value;
+
+        return await _userService.UploadSignatureImgAsync(file, Guid.Parse(userId),isDigital);
     }
     
+    [AllowAnonymous]
     [HttpGet("view-signature-img/{userId}")]
     public async Task<IActionResult> GetSignatureImg([FromRoute] string userId)
     {
