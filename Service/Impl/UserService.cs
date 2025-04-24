@@ -716,33 +716,45 @@ public class UserService : IUserService
         return await _fileService.GetAvatar(userId);
     }
 
-    public async Task<ResponseDto> UploadSignatureImgAsync(IFormFile file, Guid userId,bool? isDigital)
+    public async Task<ResponseDto> UploadSignatureImgAsync(UpdateSignatureRequest updateSignatureRequest, Guid userId)
     {
+        var file = updateSignatureRequest.File;
+        var isDigital = updateSignatureRequest.IsDigital;
         isDigital ??= false;
-        var url = _host+"/api/User/view-signature-img/"+ await _fileService.SaveSignature(file, userId.ToString());
+        
         var user = await _unitOfWork.UserUOW.FindUserByIdAsync(userId);
         var listCer = user.DigitalCertificates;
+        
         if (listCer == null || listCer.Count == 0)
         {
+            var cerId = Guid.NewGuid();
+            var name = await _fileService.SaveSignature(file, cerId.ToString());
+            var url = _host + "/api/User/view-signature-img/" + name;
+            // _fileService.InsertTextToImage(name, updateSignatureRequest.Name);
             if (!isDigital.Value)
             {
                 var cer = new DigitalCertificate
                 {
-                    SerialNumber = null,
+                    DigitalCertificateId = cerId,
+                    SerialNumber = "DMS" + GenerateRandomString(5),
                     Issuer = "Hệ thống",
                     ValidFrom = DateTime.Now,
-                    ValidTo = DateTime.Now.AddYears(1),
+                    ValidTo = DateTime.Now.AddYears(99),
                     Subject = user.FullName,
-                    IsUsb =  null,
+                    IsUsb = null,
                     SignatureImageUrl = url,
                     UserId = user.UserId,
                     User = user
                 };
+                await _unitOfWork.DigitalCertificateUOW.AddAsync(cer);
+
+                // listCer.Add(cer);
             }
             else
             {
                 var cer = new DigitalCertificate
                 {
+                    DigitalCertificateId = cerId,
                     SerialNumber = null,
                     Issuer = null,
                     ValidFrom = DateTime.Now,
@@ -753,9 +765,39 @@ public class UserService : IUserService
                     UserId = user.UserId,
                     User = user
                 };
+                await _unitOfWork.DigitalCertificateUOW.AddAsync(cer);
+
+                // listCer.Add(cer);
             }
         }
-        return ResponseUtil.GetObject(url,"ok",HttpStatusCode.OK,1);
+        else
+        {
+            foreach (var cer in listCer)
+            {
+                var name = await _fileService.SaveSignature(file, cer.DigitalCertificateId.ToString());
+                var url = _host + "/api/User/view-signature-img/" + name;
+                // _fileService.InsertTextToImage(name, updateSignatureRequest.Name);
+                if (isDigital.Value)
+                {
+                    if (cer.IsUsb == null) continue;
+                }
+                else
+                {
+                    if (cer.IsUsb != null) continue;
+                }
+
+                cer.SignatureImageUrl = url;
+                await _unitOfWork.DigitalCertificateUOW.UpdateAsync(cer);
+            }
+        }
+
+        
+
+            // await _unitOfWork.UserUOW.UpdateAsync(user);
+            // listCer.Select(x => _unitOfWork.DigitalCertificateUOW.UpdateAsync(x));
+            await _unitOfWork.SaveChangesAsync();
+            return ResponseUtil.GetObject("ok", "ok", HttpStatusCode.OK, 1);
+        
     }
 
     public async Task<IActionResult> GetSignatureImg(string userId)

@@ -88,19 +88,19 @@ public class UserController : ControllerBase
         return await _userService.GetAvatar(fileName);
     }
     
-    [HttpPost("update-signature-img/{userId:guid}")]
-    public async Task<ResponseDto> UploadSignatureImg(IFormFile file,[FromQuery] bool isDigital = false)
+    [HttpPost("update-signature-img")]
+    public async Task<ResponseDto> UploadSignatureImg([FromForm] UpdateSignatureRequest updateSignatureRequest)
     {
         var userId = User.FindFirst("userid")?.Value;
 
-        return await _userService.UploadSignatureImgAsync(file, Guid.Parse(userId),isDigital);
+        return await _userService.UploadSignatureImgAsync(updateSignatureRequest, Guid.Parse(userId));
     }
     
     [AllowAnonymous]
-    [HttpGet("view-signature-img/{userId}")]
-    public async Task<IActionResult> GetSignatureImg([FromRoute] string userId)
+    [HttpGet("view-signature-img/{fileName}")]
+    public async Task<IActionResult> GetSignatureImg([FromRoute] string fileName)
     {
-        return await _userService.GetSignatureImg(userId);
+        return await _userService.GetSignatureImg(fileName);
     }
 
 

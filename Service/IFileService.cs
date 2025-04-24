@@ -5,6 +5,7 @@ namespace Service;
 
 public interface IFileService
 {
+    IActionResult InsertTextToImage(IFormFile file, string text);
     Task<string> SaveUploadFile(IFormFile file);
     Task<string> SaveAvatar(IFormFile file,string id);
     // Task<IActionResult> GetPdfFile(Guid id);

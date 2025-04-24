@@ -27,8 +27,12 @@ using SixLabors.Fonts;
 using SixLabors.ImageSharp.PixelFormats;
 using System.IO;
 using Color = SixLabors.ImageSharp.Color;
+using Font = SixLabors.Fonts.Font;
 using FontStyle = SixLabors.Fonts.FontStyle;
 using HorizontalAlignment = SixLabors.Fonts.HorizontalAlignment;
+using Image = SixLabors.ImageSharp.Image;
+using Point = SixLabors.ImageSharp.Point;
+using PointF = SixLabors.ImageSharp.PointF;
 using VerticalAlignment = SixLabors.Fonts.VerticalAlignment;
 
 namespace Service.Impl;
@@ -355,7 +359,75 @@ public class FileService : IFileService
         pdfDocument.Save(outPath);
         pdfDocument.Close(true);
     }
+    
+    public IActionResult InsertTextToImage(IFormFile file, string text)
+    {
+        var avatarFolder = Path.Combine(_storagePath, "tmp");
+        Directory.CreateDirectory(avatarFolder);
+    
+        // Generate a unique file name for the uploaded file
+        var fileName = Guid.NewGuid() + Path.GetExtension(file.FileName);
+        var imagePath = Path.Combine(avatarFolder, fileName);
+    
+        // Save the uploaded file to the server
+        using (var stream = new FileStream(imagePath, FileMode.Create))
+        {
+            file.CopyTo(stream);
+        }
+    
+        // Load the uploaded image
+        using var image = Image.Load<Rgba32>(imagePath);
+    
+        // Configure font
+        FontFamily fontFamily = SystemFonts.Families.FirstOrDefault(f => f.Name == "Times New Roman");
+        Font font = fontFamily.CreateFont(24);
+    
+        // Measure text size
+        var textOptions = new TextOptions(font)
+        {
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+            WrappingLength = image.Width
+        };
+        var textSize = TextMeasurer.MeasureSize(text, textOptions);
+    
+        int spacing = 10; // Space between image and text
+        int newHeight = image.Height + (int)textSize.Height + spacing;
+    
+        // Create a new image with increased height to accommodate the text
+        using var outputImage = new Image<Rgba32>(image.Width, newHeight);
+        outputImage.Mutate(ctx =>
+        {
+            // Draw the original image
+            ctx.Clear(Color.Transparent);
+            ctx.DrawImage(image, new Point(0, 0), 1f);
+    
+            // Draw the text below the image, centered
+            var position = new PointF(image.Width / 2f, image.Height + spacing - 5);
+            ctx.DrawText(new RichTextOptions(font)
+            {
+                Origin = position,
+                HorizontalAlignment = HorizontalAlignment.Center
+            }, text, Color.Black);
+        });
+    
+        // Save the new image
+        var outputFileName = fileName;
+        var outputPath = Path.Combine(avatarFolder, outputFileName);
+        outputImage.Save(outputPath);
+        // Return the new image as a file result
+        var contentType = GetContentType(outputPath);
+        var fileBytes = System.IO.File.ReadAllBytes(outputPath);
+        File.Delete(outputPath);
 
+        return new FileContentResult(fileBytes, contentType)
+        {
+            FileDownloadName = outputFileName
+        };
+    }
+
+
+    
 
 
 
