@@ -731,7 +731,7 @@ public class TaskService : ITaskService
                 {
                     var currentTask = orderedTasks[i];
 
-                    if (currentTask.UserId == userId && currentTask.TaskStatus == TasksStatus.InProgress)
+                    if (currentTask.UserId == userId && currentTask.TaskStatus == TasksStatus.InProgress && currentTask.TaskType == TaskType.Browse)
                     {
                         bool previousTasksCompleted = orderedTasks
                             .Take(i)
@@ -769,6 +769,14 @@ public class TaskService : ITaskService
                         {
                             waitingDocuments.Add(doc);
                             break; // Thỏa điều kiện => thêm document và thoát vòng lặp
+                        }
+                    }
+                    else
+                    {
+                        if (nextTask.UserId != userId && currentTask.TaskType != TaskType.Browse)
+                        {
+                            waitingDocuments.Add(doc);
+                            break;
                         }
                     }
                 }

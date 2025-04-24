@@ -962,7 +962,7 @@ public partial class DocumentService : IDocumentService
                         NextStepId = s.NextStepId,
                         RejectStepId = s.RejectStepId,
                         IsFallbackStep = s.RejectStepId == null,
-                        TaskDtos = taskDtosInFlow.Where(t => t.StepId == s.StepId).ToList()
+                        TaskDtos = taskDtosInFlow.Where(t => t.StepId == s.StepId).OrderBy(t => t.TaskNumber).ToList()
                     }).ToList();
 
                 var flowDto = new FlowDto
