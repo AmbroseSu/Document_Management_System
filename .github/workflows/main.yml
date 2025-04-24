@@ -20,7 +20,7 @@ jobs:
             set -e
             echo "📥 Pulling latest code from Git..."
             cd ~/document_management_system_capstone_source/dms
-            git pull origin main
+            git pull
 
             echo "🛑 Stopping old containers (if any)..."
             docker-compose down || true
