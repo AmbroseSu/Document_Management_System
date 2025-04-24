@@ -150,6 +150,8 @@ public class TaskService : ITaskService
 
                 
             }
+            
+            // neu task của người tạo là create và đã complete thì kkhoogn được tạo task nua
             var createTasks = orderedTasks.Where(t => t.TaskType == TaskType.Create).ToList();
             if (createTasks.Any() && taskDto.TaskType == TaskType.Create)
             {
@@ -781,7 +783,7 @@ public class TaskService : ITaskService
 
                     if (currentTask.UserId == userId && currentTask.TaskStatus == TasksStatus.Completed)
                     {
-                        if (nextTask.TaskStatus == TasksStatus.Completed)
+                        if (nextTask.TaskStatus == TasksStatus.Completed && nextTask.UserId != userId)
                         {
                             acceptedDocuments.Add(doc);
                             break;
@@ -819,7 +821,7 @@ public class TaskService : ITaskService
                 {
                     var currentTask = orderedTasks[i];
 
-                    if (currentTask.UserId == userId && currentTask.TaskStatus == TasksStatus.InProgress && currentTask.TaskType == TaskType.Browse)
+                    if (currentTask.UserId == userId && currentTask.TaskStatus == TasksStatus.InProgress && (currentTask.TaskType == TaskType.Browse || currentTask.TaskType == TaskType.View))
                     {
                         bool previousTasksCompleted = orderedTasks
                             .Take(i)
@@ -858,15 +860,13 @@ public class TaskService : ITaskService
                             waitingDocuments.Add(doc);
                             break; // Thỏa điều kiện => thêm document và thoát vòng lặp
                         }
-                    }
-                    else
-                    {
                         if (nextTask.UserId != userId && currentTask.TaskType != TaskType.Browse)
                         {
                             waitingDocuments.Add(doc);
                             break;
                         }
                     }
+
                 }
             }
 
@@ -1509,6 +1509,73 @@ public class TaskService : ITaskService
                     HttpStatusCode.OK, 1);
             }
         }
+    }
+    var doc = await _unitOfWork.DocumentUOW.FindDocumentByIdAsync(documentId);
+    
+    
+    
+    if (doc != null)
+    {
+        doc.IsDeleted = true;
+        doc.UpdatedDate = DateTime.UtcNow;
+        await _unitOfWork.DocumentUOW.UpdateAsync(doc);
+        
+        var orderedTasks = await GetOrderedTasks(doc.Tasks, doc.DocumentWorkflowStatuses.FirstOrDefault()?.WorkflowId ?? Guid.Empty);
+
+        var distinctUserIds = orderedTasks
+            .Select(t => t.UserId)
+            .Distinct()
+            .ToList();
+        var docArchiveId = doc.FinalArchiveDocumentId;
+        if (docArchiveId == null)
+        {
+            return ResponseUtil.Error(ResponseMessages.DocumentHasNotArchiveDoc, ResponseMessages.OperationFailed,
+                HttpStatusCode.BadRequest);
+        }
+        
+        var userPermissions = new List<UserDocumentPermission>();
+
+        foreach (var userId in distinctUserIds)
+        {
+            var exists = await _unitOfWork.UserDocPermissionUOW.ExistsAsync(userId, docArchiveId.Value);
+            if (!exists)
+            {
+                userPermissions.Add(new UserDocumentPermission
+                {
+                    UserId = userId,
+                    ArchivedDocumentId = docArchiveId.Value,
+                    CreatedDate = DateTime.UtcNow,
+                    IsDeleted = false
+                });
+            }
+        }
+
+        // Chỉ thêm những cái chưa có
+        if (userPermissions.Any())
+        {
+            await _unitOfWork.UserDocPermissionUOW.AddRangeAsync(userPermissions);
+        }
+
+        await _unitOfWork.SaveChangesAsync();
+        
+        
+        foreach (var orderedTask in orderedTasks)
+        {
+            var orUser = await _unitOfWork.UserUOW.FindUserByIdAsync(orderedTask.UserId);
+            var notification = _notificationService.CreateDocCompletedNotification(task, task.UserId);
+            await _notificationCollection.CreateNotificationAsync(notification);
+            await _notificationService.SendPushNotificationMobileAsync(orUser.FcmToken, notification);
+            await _hubContext.Clients.User(orderedTask.UserId.ToString()).SendAsync("ReceiveMessage", notification);
+
+        }
+        
+        // TODO: (Minh) Viết check document
+        
+        await _unitOfWork.SaveChangesAsync();
+
+        // TODO: Gửi thông báo cho người tạo
+        return ResponseUtil.GetObject("Tài liệu đã duyệt xong", ResponseMessages.CreatedSuccessfully,
+            HttpStatusCode.OK, 1);
     }
 
     return ResponseUtil.Error("Không tìm thấy tài liệu", ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);

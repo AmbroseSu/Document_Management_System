@@ -82,6 +82,7 @@ public static class ResponseMessages
     public const string DocumentRejected = "Document has been rejected";
     public const string InvalidAction = "Invalid action";
     public const string DocumentCompleted = "Document has been completed";
+    public const string DocumentHasNotArchiveDoc = "Document has not archive document";
     
     //DocumentType
     public const string DocumentTypeNameNotNull = "Document Type name cannot be null or empty";
