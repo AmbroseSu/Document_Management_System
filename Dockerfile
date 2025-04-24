@@ -111,14 +111,23 @@
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
 WORKDIR /app
 
-# Cài đặt những gói cần thiết cho LibreOffice
+COPY ./deb_pakage /tmp/deb-packages
+
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    libreoffice-common \
-    libreoffice-core \
-    libreoffice-writer \
-    libreoffice-calc \
-    fonts-dejavu \
-    && rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*
+    /tmp/deb-packages/libreoffice-common*.deb \
+    /tmp/deb-packages/libreoffice-core*.deb \
+    /tmp/deb-packages/libreoffice-writer*.deb \
+    /tmp/deb-packages/libreoffice-calc*.deb \
+    /tmp/deb-packages/fonts-dejavu*.deb \
+    && rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/* /tmp/deb-packages
+# Cài đặt những gói cần thiết cho LibreOffice
+# RUN apt-get update && apt-get install -y --no-install-recommends \
+#     libreoffice-common \
+#     libreoffice-core \
+#     libreoffice-writer \
+#     libreoffice-calc \
+#     fonts-dejavu \
+#     && rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*
 COPY ./fonts/TimesNewRoman.ttf /usr/share/fonts/truetype/msttcorefonts/TimesNewRoman.ttf
 # Copy HTTPS certificate
 USER root
