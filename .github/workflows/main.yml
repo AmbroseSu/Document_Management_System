@@ -23,11 +23,9 @@ jobs:
 
 
             echo "🛑 Stopping old containers (if any)..."
-            docker-compose down || true
-
-            echo "🔧 Building new image..."
+            docker-compose down
+            echo ""🚀 build"
             docker-compose build
-
             echo "🚀 Starting app..."
-            docker-compose up -d --remove-orphans
+            docker-compose up -d
           EOF
