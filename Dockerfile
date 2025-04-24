@@ -119,7 +119,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libreoffice-calc \
     fonts-dejavu \
     && rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*
-
+COPY ./fonts/TimesNewRoman.ttf /usr/share/fonts/truetype/msttcorefonts/TimesNewRoman.ttf
 # Copy HTTPS certificate
 USER root
 RUN mkdir -p /https
