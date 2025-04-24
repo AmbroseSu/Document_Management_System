@@ -61,11 +61,23 @@ public class TaskService : ITaskService
                 return ResponseUtil.Error(ResponseMessages.TaskEndDayFailed, ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
             
             var existingTasks = await _unitOfWork.TaskUOW.FindTaskByStepIdDocIdAsync(taskDto.StepId, taskDto.DocumentId);
+            
             var nextTaskNumber = existingTasks.Count() + 1;
             
 
             
             var currentStep = await _unitOfWork.StepUOW.FindStepByIdAsync(taskDto.StepId);
+            if (currentStep.Role.RoleName.Equals("chief", StringComparison.OrdinalIgnoreCase))
+            {
+                var signTasksInStep = existingTasks.Where(t => t.TaskType == TaskType.Sign).ToList();
+                if (signTasksInStep.Any() && taskDto.TaskType == TaskType.Sign)
+                {
+                    return ResponseUtil.Error(
+                        ResponseMessages.SignExistNotCreate,
+                        ResponseMessages.OperationFailed,
+                        HttpStatusCode.BadRequest);
+                }
+            }
             var currentFlow = currentStep!.FlowId;
 
             var workflowFlow = await _unitOfWork.WorkflowFlowUOW.FindWorkflowFlowByFlowIdAsync(currentFlow);
@@ -572,7 +584,10 @@ public class TaskService : ITaskService
     switch (tab)
     {
         case DocumentTab.All:
-            filteredDocuments = allDocuments;
+            filteredDocuments = allDocuments
+                .Where(doc => doc.Tasks != null && doc.Tasks
+                    .Any(task => task.UserId == userId && task.TaskStatus != TasksStatus.Waiting))
+                .ToList();
             break;
 
         case DocumentTab.Overdue:
@@ -932,6 +947,7 @@ public class TaskService : ITaskService
 
             task.TaskStatus = TasksStatus.Completed;
             task.UpdatedDate = DateTime.UtcNow;
+            await _unitOfWork.TaskUOW.UpdateAsync(task);
             await _unitOfWork.SaveChangesAsync();
 
             // var nextTask = tasksInSameStep.FirstOrDefault(t => t.TaskNumber > task.TaskNumber);
@@ -1022,6 +1038,7 @@ public class TaskService : ITaskService
 
             task.TaskStatus = TasksStatus.Completed;
             task.UpdatedDate = DateTime.UtcNow;
+            await _unitOfWork.TaskUOW.UpdateAsync(task);
             await _unitOfWork.SaveChangesAsync();
 
             var result = await ActivateNextTaskSubmit(task);
@@ -1076,7 +1093,7 @@ public class TaskService : ITaskService
             await _notificationCollection.CreateNotificationAsync(notification);
             await _notificationService.SendPushNotificationMobileAsync(nextUser.FcmToken, notification);
             await _hubContext.Clients.User(notification.UserId.ToString()).SendAsync("ReceiveMessage", notification);
-
+            await _unitOfWork.TaskUOW.UpdateAsync(nextTask);
             await _unitOfWork.SaveChangesAsync();
 
             return ResponseUtil.GetObject($"Đến lượt duyệt tiếp theo:{nextTask.UserId}", ResponseMessages.CreatedSuccessfully,
@@ -1113,6 +1130,7 @@ public class TaskService : ITaskService
                 await _notificationCollection.CreateNotificationAsync(notification);
                 await _notificationService.SendPushNotificationMobileAsync(firstTaskUser.FcmToken, notification);
                 await _hubContext.Clients.User(notification.UserId.ToString()).SendAsync("ReceiveMessage", notification);
+                await _unitOfWork.TaskUOW.UpdateAsync(firstTaskInNextStep);
                 await _unitOfWork.SaveChangesAsync();
 
                 return ResponseUtil.GetObject($"Chuyển sang bước tiếp theo: {firstTaskInNextStep.UserId}", ResponseMessages.CreatedSuccessfully,
@@ -1173,6 +1191,7 @@ public class TaskService : ITaskService
             {
                 firstTask.TaskStatus = TasksStatus.InProgress;
                 firstTask.UpdatedDate = DateTime.UtcNow;
+                await _unitOfWork.TaskUOW.UpdateAsync(firstTask);
 
                 // TODO: Gửi thông báo
                 await _unitOfWork.SaveChangesAsync();
@@ -1274,6 +1293,7 @@ public class TaskService : ITaskService
         {
             nextTask.TaskStatus = TasksStatus.InProgress;
             nextTask.UpdatedDate = DateTime.UtcNow;
+            await _unitOfWork.TaskUOW.UpdateAsync(nextTask);
 
             // TODO: Gửi thông báo đến nextTask.UserId
             var nextUser = await _unitOfWork.UserUOW.FindUserByIdAsync(nextTask.UserId);
@@ -1311,6 +1331,7 @@ public class TaskService : ITaskService
             {
                 firstTaskInNextStep.TaskStatus = TasksStatus.InProgress;
                 firstTaskInNextStep.UpdatedDate = DateTime.UtcNow;
+                await _unitOfWork.TaskUOW.UpdateAsync(firstTaskInNextStep);
 
                 var firstTaskUser = await _unitOfWork.UserUOW.FindUserByIdAsync(firstTaskInNextStep.UserId);
                 // TODO: Gửi thông báo
@@ -1378,7 +1399,7 @@ public class TaskService : ITaskService
             {
                 firstTask.TaskStatus = TasksStatus.InProgress;
                 firstTask.UpdatedDate = DateTime.UtcNow;
-
+                await _unitOfWork.TaskUOW.UpdateAsync(firstTask);
                 // TODO: Gửi thông báo
                 await _unitOfWork.SaveChangesAsync();
                 
