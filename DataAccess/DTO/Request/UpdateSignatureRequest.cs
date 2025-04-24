@@ -4,7 +4,6 @@ namespace DataAccess.DTO.Request;
 
 public class UpdateSignatureRequest
 {
-    public string Name { get; set; }
-    public bool? IsDigital { get; set; }
-    public IFormFile File { get; set; }
+    public IFormFile? NormalSignature { get; set; }
+    public IFormFile? DigitalSignature { get; set; }
 }

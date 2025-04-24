@@ -13,10 +13,12 @@ namespace DocumentManagementSystemApplication.Controllers;
 public class UserController : ControllerBase
 {
     private readonly IUserService _userService;
+    private readonly IFileService _fileService;
 
-    public UserController(IUserService userService)
+    public UserController(IUserService userService, IFileService fileService)
     {
         _userService = userService;
+        _fileService = fileService;
     }
 
     [HttpPost("create-user-by-form")]
@@ -86,6 +88,13 @@ public class UserController : ControllerBase
         
 
         return await _userService.GetAvatar(fileName);
+    }
+    
+    [AllowAnonymous]
+    [HttpPost("update-insert-name-signature-img")]
+    public  IActionResult InsertNameSignatureImg(IFormFile file,[FromForm] string fullName)
+    {
+        return _fileService.InsertTextToImage(file, fullName);
     }
     
     [HttpPost("update-signature-img")]
