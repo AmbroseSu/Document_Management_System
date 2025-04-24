@@ -24,7 +24,7 @@ jobs:
 
             echo "🛑 Stopping old containers (if any)..."
             docker-compose down
-            echo ""🚀 build"
+            echo "🚀 build"
             docker-compose build
             echo "🚀 Starting app..."
             docker-compose up -d
