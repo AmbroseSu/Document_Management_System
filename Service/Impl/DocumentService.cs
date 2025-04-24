@@ -326,9 +326,56 @@ public partial class DocumentService : IDocumentService
             TimeSpan.FromMinutes(2));
         return ResponseUtil.GetObject(result, ResponseMessages.GetSuccessfully, HttpStatusCode.OK, 1);
     }
+    // private async Task<List<Tasks>> GetOrderedTasks(Document doc)
+    // {
+    //     var tasks = doc.Tasks;
+    //     var workflowId = doc.DocumentWorkflowStatuses.FirstOrDefault().WorkflowId;
+    //     var flowNumberMap = new Dictionary<(Guid workflowId, Guid flowId), int>();
+    //
+    //     async Task<int> GetFlowNumber(Guid workflowId, Guid flowId)
+    //     {
+    //         if (!flowNumberMap.TryGetValue((workflowId, flowId), out var number))
+    //         {
+    //             var wfFlow = await _unitOfWork.WorkflowFlowUOW.FindWorkflowFlowByWorkflowIdAndFlowIdAsync(workflowId, flowId);
+    //             number = wfFlow?.FlowNumber ?? int.MaxValue;
+    //             flowNumberMap[(workflowId, flowId)] = number;
+    //         }
+    //
+    //         return number;
+    //     }
+    //
+    //     var tasksWithFlowNumbers = new List<(Tasks Task, int FlowNumber, int StepNumber, int TaskNumber)>();
+    //
+    //     foreach (var t in tasks)
+    //     {
+    //         var flowId = t.Step?.Flow?.FlowId ?? Guid.Empty;
+    //         var flowNumber = await GetFlowNumber(workflowId, flowId);
+    //         var stepNumber = t.Step?.StepNumber ?? int.MaxValue;
+    //         var taskNumber = t.TaskNumber;
+    //
+    //         tasksWithFlowNumbers.Add((t, flowNumber, stepNumber, taskNumber));
+    //     }
+    //
+    //     var orderedTasks = tasksWithFlowNumbers
+    //         .OrderBy(x => x.FlowNumber)
+    //         .ThenBy(x => x.StepNumber)
+    //         .ThenBy(x => x.TaskNumber)
+    //         .Select(x => x.Task)
+    //         .ToList();
+    //
+    //     // Debug: show flow info
+    //     foreach (var x in orderedTasks)
+    //     {
+    //         var flowNumber = x.Step?.Flow?.WorkflowFlows?.FirstOrDefault(wf => wf.WorkflowId == workflowId)?.FlowNumber;
+    //         Console.WriteLine($"TaskId: {x.TaskId}, FlowNumber: {flowNumber}, StepNumber: {x.Step?.StepNumber}, TaskNumber: {x.TaskNumber}");
+    //     }
+    //
+    //     return orderedTasks;
+    // }
 
     public async Task<ResponseDto> GetMySelfDocument(Guid userId, string? searchText,int page,int pageSize)
     {
+        var user = await _unitOfWork.UserUOW.FindUserByIdAsync(userId);
         List<DocumentJsonDto> doc;
         searchText ??= "";
         var cache = _unitOfWork.RedisCacheUOW.GetData<List<DocumentJsonDto>>(
@@ -340,11 +387,36 @@ public partial class DocumentService : IDocumentService
         else
         { 
             var tmp = (await _unitOfWork.DocumentUOW.FindAllDocumentMySelf(userId)).ToList();
+            if (user.UserRoles.Any(x => x.Role.RoleName.Split("_")[^1] == "Chief" && x.Role.IsDeleted == false)) ;
+            {
+                var docCa = await _unitOfWork.DocumentUOW.FindAllDocumentAsync();
+                docCa = docCa.Where(x => x.DocumentWorkflowStatuses?.FirstOrDefault()?.Workflow?.Scope == Scope.InComing);
+                if (docCa != null)
+                {
+                    var li = docCa.Select(x => x.Tasks).ToList();
+                    var kk = new List<Document>();
+                    foreach (var t2 in li
+                                 .Select(lTask =>
+                                     lTask.Where(x => x.UserId == userId && x is
+                                     {
+                                         TaskType: TaskType.Create,
+                                         TaskStatus: TasksStatus.InProgress or TasksStatus.Completed
+                                     }).Select(x => x.Document).ToList()).Select(t2 => t2.Distinct().ToList()))
+                    {
+                        kk.AddRange(t2);
+                    }
+
+                    kk = kk.Distinct().ToList();
+                    tmp.AddRange(kk);
+                }
+            }
+
             doc = _mapper.Map<List<DocumentJsonDto>>(tmp);
+
             // var docCA = await _unitOfWork.DocumentUOW.
             // doc.ToList();
             // _unitOfWork.RedisCacheUOW.SetData("GetAllMySeflDoc_userId_" + userId, doc, TimeSpan.FromMinutes(2)); 
-            
+
         }
         var result = doc.Where(x => x.DocumentName.Contains(searchText)).Select(x =>
         {
@@ -535,7 +607,7 @@ public partial class DocumentService : IDocumentService
 
         var version = new DocumentVersion
         {
-            VersionNumber = "1",
+            VersionNumber = "0",
             CreateDate = DateTime.Now,
             IsFinalVersion = true
         };

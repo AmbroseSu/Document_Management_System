@@ -716,9 +716,17 @@ public class UserService : IUserService
         return await _fileService.GetAvatar(userId);
     }
 
-    public async Task<ResponseDto> UploadSignatureImgAsync(IFormFile file, Guid userId)
+    public async Task<ResponseDto> UploadSignatureImgAsync(IFormFile file, Guid userId,bool? isDigital)
     {
+        isDigital ??= false;
         var url = _host+"/api/User/view-signature-img/"+ await _fileService.SaveSignature(file, userId.ToString());
+        var user = await _unitOfWork.UserUOW.FindUserByIdAsync(userId);
+        var listCer = user.DigitalCertificates;
+        var haveDigital = listCer.Count==2;
+        foreach (var cer in listCer)
+        {
+            
+        }
         return ResponseUtil.GetObject(url,"ok",HttpStatusCode.OK,1);
     }
 
