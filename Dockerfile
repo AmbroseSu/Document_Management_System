@@ -47,14 +47,16 @@ WORKDIR /app
 
 # Cài thư viện native cần cho SkiaSharp
 RUN apt-get update && apt-get install -y \
+    wget \
+    cabextract \
+    xfonts-utils \
+    fontconfig \
     libfontconfig1 \
     libfreetype6 \
     libpng16-16 \
     libjpeg62-turbo \
     libicu72 \
-    cabextract \
-    xfonts-utils \
-    fontconfig \
+    libreoffice \
     && mkdir -p /usr/share/fonts/truetype/msttcorefonts \
     && cd /usr/share/fonts/truetype/msttcorefonts \
     && wget -q https://downloads.sourceforge.net/corefonts/times32.exe \
