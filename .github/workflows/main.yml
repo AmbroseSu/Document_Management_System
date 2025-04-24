@@ -24,7 +24,7 @@ jobs:
 
            
             echo "🚀 build"
-            docker-compose build
+            docker-compose build --no-cache
             echo "🛑 Stopping old containers (if any)..."
             docker-compose down
             echo "🚀 Starting app..."
