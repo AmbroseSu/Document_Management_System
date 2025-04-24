@@ -128,7 +128,8 @@ public static class ResponseMessages
     public const string TaskFirstNotFound = "Task 1 not found. Please create task 1 first.";
     public const string NotYourTurnOrSign = "It is not your turn to sign or it is not your turn to sign.";
     public const string SignExistNotCreate = "A Sign task already exists in this step. No more can be created.";
-    
+
+    public const string CanCreateTaskSubmit = "You cannot create task has task type submit in here";
     //Step
     public const string StepIdNull = "Step id cannot be null";
     

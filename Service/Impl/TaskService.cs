@@ -91,13 +91,14 @@ public class TaskService : ITaskService
             var stepAllOfFlow = await _unitOfWork.StepUOW.FindStepByFlowIdAsync(firstFlowInWorkflow!.FlowId);
             var firstStepInFlow = stepAllOfFlow!.OrderBy(s => s.StepNumber).FirstOrDefault();
 
-            var allWorkflowFlows = workflowFlowAll.OrderBy(wf => wf.FlowNumber)
-                .ToList();
-            var currentIndex = allWorkflowFlows.FindIndex(wf => wf.FlowId == currentFlow);
-            var previousWorkflowFlow = currentIndex > 0 ? allWorkflowFlows[currentIndex - 1] : null;
-            
-            
-            
+            var isCreateSubmit = await IsSubmitAllowedInFirstTaskOfNonFirstFlow(workflowId, currentStep.StepNumber,
+                nextTaskNumber, taskDto.TaskType, taskDto.UserId.Value);
+
+            if (!isCreateSubmit)
+            {
+                return ResponseUtil.Error(ResponseMessages.CanCreateTaskSubmit, ResponseMessages.OperationFailed,
+                    HttpStatusCode.BadRequest);
+            }
             
             var user = await _unitOfWork.UserUOW.FindUserByIdAsync(taskDto.UserId.Value);
             if (user == null)
@@ -204,6 +205,57 @@ public class TaskService : ITaskService
             return ResponseUtil.Error(e.Message, ResponseMessages.OperationFailed, HttpStatusCode.InternalServerError);
         }
     }
+    
+    public async Task<bool> IsSubmitAllowedInFirstTaskOfNonFirstFlow(
+        Guid currentFlowId,
+        int currentStepNumber,
+        int currentTaskNumber,
+        TaskType taskTypeBeingCreated,
+        Guid currentUserOfTask)
+    {
+        // Nếu không phải Task đầu tiên của Step đầu tiên thì bỏ qua điều kiện này
+        if (currentStepNumber != 1 || currentTaskNumber != 1)
+            return true;
+
+        // Nếu không phải task Submit thì không cần kiểm tra
+        if (taskTypeBeingCreated != TaskType.Submit)
+            return true;
+
+        // Lấy thông tin Flow hiện tại và toàn bộ Flow trong Workflow
+        var currentWorkflowFlow = await _unitOfWork.WorkflowFlowUOW.FindWorkflowFlowByFlowIdAsync(currentFlowId);
+        var allFlowsInWorkflow = await _unitOfWork.WorkflowFlowUOW.FindWorkflowFlowByWorkflowIdAsync(currentWorkflowFlow.WorkflowId);
+
+        var orderedFlows = allFlowsInWorkflow.OrderBy(f => f.FlowNumber).ToList();
+        var currentFlowIndex = orderedFlows.FindIndex(f => f.FlowId == currentFlowId);
+
+        // Nếu là Flow đầu tiên thì không áp dụng điều kiện này → cho phép tạo Submit
+        if (currentFlowIndex == 0)
+            return true;
+
+        // Lấy Flow trước đó
+        var previousFlowId = orderedFlows[currentFlowIndex - 1].FlowId;
+        var stepsOfPreviousFlow = await _unitOfWork.StepUOW.FindStepByFlowIdAsync(previousFlowId);
+        var lastStep = stepsOfPreviousFlow.OrderByDescending(s => s.StepNumber).FirstOrDefault();
+
+        if (lastStep != null)
+        {
+            var tasksInLastStep = await _unitOfWork.TaskUOW.FindTaskByStepIdAsync(lastStep.StepId);
+            var lastTask = tasksInLastStep.OrderByDescending(t => t.TaskNumber).FirstOrDefault();
+
+            if (lastTask?.TaskType == TaskType.Submit)
+            {
+                return false; // Không cho phép Submit ở đầu Flow này
+            }
+
+            if (lastTask?.User.UserId != currentUserOfTask)
+            {
+                return false;
+            }
+        }
+
+        return true; //Được phép tạo Task Submit
+    }
+
     
         public async Task<ResponseDto> CreateFirstTask(TaskDto taskDto)
     {
@@ -373,7 +425,7 @@ public class TaskService : ITaskService
             if (taskRequest.StartDate < DateTime.Now || taskRequest.EndDate < DateTime.Now)
                 return ResponseUtil.Error(ResponseMessages.TaskStartdayEndDayFailed, ResponseMessages.OperationFailed,
                     HttpStatusCode.BadRequest);
-            if (taskRequest.EndDate >= taskRequest.StartDate)
+            if (taskRequest.EndDate <= taskRequest.StartDate)
                 return ResponseUtil.Error(ResponseMessages.TaskEndDayFailed, ResponseMessages.OperationFailed,
                     HttpStatusCode.BadRequest);
             var document = await _unitOfWork.DocumentUOW.FindDocumentByIdAsync(task.DocumentId);

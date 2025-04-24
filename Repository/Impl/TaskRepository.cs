@@ -40,7 +40,7 @@ public class TaskRepository : ITaskRepository
     {
         if (id == null) throw new ArgumentNullException(nameof(id));
         return await _taskDao.FindAsync(u => u.StepId == id  && u.IsDeleted == false,
-            u => u.Include(s => s.Step).Include(d => d.Document));
+            u => u.Include(s => s.Step).Include(u => u.User).Include(d => d.Document));
     }
     
     public async Task<IEnumerable<Tasks>> FindTasksByStepIdsAsync(List<Guid> stepIds, Guid? documentId)
