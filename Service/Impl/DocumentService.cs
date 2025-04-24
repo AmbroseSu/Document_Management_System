@@ -254,12 +254,8 @@ public partial class DocumentService : IDocumentService
 
     public async Task<ResponseDto> GetDocumentDetailById(Guid documentId, Guid userId)
     {
-        var cache = _unitOfWork.RedisCacheUOW.GetData<DocumentResponse>(
-            "GetDocumentDetailById" + userId + documentId);
-        if (cache != null)
-        {
-            return ResponseUtil.GetObject(cache, ResponseMessages.GetSuccessfully, HttpStatusCode.OK, 1);
-        }
+        
+
 
         var document = await _unitOfWork.DocumentUOW.FindDocumentByIdAsync(documentId);
         var task = await _unitOfWork.TaskUOW.FindTaskByDocumentIdAndUserIdAsync(documentId, userId);
@@ -322,8 +318,7 @@ public partial class DocumentService : IDocumentService
                 }
             ).ToList()
         };
-        _unitOfWork.RedisCacheUOW.SetData("GetDocumentDetailById" + userId + documentId, result,
-            TimeSpan.FromMinutes(2));
+
         return ResponseUtil.GetObject(result, ResponseMessages.GetSuccessfully, HttpStatusCode.OK, 1);
     }
     // private async Task<List<Tasks>> GetOrderedTasks(Document doc)
@@ -673,8 +668,16 @@ public partial class DocumentService : IDocumentService
                 var archiveId = Guid.NewGuid();
                 //TODO Send notification
                 var taskList = document.Tasks;
+                var li = new List<UserDocumentPermission>();
                 foreach (var task in taskList)
                 {
+                    var permision = new UserDocumentPermission()
+                    {
+                        CreatedDate = DateTime.Now,
+                        IsDeleted = false,
+                        UserId = task.UserId,
+                    };
+                    li.Add(permision);
                     var user = await _unitOfWork.UserUOW.FindUserByIdAsync(task.UserId);
                     var notification = _notificationService.CreateTaskAssignNotification(task, task.UserId);
                     await _notificationCollection.CreateNotificationAsync(notification);
@@ -683,8 +686,10 @@ public partial class DocumentService : IDocumentService
                         .SendAsync("ReceiveMessage", notification);
                 }
 
+                
                 var archiveDocument = new ArchivedDocument
                 {
+                    UserDocumentPermissions = li,
                     ArchivedDocumentId = archiveId,
                     ArchivedDocumentName = document.DocumentName,
                     ArchivedDocumentContent = document.DocumentContent,
