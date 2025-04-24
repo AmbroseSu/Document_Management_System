@@ -722,10 +722,38 @@ public class UserService : IUserService
         var url = _host+"/api/User/view-signature-img/"+ await _fileService.SaveSignature(file, userId.ToString());
         var user = await _unitOfWork.UserUOW.FindUserByIdAsync(userId);
         var listCer = user.DigitalCertificates;
-        var haveDigital = listCer.Count==2;
-        foreach (var cer in listCer)
+        if (listCer == null || listCer.Count == 0)
         {
-            
+            if (!isDigital.Value)
+            {
+                var cer = new DigitalCertificate
+                {
+                    SerialNumber = null,
+                    Issuer = "Hệ thống",
+                    ValidFrom = DateTime.Now,
+                    ValidTo = DateTime.Now.AddYears(1),
+                    Subject = user.FullName,
+                    IsUsb =  null,
+                    SignatureImageUrl = url,
+                    UserId = user.UserId,
+                    User = user
+                };
+            }
+            else
+            {
+                var cer = new DigitalCertificate
+                {
+                    SerialNumber = null,
+                    Issuer = null,
+                    ValidFrom = DateTime.Now,
+                    ValidTo = DateTime.Now.AddYears(1),
+                    Subject = user.FullName,
+                    IsUsb = false,
+                    SignatureImageUrl = url,
+                    UserId = user.UserId,
+                    User = user
+                };
+            }
         }
         return ResponseUtil.GetObject(url,"ok",HttpStatusCode.OK,1);
     }

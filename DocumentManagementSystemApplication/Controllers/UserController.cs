@@ -72,13 +72,14 @@ public class UserController : ControllerBase
     {
         return await _userService.ReadUsersFromCsvAsync(file);
     }
-    
+
     [HttpPost("update-avatar/{userId}")]
     public async Task<ResponseDto> UpdateAvatar([FromForm] IFormFile file,string userId)
     {
         return await _userService.UpdateAvatarAsync(file,userId);
     }
     
+    [AllowAnonymous]
     [HttpGet("view-avatar/{fileName}")]
     public async Task<IActionResult> GetAvatar(string fileName)
     {
@@ -95,6 +96,7 @@ public class UserController : ControllerBase
         return await _userService.UploadSignatureImgAsync(file, Guid.Parse(userId),isDigital);
     }
     
+    [AllowAnonymous]
     [HttpGet("view-signature-img/{userId}")]
     public async Task<IActionResult> GetSignatureImg([FromRoute] string userId)
     {
