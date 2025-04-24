@@ -377,10 +377,8 @@ public class FileService : IFileService
     
         // Load the uploaded image
         using var image = Image.Load<Rgba32>(imagePath);
-    
         // Configure font
-        FontFamily fontFamily = SystemFonts.Families.FirstOrDefault(f => f.Name == "Times New Roman");
-        Font font = fontFamily.CreateFont(24);
+        Font font = SystemFonts.CreateFont("Times New Roman", 24, FontStyle.Regular);
     
         // Measure text size
         var textOptions = new TextOptions(font)
