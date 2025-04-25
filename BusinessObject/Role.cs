@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace BusinessObject;
 
@@ -22,6 +23,7 @@ public class Role
     public bool IsDeleted { get; set; }
 
 
+    [JsonIgnore]
     public List<Step>? Steps { get; set; }
     public List<UserRole>? UserRoles { get; set; }
     public List<RoleResource>? RoleResources { get; set; }
