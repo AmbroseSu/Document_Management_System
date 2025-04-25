@@ -151,7 +151,8 @@ builder.Services.AddCors(options =>
                 "http://127.0.0.1:5500",
                 "http://localhost:3000",
                 "http://120.72.85.88:8084",
-                "http://nghetrenghetre.xyz:8084"
+                "http://nghetrenghetre.xyz:8084",
+                "http://103.90.227.64:5290"
             ) // địa chỉ chạy file HTML
             .AllowAnyHeader()
             .AllowAnyMethod() 
