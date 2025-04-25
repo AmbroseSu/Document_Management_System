@@ -53,10 +53,26 @@ public class FlowRepository : IFlowRepository
         //     .ToListAsync();
     }
     
+    // public async Task<IEnumerable<Flow>> FindAllFlowAsync()
+    // {
+    //     return await _flowDao.FindAsync(u => true,
+    //         u => u.Include(d => d.Steps).ThenInclude(r => r.Role));
+    // }
+    
     public async Task<IEnumerable<Flow>> FindAllFlowAsync()
     {
-        return await _flowDao.FindAsync(u => true,
-            u => u.Include(d => d.Steps).ThenInclude(r => r.Role));
+        var flows = await _flowDao.FindAsync(
+            u => true,
+            u => u.Include(d => d.Steps).ThenInclude(r => r.Role)
+        );
+
+        // Sắp xếp Steps theo StepNumber
+        foreach (var flow in flows)
+        {
+            flow.Steps = flow.Steps.OrderBy(s => s.StepNumber).ToList();
+        }
+
+        return flows;
     }
     
 }
