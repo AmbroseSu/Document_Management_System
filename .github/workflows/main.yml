@@ -19,12 +19,13 @@ jobs:
           sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no -p "$SSH_PORT" "$SSH_USERNAME@$SSH_HOST" << 'EOF'
             set -e
             echo "📥 Pulling latest code from Git..."
-            cd /home/admin-kns/document_management_system_capstone_source/dms/Document_Management_System &&  git pull origin main || exit 1
+            cd /root/dms/Document_Management_System &&  git pull origin main || exit 1
 
 
            
             echo "🚀 build"
             docker-compose build --no-cache
+            docker builder prune -f
             echo "🛑 Stopping old containers (if any)..."
             docker-compose down
             echo "🚀 Starting app..."
