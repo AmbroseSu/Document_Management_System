@@ -67,10 +67,10 @@ public class WorkflowRepository : IWorkflowRepository
                     .ThenInclude(dt => dt.DocumentWorkflowStatuses));
     }
     
-    public async Task<Workflow?> FindWorkflowByScopeAsync(Scope? scope)
+    public async Task<IEnumerable<Workflow>?> FindWorkflowsByScopeAsync(Scope? scope)
     {
         if (scope == null) throw new ArgumentNullException(nameof(scope));
-        return await _workflowDao.FindByAsync(u => u.Scope.Equals(scope));
+        return await _workflowDao.FindAsync(u => u.Scope.Equals(scope) && u.IsDeleted == false);
     }
 
     public async Task<IEnumerable<Workflow>> FindAllWorkflowAsync()
@@ -84,7 +84,7 @@ public class WorkflowRepository : IWorkflowRepository
     
     public async Task<IEnumerable<Workflow>> FindAllWorkflowByScopeAsync(Scope scope)
     {
-        return await _workflowDao.FindAsync(u => u.Scope.Equals(scope),
+        return await _workflowDao.FindAsync(u => u.Scope.Equals(scope) && u.IsDeleted == false,
             u => u.Include(d => d.DocumentTypeWorkflows)
                 .ThenInclude(dt => dt.DocumentType)
                 .Include(d => d.WorkflowFlows)

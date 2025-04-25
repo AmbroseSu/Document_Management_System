@@ -643,5 +643,20 @@ public class WorkflowService : IWorkflowService
                 HttpStatusCode.InternalServerError);
         }
     }
+
+    public async Task<ResponseDto> FindMainWorkflowByScopeAsync(Scope scope)
+    {
+        try
+        {
+            var workflows = await _unitOfWork.WorkflowUOW.FindWorkflowsByScopeAsync(scope);
+            var result = _mapper.Map<List<WorkflowDto>>(workflows);
+            return ResponseUtil.GetObject(result, ResponseMessages.GetSuccessfully, HttpStatusCode.OK, 1);
+        }
+        catch (Exception e)
+        {
+            return ResponseUtil.Error(ResponseMessages.FailedToSaveData, e.Message,
+                HttpStatusCode.InternalServerError);
+        }
+    }
     
 }

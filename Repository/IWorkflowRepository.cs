@@ -10,7 +10,7 @@ public interface IWorkflowRepository
     Task UpdateAsync(Workflow entity);
     Task<Workflow?> FindWorkflowByIdAsync(Guid? id);
     Task<Workflow?> FindWorkflowByNameAsync(string? name);
-    //Task<Workflow?> FindWorkflowByScopeAsync(Scope? scope);
+    Task<IEnumerable<Workflow>?> FindWorkflowsByScopeAsync(Scope? scope);
     Task<IEnumerable<Workflow>> FindAllWorkflowAsync();
     Task<IEnumerable<Workflow>> FindWorkflowByUserId(Guid userId);
     Task<IEnumerable<Workflow>> FindAllWorkflowByScopeAsync(Scope scope);
