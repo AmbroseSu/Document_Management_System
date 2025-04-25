@@ -734,7 +734,7 @@ public class UserService : IUserService
         return await _fileService.GetAvatar(userId);
     }
 
-    public async Task<ResponseDto> UploadSignatureImgAsync(UpdateSignatureRequest updateSignatureRequest, Guid userId)
+public async Task<ResponseDto> UploadSignatureImgAsync(UpdateSignatureRequest updateSignatureRequest, Guid userId)
     {
         var normalSign = updateSignatureRequest.NormalSignature;
         var digitalSign = updateSignatureRequest.DigitalSignature;
@@ -743,13 +743,8 @@ public class UserService : IUserService
         var user = await _unitOfWork.UserUOW.FindUserByIdAsync(userId);
         if(user!.IsEnable) return ResponseUtil.Error("Tài khoản đã cập nhật thông tin lần đâu, vui lòng liên hệ Admin để được cập nhật lại thông tin",
             ResponseMessages.FailedToSaveData, HttpStatusCode.BadRequest);
-        if (user == null)
-            return ResponseUtil.Error(ResponseMessages.EmailNotExists, ResponseMessages.OperationFailed,
-                HttpStatusCode.BadRequest);
-        if (user.IsDeleted)
-            return ResponseUtil.Error(ResponseMessages.UserHasDeleted, ResponseMessages.OperationFailed,
-                HttpStatusCode.BadRequest);
         var listCer = user!.DigitalCertificates;
+        
         if (listCer == null || listCer.Count == 0)
         {
             if (normalSign == null)

@@ -1451,10 +1451,10 @@ public class TaskService : ITaskService
         var workflowId = workflowFlow.WorkflowId;
         
         // Step hiện tại là cuối cùng của Flow — kiểm tra Flow kế tiếp
-        return await ActivateFirstTaskOfNextFlowSubmit(workflowId, currentFlow, documentId.Value);
+        return await ActivateFirstTaskOfNextFlowSubmit(workflowId, currentFlow, documentId.Value,currentTask);
     }
     
-   private async Task<ResponseDto> ActivateFirstTaskOfNextFlowSubmit(Guid workflowId, Flow currentFlow, Guid documentId)
+   private async Task<ResponseDto> ActivateFirstTaskOfNextFlowSubmit(Guid workflowId, Flow currentFlow, Guid documentId, Tasks currentTask)
 {
     // Lấy tất cả WorkflowFlow của Workflow hiện tại, theo thứ tự
     var workflowFlows = await _unitOfWork.WorkflowFlowUOW.FindWorkflowFlowByWorkflowIdAsync(workflowId);
@@ -1462,6 +1462,7 @@ public class TaskService : ITaskService
     var task = new Tasks();
     var currentWorkflowFlowIndex = orderedWorkflowFlows.FindIndex(wf => wf.FlowId == currentFlow.FlowId);
     var currentWorkflowFlow = orderedWorkflowFlows.Where(wf => wf.FlowId == currentFlow.FlowId ).FirstOrDefault();
+    
     if (currentWorkflowFlowIndex < orderedWorkflowFlows.Count - 1)
     {
         var nextWorkflowFlow = orderedWorkflowFlows[currentWorkflowFlowIndex + 1];
@@ -1522,41 +1523,47 @@ public class TaskService : ITaskService
         
         var orderedTasks = await GetOrderedTasks(doc.Tasks, doc.DocumentWorkflowStatuses.FirstOrDefault()?.WorkflowId ?? Guid.Empty);
 
-        var distinctUserIds = orderedTasks
-            .Select(t => t.UserId)
-            .Distinct()
-            .ToList();
-        var docArchiveId = doc.FinalArchiveDocumentId;
-        if (docArchiveId == null)
+        var workflow = await _unitOfWork.WorkflowUOW.FindWorkflowByIdAsync(workflowId);
+        if (workflow.Scope == Scope.InComing && currentTask.TaskType == TaskType.View)
         {
-            return ResponseUtil.Error(ResponseMessages.DocumentHasNotArchiveDoc, ResponseMessages.OperationFailed,
-                HttpStatusCode.BadRequest);
+            var distinctUserIds = orderedTasks
+                .Select(t => t.UserId)
+                .Distinct()
+                .ToList();
+            var docArchiveId = doc.FinalArchiveDocumentId;
+            if (docArchiveId == null)
+            {
+                return ResponseUtil.Error(ResponseMessages.DocumentHasNotArchiveDoc, ResponseMessages.OperationFailed,
+                    HttpStatusCode.BadRequest);
+            }
+        
+            var userPermissions = new List<UserDocumentPermission>();
+
+            foreach (var userId in distinctUserIds)
+            {
+                var exists = await _unitOfWork.UserDocPermissionUOW.ExistsAsync(userId, docArchiveId.Value);
+                if (!exists)
+                {
+                    userPermissions.Add(new UserDocumentPermission
+                    {
+                        UserId = userId,
+                        ArchivedDocumentId = docArchiveId.Value,
+                        CreatedDate = DateTime.UtcNow,
+                        IsDeleted = false
+                    });
+                }
+            }
+
+            // Chỉ thêm những cái chưa có
+            if (userPermissions.Any())
+            {
+                await _unitOfWork.UserDocPermissionUOW.AddRangeAsync(userPermissions);
+            }
+
+            await _unitOfWork.SaveChangesAsync();
         }
         
-        var userPermissions = new List<UserDocumentPermission>();
-
-        foreach (var userId in distinctUserIds)
-        {
-            var exists = await _unitOfWork.UserDocPermissionUOW.ExistsAsync(userId, docArchiveId.Value);
-            if (!exists)
-            {
-                userPermissions.Add(new UserDocumentPermission
-                {
-                    UserId = userId,
-                    ArchivedDocumentId = docArchiveId.Value,
-                    CreatedDate = DateTime.UtcNow,
-                    IsDeleted = false
-                });
-            }
-        }
-
-        // Chỉ thêm những cái chưa có
-        if (userPermissions.Any())
-        {
-            await _unitOfWork.UserDocPermissionUOW.AddRangeAsync(userPermissions);
-        }
-
-        await _unitOfWork.SaveChangesAsync();
+        
         
         
         foreach (var orderedTask in orderedTasks)
