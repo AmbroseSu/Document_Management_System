@@ -16,7 +16,7 @@ jobs:
           SSH_HOST: ${{ secrets.SERVER_HOST }}
           SSH_PORT: ${{ secrets.SERVER_PORT }}
         run: |
-          sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no -p "$SSH_PORT" -t "$SSH_USERNAME@$SSH_HOST" << 'EOF'
+          sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no -p "$SERVER_PORT" -t "$SERVER_USERNAME@$SERVER_HOST" << 'EOF'
             set -e
             cd /root/dms/Document_Management_System &&  git pull origin main || exit 1
 
