@@ -1,3 +1,6 @@
+using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
+
 namespace DataAccess.DTO.Request;
 
 public class SignOptions

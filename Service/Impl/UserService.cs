@@ -730,6 +730,7 @@ public class UserService : IUserService
 
     public async Task<IActionResult> GetAvatar(string userId)
     {
+        // var urlImg = (await _unitOfWork.UserUOW.FindUserByIdAsync(Guid.Parse(userId))).Avatar.Split("/")[^1];
         return await _fileService.GetAvatar(userId);
     }
 
@@ -742,8 +743,13 @@ public class UserService : IUserService
         var user = await _unitOfWork.UserUOW.FindUserByIdAsync(userId);
         if(user!.IsEnable) return ResponseUtil.Error("Tài khoản đã cập nhật thông tin lần đâu, vui lòng liên hệ Admin để được cập nhật lại thông tin",
             ResponseMessages.FailedToSaveData, HttpStatusCode.BadRequest);
+        if (user == null)
+            return ResponseUtil.Error(ResponseMessages.EmailNotExists, ResponseMessages.OperationFailed,
+                HttpStatusCode.BadRequest);
+        if (user.IsDeleted)
+            return ResponseUtil.Error(ResponseMessages.UserHasDeleted, ResponseMessages.OperationFailed,
+                HttpStatusCode.BadRequest);
         var listCer = user!.DigitalCertificates;
-        
         if (listCer == null || listCer.Count == 0)
         {
             if (normalSign == null)
@@ -825,6 +831,30 @@ public class UserService : IUserService
         await _unitOfWork.SaveChangesAsync();
         return ResponseUtil.GetObject("ok", ResponseMessages.UpdateSuccessfully, HttpStatusCode.OK, 1);
         
+    }
+    
+    public async Task<ResponseDto> EnableUploadSignatureImage(Guid userId)
+    {
+        try
+        {
+            var user = await _unitOfWork.UserUOW.FindUserByIdAsync(userId);
+            if (user == null)
+                return ResponseUtil.Error(ResponseMessages.EmailNotExists, ResponseMessages.OperationFailed,
+                    HttpStatusCode.BadRequest);
+            if (user.IsDeleted)
+                return ResponseUtil.Error(ResponseMessages.UserHasDeleted, ResponseMessages.OperationFailed,
+                    HttpStatusCode.BadRequest);
+            user.IsEnable = false;
+            await _unitOfWork.UserUOW.UpdateAsync(user);
+            await _unitOfWork.SaveChangesAsync();
+            return ResponseUtil.GetObject(ResponseMessages.EnableUploadSignatureImage, ResponseMessages.OperationFailed,
+                HttpStatusCode.OK, 1);
+        }
+        catch (Exception e)
+        {
+            return ResponseUtil.Error(e.Message, ResponseMessages.OperationFailed,
+                HttpStatusCode.InternalServerError);
+        }
     }
 
     public async Task<IActionResult> GetSignatureImg(string userId)

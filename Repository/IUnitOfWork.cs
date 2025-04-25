@@ -30,6 +30,7 @@ public interface IUnitOfWork : IDisposable
     IDocumentVersionRepository DocumentVersionUOW { get; }
     IRedisCacheRepository RedisCacheUOW { get; }
     ICommentRepository CommentUOW { get; }
+    IUserDocPermissionRepository UserDocPermissionUOW { get; }
     Task<int> SaveChangesAsync();
     
     Task<IDbContextTransaction> BeginTransactionAsync();

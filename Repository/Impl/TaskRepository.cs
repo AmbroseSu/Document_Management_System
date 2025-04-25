@@ -128,7 +128,7 @@ public class TaskRepository : ITaskRepository
 
     public async Task<IEnumerable<Tasks>> FindTaskByDocumentIdAndUserIdAsync(Guid? documentId, Guid userId)
     {
-        return await _taskDao.FindAsync(t => t.DocumentId == documentId && t.UserId == userId);
+        return await _taskDao.FindAsync(t => t.DocumentId == documentId && t.UserId == userId && t.IsDeleted == false);
     }
     
 
