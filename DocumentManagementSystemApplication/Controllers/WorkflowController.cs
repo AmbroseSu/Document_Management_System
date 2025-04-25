@@ -53,5 +53,11 @@ namespace DocumentManagementSystemApplication.Controllers
         {
             return await _workflowService.GetWorkflowByScopeAsync(scope);
         }
+
+        [HttpGet("view-main-workflow-by-scope")]
+        public async Task<ResponseDto> ViewMainWorkflowByScope([FromQuery] Scope scope)
+        {
+            return await _workflowService.FindMainWorkflowByScopeAsync(scope);
+        }
     }
 }

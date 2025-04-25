@@ -13,4 +13,5 @@ public interface IWorkflowService
     Task<ResponseDto> GetWorkflowDetailsWithFlowAndStep(Guid workflowId);
     Task<ResponseDto> CreateWorkflowAsync(CreateWorkFlowRequest workflowRequest);
     Task<ResponseDto> GetWorkflowByScopeAsync(Scope scope);
+    Task<ResponseDto> FindMainWorkflowByScopeAsync(Scope scope);
 }
