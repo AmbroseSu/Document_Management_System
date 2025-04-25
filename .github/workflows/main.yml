@@ -24,10 +24,10 @@ jobs:
 
            
             echo "🚀 build"
-            docker-compose build --no-cache
+            docker compose build --no-cache
             docker builder prune -f
             echo "🛑 Stopping old containers (if any)..."
-            docker-compose down
+            docker compose down
             echo "🚀 Starting app..."
-            docker-compose up -d --remove-orphans
+            docker compose up -d --remove-orphans
           EOF
