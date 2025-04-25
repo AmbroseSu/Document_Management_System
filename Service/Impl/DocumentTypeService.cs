@@ -37,6 +37,7 @@ public class DocumentTypeService : IDocumentTypeService
             {
                 DocumentTypeName = documentTypeDto.DocumentTypeName,
                 Acronym = documentTypeDto.Acronym,
+                CreateAt = DateTime.Now,
                 IsDeleted = false
             };
             //var division = _mapper.Map<Division>(divisionDto);
