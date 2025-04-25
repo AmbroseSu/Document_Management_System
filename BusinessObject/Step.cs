@@ -20,6 +20,7 @@ public class Step
     public Guid RoleId { get; set; }
     [JsonIgnore]
     public Flow? Flow { get; set; }
+    
     public Role? Role { get; set; }
 
     public List<Tasks>? Tasks { get; set; }

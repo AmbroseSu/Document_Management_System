@@ -56,7 +56,7 @@ public class FlowRepository : IFlowRepository
     public async Task<IEnumerable<Flow>> FindAllFlowAsync()
     {
         return await _flowDao.FindAsync(u => true,
-            u => u.Include(d => d.Steps));
+            u => u.Include(d => d.Steps).ThenInclude(r => r.Role));
     }
     
 }
