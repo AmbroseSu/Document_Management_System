@@ -86,7 +86,7 @@ public partial class DocumentService : IDocumentService
                             DocumentTypeId = dt.DocumentTypeId,
                             DocumentTypeName = dt.DocumentTypeName,
                             DocumentResponseMobiles = dt.Documents
-                                .Where(d => d.DocumentWorkflowStatuses.Any(dws => dws.WorkflowId == x.WorkflowId))
+                                .Where(d => !d.IsDeleted && d.DocumentWorkflowStatuses.Any(dws => dws.WorkflowId == x.WorkflowId))
                                 .Select(d => new DocumentResponseMobile()
                                 {
                                     Id = d.DocumentId,
@@ -569,7 +569,7 @@ public partial class DocumentService : IDocumentService
         var documentTypeId = GetGuid(documentUploadDto.CanChange.GetValueOrDefault("DocumentTypeId"));
         var workflowId = GetGuid(documentUploadDto.CanChange.GetValueOrDefault("WorkflowId"));
         var deadline = GetDateTime(documentUploadDto.CanChange.GetValueOrDefault("Deadline")) ?? DateTime.Now;
-
+        var validFrom = GetDateTime(documentUploadDto.CanChange.GetValueOrDefault("ValidFrom")) ?? DateTime.Now;
         var workflowO = await _unitOfWork.WorkflowUOW.FindWorkflowByIdAsync(workflowId);
         var workflowFlow = workflowO.WorkflowFlows.Select(x => x).FirstOrDefault(x => x.FlowNumber == 1);
 
@@ -583,6 +583,7 @@ public partial class DocumentService : IDocumentService
             ProcessingStatus = ProcessingStatus.InProgress,
             IsDeleted = false,
             Sender = sender,
+            DateIssued = validFrom,
             DateReceived = dateReceived,
             Deadline = deadline,
             UserId = userId,
@@ -875,6 +876,42 @@ public partial class DocumentService : IDocumentService
 
         Console.WriteLine($"Footer added. Modified file saved at: {outputFilePath}");
     }
+    
+    private static DateTime ParsePdfDate(string pdfDate)
+    {
+        // Bỏ tiền tố "D:"
+        if (pdfDate.StartsWith("D:"))
+            pdfDate = pdfDate.Substring(2);
+
+        // Tách phần datetime và timezone
+        string dateTimePart = pdfDate;
+        string timeZonePart = "Z"; // mặc định UTC
+
+        var tzIndex = pdfDate.IndexOfAny(new[] { '+', '-', 'Z' });
+        if (tzIndex >= 0)
+        {
+            dateTimePart = pdfDate.Substring(0, tzIndex);
+            timeZonePart = pdfDate.Substring(tzIndex+1).Replace("'", "");
+        }
+
+        // Parse datetime cơ bản
+        var dt = DateTime.ParseExact(dateTimePart, "yyyyMMddHHmmss", null);
+
+        // Xử lý timezone nếu có
+        if (timeZonePart != "Z")
+        {
+            // Giờ lệch so với UTC
+            TimeSpan offset = TimeSpan.ParseExact(timeZonePart, "hhmm", null);
+            if (timeZonePart.StartsWith("-"))
+                offset = -offset;
+
+            // Gán thông tin timezone
+            var offsetTime = new DateTimeOffset(dt, offset);
+            return offsetTime.UtcDateTime.ToLocalTime(); // hoặc .DateTime nếu không cần UTC
+        }
+
+        return dt;
+    }
     private List<MetaDataDocument>? CheckMetaDataFile(string url)
     {
         if (!File.Exists(url))
@@ -903,7 +940,7 @@ public partial class DocumentService : IDocumentService
                     Location = signature.GetLocation(),
                     IsValid = pkcs7.VerifySignatureIntegrityAndAuthenticity(),
                     SerialNumber = pkcs7.GetSigningCertificate().GetSerialNumber().ToString(),
-                    ValidFrom = pkcs7.GetSigningCertificate().GetNotBefore().ToLocalTime(),
+                    ValidFrom = ParsePdfDate(signature.GetDate().ToString()),
                     ExpirationDate = pkcs7.GetSigningCertificate().GetNotAfter().ToLocalTime(),
                     Algorithm = pkcs7.GetSignatureAlgorithmName()
                 };

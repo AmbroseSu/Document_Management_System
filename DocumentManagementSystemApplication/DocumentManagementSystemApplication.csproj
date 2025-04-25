@@ -49,6 +49,7 @@
       <Folder Include="data\storage\doc\" />
       <Folder Include="data\storage\output\" />
       <Folder Include="data\storage\signature\" />
+      <Folder Include="data\storage\tmp\" />
       <Folder Include="data\tmp\" />
     </ItemGroup>
 

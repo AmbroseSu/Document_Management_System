@@ -24,16 +24,19 @@ namespace DocumentManagementSystemApplication.Controllers
         }
         
         [AllowAnonymous]
-        [HttpGet("view-test")]
-        public  IActionResult GetViewTest([FromQuery]string pathFile,[FromQuery]string output)
+        [HttpPost("view-test")]
+        public  IActionResult GetViewTest(IFormFile file)
         {
-              _fileService.InsertTextAsImageToPdf("/home/wiramin/Downloads/Mau to trinh(1) (2).pdf","/home/wiramin/Data/project/Capstone_2025/Document_Management_System/DocumentManagementSystemApplication/data/storage/output","Số:09/2025/TT-TNABC",89+20,659+20,209+10,679+15);
-              return Ok();
+              // _fileService.InsertTextToImage("/home/wiramin/Data/project/Capstone_2025/Document_Management_System/DocumentManagementSystemApplication/data/storage/images.png"
+              //     ,"/home/wiramin/Data/project/Capstone_2025/Document_Management_System/DocumentManagementSystemApplication/data/storage/signature/images.png",
+              //     "Tạ Gia Nhật Minh");
+              
+              return _fileService.InsertTextToImage(file, "Le Phan Hoai Nam");
         }
 
         [AllowAnonymous]
         [HttpPost("create-convert-doc-to-pdf")]
-        public async Task<IActionResult> GetViewTest(IFormFile file)
+        public async Task<IActionResult> ConvertDocToPdf(IFormFile file)
         {
             return await _fileService.ConvertDocToPdf(file);
         }

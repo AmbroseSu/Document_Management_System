@@ -2,7 +2,9 @@ version: "3.8"
 
 services:
   dms:
-    image: wiramin/dms:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: dms
     ports:
       - "5290:5290"

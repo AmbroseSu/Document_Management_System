@@ -13,10 +13,12 @@ namespace DocumentManagementSystemApplication.Controllers;
 public class UserController : ControllerBase
 {
     private readonly IUserService _userService;
+    private readonly IFileService _fileService;
 
-    public UserController(IUserService userService)
+    public UserController(IUserService userService, IFileService fileService)
     {
         _userService = userService;
+        _fileService = fileService;
     }
 
     [HttpPost("create-user-by-form")]
@@ -88,12 +90,19 @@ public class UserController : ControllerBase
         return await _userService.GetAvatar(fileName);
     }
     
-    [HttpPost("update-signature-img/{userId:guid}")]
-    public async Task<ResponseDto> UploadSignatureImg(IFormFile file,[FromQuery] bool isDigital = false)
+    [AllowAnonymous]
+    [HttpPost("update-insert-name-signature-img")]
+    public  IActionResult InsertNameSignatureImg(IFormFile file,[FromForm] string fullName)
+    {
+        return _fileService.InsertTextToImage(file, fullName);
+    }
+    
+    [HttpPost("update-signature-img")]
+    public async Task<ResponseDto> UploadSignatureImg([FromForm] UpdateSignatureRequest updateSignatureRequest)
     {
         var userId = User.FindFirst("userid")?.Value;
 
-        return await _userService.UploadSignatureImgAsync(file, Guid.Parse(userId),isDigital);
+        return await _userService.UploadSignatureImgAsync(updateSignatureRequest, Guid.Parse(userId));
     }
     
     [HttpPost("update-enable-signature-img")]
@@ -105,10 +114,10 @@ public class UserController : ControllerBase
     }
     
     [AllowAnonymous]
-    [HttpGet("view-signature-img/{userId}")]
-    public async Task<IActionResult> GetSignatureImg([FromRoute] string userId)
+    [HttpGet("view-signature-img/{fileName}")]
+    public async Task<IActionResult> GetSignatureImg([FromRoute] string fileName)
     {
-        return await _userService.GetSignatureImg(userId);
+        return await _userService.GetSignatureImg(fileName);
     }
 
 

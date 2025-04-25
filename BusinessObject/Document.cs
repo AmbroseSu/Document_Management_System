@@ -8,6 +8,25 @@ namespace BusinessObject;
 public class Document
 {
     private DateTime _createdDate;
+
+    protected bool Equals(Document other)
+    {
+        return DocumentId.Equals(other.DocumentId);
+    }
+
+    public override bool Equals(object? obj)
+    {
+        if (obj is null) return false;
+        if (ReferenceEquals(this, obj)) return true;
+        if (obj.GetType() != GetType()) return false;
+        return Equals((Document)obj);
+    }
+
+    public override int GetHashCode()
+    {
+        return DocumentId.GetHashCode();
+    }
+
     private DateTime _updatedDate;
     private DateTime _deadline;
     private DateTime? _dateReceived;

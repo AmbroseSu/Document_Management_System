@@ -40,7 +40,8 @@ public class UserRepository : IUserRepository
         return await _userDao.FindByAsync(u => u.UserId == id, 
             ur => ur.Include(urr => urr.UserRoles).ThenInclude(r => r.Role)
             .Include(d => d.Division)
-            .Include(t => t.Tasks));
+            .Include(t => t.Tasks)
+            .Include(u => u.DigitalCertificates));
     }
 
     public async Task<User?> FindUserByUserNameAsync(string userName)

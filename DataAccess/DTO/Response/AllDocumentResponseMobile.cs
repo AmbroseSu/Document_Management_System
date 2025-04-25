@@ -14,6 +14,24 @@ public class DocumentTypeResponseMobile
     public string? DocumentTypeName { get; set; }
     public float? Percent { get; set; }
     public List<DocumentResponseMobile>? DocumentResponseMobiles { get; set; }
+
+    protected bool Equals(DocumentTypeResponseMobile other)
+    {
+        return DocumentTypeId.Equals(other.DocumentTypeId);
+    }
+
+    public override bool Equals(object? obj)
+    {
+        if (obj is null) return false;
+        if (ReferenceEquals(this, obj)) return true;
+        if (obj.GetType() != GetType()) return false;
+        return Equals((DocumentTypeResponseMobile)obj);
+    }
+
+    public override int GetHashCode()
+    {
+        return DocumentTypeId.GetHashCode();
+    }
 }
 public  class DocumentResponseMobile
 {

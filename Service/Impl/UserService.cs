@@ -19,6 +19,7 @@ using DataAccess.DTO.Response;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
+using Syncfusion.OfficeChart.Implementation;
 
 
 namespace Service.Impl;
@@ -733,57 +734,103 @@ public class UserService : IUserService
         return await _fileService.GetAvatar(userId);
     }
 
-    public async Task<ResponseDto> UploadSignatureImgAsync(IFormFile file, Guid userId,bool? isDigital)
+    public async Task<ResponseDto> UploadSignatureImgAsync(UpdateSignatureRequest updateSignatureRequest, Guid userId)
     {
-        isDigital ??= false;
-        var url = _host+"/api/User/view-signature-img/"+ await _fileService.SaveSignature(file, userId.ToString());
+        var normalSign = updateSignatureRequest.NormalSignature;
+        var digitalSign = updateSignatureRequest.DigitalSignature;
+
+        
         var user = await _unitOfWork.UserUOW.FindUserByIdAsync(userId);
+        if(user!.IsEnable) return ResponseUtil.Error("Tài khoản đã cập nhật thông tin lần đâu, vui lòng liên hệ Admin để được cập nhật lại thông tin",
+            ResponseMessages.FailedToSaveData, HttpStatusCode.BadRequest);
         if (user == null)
             return ResponseUtil.Error(ResponseMessages.EmailNotExists, ResponseMessages.OperationFailed,
                 HttpStatusCode.BadRequest);
         if (user.IsDeleted)
             return ResponseUtil.Error(ResponseMessages.UserHasDeleted, ResponseMessages.OperationFailed,
                 HttpStatusCode.BadRequest);
-        var listCer = user.DigitalCertificates;
+        var listCer = user!.DigitalCertificates;
         if (listCer == null || listCer.Count == 0)
         {
-            if (!isDigital.Value)
+            if (normalSign == null)
             {
-                var cer = new DigitalCertificate
-                {
-                    SerialNumber = null,
-                    Issuer = "Hệ thống",
-                    ValidFrom = DateTime.Now,
-                    ValidTo = DateTime.Now.AddYears(1),
-                    Subject = user.FullName,
-                    IsUsb =  null,
-                    SignatureImageUrl = url,
-                    UserId = user.UserId,
-                    User = user
-                };
+                return ResponseUtil.Error("Đăng nhập lần đầu, vui lòng upload ảnh chữ ký nháy",
+                    ResponseMessages.FailedToSaveData, HttpStatusCode.BadRequest);
             }
-            else
+            if(!Path.GetExtension(normalSign.FileName).Equals(".png", StringComparison.CurrentCultureIgnoreCase))
+                return ResponseUtil.Error("File chữ ký không đúng định dạng, vui lòng chọn lại file",
+                    ResponseMessages.FailedToSaveData, HttpStatusCode.BadRequest);
+            var cerId = Guid.NewGuid();
+            var name = await _fileService.SaveSignature(normalSign, cerId.ToString());
+            var url = _host + "/api/User/view-signature-img/" + name;
+            var cer = new DigitalCertificate
             {
-                var cer = new DigitalCertificate
+                DigitalCertificateId = cerId,
+                SerialNumber = "DMS" + GenerateRandomString(5),
+                Issuer = "Hệ thống",
+                ValidFrom = DateTime.Now,
+                ValidTo = DateTime.Now.AddYears(99),
+                Subject = user.FullName,
+                IsUsb = null,
+                SignatureImageUrl = url,
+                UserId = user.UserId,
+                User = user
+            };
+            await _unitOfWork.DigitalCertificateUOW.AddAsync(cer);
+            // _fileService.InsertTextToImage(name, updateSignatureRequest.Name);
+            if (digitalSign != null)
+            {
+                if(!Path.GetExtension(digitalSign.FileName).Equals(".png", StringComparison.CurrentCultureIgnoreCase))
+                    return ResponseUtil.Error("File chữ ký không đúng định dạng, vui lòng chọn lại file",
+                        ResponseMessages.FailedToSaveData, HttpStatusCode.BadRequest);
+                var cerDigitalId = Guid.NewGuid();
+                var nameDigital = await _fileService.SaveSignature(digitalSign, cerDigitalId.ToString());
+                var urlDigital = _host + "/api/User/view-signature-img/" + nameDigital;
+                var cerDigital = new DigitalCertificate
                 {
+                    DigitalCertificateId = cerDigitalId,
                     SerialNumber = null,
                     Issuer = null,
                     ValidFrom = DateTime.Now,
                     ValidTo = DateTime.Now.AddYears(1),
                     Subject = user.FullName,
                     IsUsb = false,
-                    SignatureImageUrl = url,
+                    SignatureImageUrl = urlDigital,
                     UserId = user.UserId,
                     User = user
                 };
+                await _unitOfWork.DigitalCertificateUOW.AddAsync(cerDigital);
+                
+            }
+            
+        }
+        else
+        {
+            if(digitalSign==null && normalSign ==null) return ResponseUtil.Error("Vui lòng upload ít nhất 1 ảnh chữ ký",
+                ResponseMessages.FailedToSaveData, HttpStatusCode.BadRequest);
+            foreach (var cer in listCer)
+            {
+                if (digitalSign != null)
+                {
+                    await _fileService.SaveSignature(digitalSign, cer.DigitalCertificateId.ToString());
+                    if(!Path.GetExtension(digitalSign.FileName).Equals(".png", StringComparison.CurrentCultureIgnoreCase))
+                        return ResponseUtil.Error("File chữ ký không đúng định dạng, vui lòng chọn lại file",
+                            ResponseMessages.FailedToSaveData, HttpStatusCode.BadRequest);
+                }
+
+                if (normalSign == null) continue;
+                await _fileService.SaveSignature(normalSign, cer.DigitalCertificateId.ToString());
+                if(!Path.GetExtension(normalSign.FileName).Equals(".png", StringComparison.CurrentCultureIgnoreCase))
+                    return ResponseUtil.Error("File chữ ký không đúng định dạng, vui lòng chọn lại file",
+                        ResponseMessages.FailedToSaveData, HttpStatusCode.BadRequest);
             }
         }
 
         user.IsEnable = true;
         await _unitOfWork.UserUOW.UpdateAsync(user);
         await _unitOfWork.SaveChangesAsync();
+        return ResponseUtil.GetObject("ok", ResponseMessages.UpdateSuccessfully, HttpStatusCode.OK, 1);
         
-        return ResponseUtil.GetObject(url,"ok",HttpStatusCode.OK,1);
     }
     
     public async Task<ResponseDto> EnableUploadSignatureImage(Guid userId)
