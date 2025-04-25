@@ -544,6 +544,7 @@ public class TaskService : ITaskService
            var tasks = await _unitOfWork.TaskUOW.FindAllTaskAsync(userId);
 
            var taskDetails = new List<TaskDetail>();
+           tasks = tasks.OrderByDescending(t => t.CreatedDate);
            
            foreach (var task in tasks)
            {
@@ -572,6 +573,8 @@ public class TaskService : ITaskService
            var totalRecords = tasks.Count();
            var totalPages = (int)Math.Ceiling((double)totalRecords / limit);
 
+           
+           
            IEnumerable<TaskDetail> tasksResults = taskDetails
                .Skip((page - 1) * limit)
                .Take(limit)

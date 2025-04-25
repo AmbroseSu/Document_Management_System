@@ -184,35 +184,35 @@ public class SignApiService : ISignApiService
             var client = new HttpClient();
             var coordinateString = GetCoordinateString(signRequest.Llx, signRequest.Lly,
                 signRequest.Urx, signRequest.Ury);
-            //var document = await _unitOfWork.DocumentUOW.FindDocumentByIdAsync(signRequest.DocumentId);
-            // if (document == null)
-            // {
-            //     return ResponseUtil.Error(ResponseMessages.DocumentNotFound, ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
-            // }
-            //var listTasks = document.Tasks;
-            //var task = listTasks.Where(t =>
-            //    t.UserId == userId && t.TaskType == TaskType.Sign && t.TaskStatus == TasksStatus.InProgress).FirstOrDefault();
-            //if (task == null)
-            //{
-            //    return ResponseUtil.Error(ResponseMessages.NotYourTurnOrSign, ResponseMessages.OperationFailed,
-            //        HttpStatusCode.BadRequest);
-            //}
-            //var version = document?.DocumentVersions?.Find(t => t.IsFinalVersion);
-            //var docFile = await _fileService.GetFileBytes(Path.Combine("document", document.DocumentId.ToString(),
-            //    version.DocumentVersionId.ToString(),
-            //    document.DocumentName + ".pdf"));
-            //var docFileBytes = docFile.FileBytes;
-            //string fileData = Convert.ToBase64String(docFileBytes);
-            string fileData = "";
+            var document = await _unitOfWork.DocumentUOW.FindDocumentByIdAsync(signRequest.DocumentId);
+            if (document == null)
+             {
+                 return ResponseUtil.Error(ResponseMessages.DocumentNotFound, ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
+             }
+            var listTasks = document.Tasks;
+            var task = listTasks.Where(t =>
+                t.UserId == userId && t.TaskType == TaskType.Sign && t.TaskStatus == TasksStatus.InProgress).FirstOrDefault();
+            if (task == null)
+            {
+                return ResponseUtil.Error(ResponseMessages.NotYourTurnOrSign, ResponseMessages.OperationFailed,
+                    HttpStatusCode.BadRequest);
+            }
+            var version = document?.DocumentVersions?.Find(t => t.IsFinalVersion);
+            var docFile = await _fileService.GetFileBytes(Path.Combine("document", document.DocumentId.ToString(),
+                version.DocumentVersionId.ToString(),
+                document.DocumentName + ".pdf"));
+            var docFileBytes = docFile.FileBytes;
+            string fileData = Convert.ToBase64String(docFileBytes);
+            //string fileData = "";
 
             
-            //var listDigitalCertificates =
-            //    await _unitOfWork.DigitalCertificateUOW.FindDigitalCertificateByUserIdAsync(userId);
-            //var digitalCertificate = listDigitalCertificates.Where(dc => dc.SerialNumber != null).FirstOrDefault();
-            //var signFile = await _fileService.GetFileBytes(Path.Combine("signature", digitalCertificate.DigitalCertificateId + ".png"));
-            //var signFileBytes = signFile.FileBytes;
-            //string signData = Convert.ToBase64String(signFileBytes);
-            string signData = "";
+            var listDigitalCertificates =
+                await _unitOfWork.DigitalCertificateUOW.FindDigitalCertificateByUserIdAsync(userId);
+            var digitalCertificate = listDigitalCertificates.Where(dc => dc.SerialNumber != null).FirstOrDefault();
+            var signFile = await _fileService.GetFileBytes(Path.Combine("signature", digitalCertificate.DigitalCertificateId + ".png"));
+            var signFileBytes = signFile.FileBytes;
+            string signData = Convert.ToBase64String(signFileBytes);
+            //string signData = "";
             
             
             var signOptions = new SignOptions
@@ -273,15 +273,15 @@ public class SignApiService : ISignApiService
             
             var jsonSign = JObject.Parse(responseContent);
             var fileDataBase64 = jsonSign["result"]?["file_data"]?.ToString();
-            //if (string.IsNullOrWhiteSpace(fileDataBase64))
-            //    throw new Exception("Không tìm thấy trường file_data trong response");
-            //var fileBytes = Convert.FromBase64String(fileDataBase64);
-            //var filePath = Path.Combine(_storagePath, Path.Combine("document", document.DocumentId.ToString(),
-            //    version.DocumentVersionId.ToString(),
-            //    document.DocumentName + ".pdf"));
-            //File.WriteAllBytesAsync(filePath, fileBytes);
-            //return ResponseUtil.GetObject(ResponseMessages.SignatureSuccessfully, ResponseMessages.CreatedSuccessfully, HttpStatusCode.Created,1);
-            return ResponseUtil.GetObject(fileDataBase64, ResponseMessages.CreatedSuccessfully, HttpStatusCode.Created,1);
+            if (string.IsNullOrWhiteSpace(fileDataBase64))
+                throw new Exception("Không tìm thấy trường file_data trong response");
+            var fileBytes = Convert.FromBase64String(fileDataBase64);
+            var filePath = Path.Combine(_storagePath, Path.Combine("document", document.DocumentId.ToString(),
+                version.DocumentVersionId.ToString(),
+                document.DocumentName + ".pdf"));
+            File.WriteAllBytesAsync(filePath, fileBytes);
+            return ResponseUtil.GetObject(ResponseMessages.SignatureSuccessfully, ResponseMessages.CreatedSuccessfully, HttpStatusCode.Created,1);
+            //return ResponseUtil.GetObject(fileDataBase64, ResponseMessages.CreatedSuccessfully, HttpStatusCode.Created,1);
         }
         catch (Exception e)
         {
