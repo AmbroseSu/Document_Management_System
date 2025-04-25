@@ -738,6 +738,12 @@ public class UserService : IUserService
         isDigital ??= false;
         var url = _host+"/api/User/view-signature-img/"+ await _fileService.SaveSignature(file, userId.ToString());
         var user = await _unitOfWork.UserUOW.FindUserByIdAsync(userId);
+        if (user == null)
+            return ResponseUtil.Error(ResponseMessages.EmailNotExists, ResponseMessages.OperationFailed,
+                HttpStatusCode.BadRequest);
+        if (user.IsDeleted)
+            return ResponseUtil.Error(ResponseMessages.UserHasDeleted, ResponseMessages.OperationFailed,
+                HttpStatusCode.BadRequest);
         var listCer = user.DigitalCertificates;
         if (listCer == null || listCer.Count == 0)
         {
@@ -772,7 +778,36 @@ public class UserService : IUserService
                 };
             }
         }
+
+        user.IsEnable = true;
+        await _unitOfWork.UserUOW.UpdateAsync(user);
+        await _unitOfWork.SaveChangesAsync();
+        
         return ResponseUtil.GetObject(url,"ok",HttpStatusCode.OK,1);
+    }
+    
+    public async Task<ResponseDto> EnableUploadSignatureImage(Guid userId)
+    {
+        try
+        {
+            var user = await _unitOfWork.UserUOW.FindUserByIdAsync(userId);
+            if (user == null)
+                return ResponseUtil.Error(ResponseMessages.EmailNotExists, ResponseMessages.OperationFailed,
+                    HttpStatusCode.BadRequest);
+            if (user.IsDeleted)
+                return ResponseUtil.Error(ResponseMessages.UserHasDeleted, ResponseMessages.OperationFailed,
+                    HttpStatusCode.BadRequest);
+            user.IsEnable = false;
+            await _unitOfWork.UserUOW.UpdateAsync(user);
+            await _unitOfWork.SaveChangesAsync();
+            return ResponseUtil.GetObject(ResponseMessages.EnableUploadSignatureImage, ResponseMessages.OperationFailed,
+                HttpStatusCode.OK, 1);
+        }
+        catch (Exception e)
+        {
+            return ResponseUtil.Error(e.Message, ResponseMessages.OperationFailed,
+                HttpStatusCode.InternalServerError);
+        }
     }
 
     public async Task<IActionResult> GetSignatureImg(string userId)

@@ -280,7 +280,6 @@ public class AuthenticationService : IAuthenticationService
                     HttpStatusCode.BadRequest);
 
             user.Password = BCrypt.Net.BCrypt.HashPassword(changePasswordRequest.NewPassword);
-            user.IsEnable = true;
             await _unitOfWork.UserUOW.UpdateAsync(user);
             otp.IsDeleted = true;
             await _unitOfWork.VerificationOtpUOW.UpdateAsync(otp);

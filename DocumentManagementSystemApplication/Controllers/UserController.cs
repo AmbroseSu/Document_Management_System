@@ -96,6 +96,14 @@ public class UserController : ControllerBase
         return await _userService.UploadSignatureImgAsync(file, Guid.Parse(userId),isDigital);
     }
     
+    [HttpPost("update-enable-signature-img")]
+    public async Task<ResponseDto> UpDateEnableSignatureImg()
+    {
+        var userId = User.FindFirst("userid")?.Value;
+
+        return await _userService.EnableUploadSignatureImage(Guid.Parse(userId));
+    }
+    
     [AllowAnonymous]
     [HttpGet("view-signature-img/{userId}")]
     public async Task<IActionResult> GetSignatureImg([FromRoute] string userId)

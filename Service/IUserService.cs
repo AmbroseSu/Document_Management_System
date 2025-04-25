@@ -20,5 +20,6 @@ public interface IUserService
     Task<List<FileImportData>> ReadUsersFromCsvAsync(IFormFile file);
     Task<IActionResult> GetAvatar(string userId);
     Task<ResponseDto> UploadSignatureImgAsync(IFormFile file, Guid userId,bool? isDigital);
+    Task<ResponseDto> EnableUploadSignatureImage(Guid userId);
     Task<IActionResult> GetSignatureImg(string userId);
 }

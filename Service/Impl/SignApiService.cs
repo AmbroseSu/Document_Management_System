@@ -290,6 +290,7 @@ public class SignApiService : ISignApiService
         }
     }
     
+    
     private String GetCoordinateString(int llx, int lly, int urx, int ury)
     {
         return $"{llx},{lly},{urx},{ury}";
