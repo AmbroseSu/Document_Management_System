@@ -70,7 +70,7 @@ public class WorkflowRepository : IWorkflowRepository
     public async Task<IEnumerable<Workflow>?> FindWorkflowsByScopeAsync(Scope? scope)
     {
         if (scope == null) throw new ArgumentNullException(nameof(scope));
-        return await _workflowDao.FindAsync(u => u.Scope.Equals(scope) && u.IsDeleted == false && u.CreateAt == null);
+        return await _workflowDao.FindAsync(u => u.Scope.Equals(scope) && u.IsDeleted == false && u.CreateBy == null);
     }
 
     public async Task<IEnumerable<Workflow>> FindAllWorkflowAsync()
