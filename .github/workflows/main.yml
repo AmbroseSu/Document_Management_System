@@ -16,17 +16,13 @@ jobs:
           SSH_HOST: ${{ secrets.SERVER_HOST }}
           SSH_PORT: ${{ secrets.SERVER_PORT }}
         run: |
-          sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no -p "$SSH_PORT" "$SSH_USERNAME@$SSH_HOST" << 'EOF'
+          sshpass -p "$SSH_PASSWORD" ssh -o StrictHostKeyChecking=no -p "$SSH_PORT" -t "$SSH_USERNAME@$SSH_HOST" << 'EOF'
             set -e
-            echo "📥 Pulling latest code from Git..."
             cd /root/dms/Document_Management_System &&  git pull origin main || exit 1
 
 
            
-            echo "🚀 build"
             docker compose build --no-cache
-            echo "🛑 Stopping old containers (if any)..."
             docker compose down
-            echo "🚀 Starting app..."
             docker compose up -d --remove-orphans
           EOF
