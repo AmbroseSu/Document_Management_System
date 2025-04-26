@@ -1,4 +1,5 @@
 using BusinessObject;
+using DataAccess;
 using DataAccess.DTO;
 using DataAccess.DTO.Request;
 using Microsoft.AspNetCore.Authorization;
@@ -16,22 +17,32 @@ namespace DocumentManagementSystemApplication.Controllers
     {
         private readonly IDocumentService _documentService;
         private readonly IFileService _fileService;
+        private readonly MongoDbService _mongoDbService;
 
-        public DocumentController(IDocumentService documentService, IFileService fileService)
+        public DocumentController(IDocumentService documentService, IFileService fileService, MongoDbService mongoDbService)
         {
             _documentService = documentService;
             _fileService = fileService;
+            _mongoDbService = mongoDbService;
         }
         
         [AllowAnonymous]
         [HttpPost("view-test")]
-        public  IActionResult GetViewTest(IFormFile file)
+        public async Task<IActionResult> GetViewTest()
         {
               // _fileService.InsertTextToImage("/home/wiramin/Data/project/Capstone_2025/Document_Management_System/DocumentManagementSystemApplication/data/storage/images.png"
               //     ,"/home/wiramin/Data/project/Capstone_2025/Document_Management_System/DocumentManagementSystemApplication/data/storage/signature/images.png",
               //     "Tạ Gia Nhật Minh");
               
-              return _fileService.InsertTextToImage(file, "Le Phan Hoai Nam");
+              // return _fileService.InsertTextToImage(file, "Le Phan Hoai Nam");\
+              var count = new Count()
+              {
+                  Id = "base",
+                  Value = 0,
+                  UpdateTime = DateTime.Now
+              };
+              await _mongoDbService.CreateCountAsync(count);
+              return Ok();
         }
 
         [AllowAnonymous]
@@ -166,11 +177,27 @@ namespace DocumentManagementSystemApplication.Controllers
             var result = await _documentService.ShowProcessDocumentDetail(documentId);
             return result;
         }
-        // [HttpPost("create-document-by-template")]
-        // public async Task<ResponseDto> CreateDocumentByTemplate([FromBody] DocumentUploadDto documentUploadDto)
+        [HttpPost("create-document-by-template")]
+        public async Task<ResponseDto> CreateDocumentByTemplate([FromBody] DocumentPreInfo documentPreInfo)
+        {
+            var id = User.FindFirst("userid")?.Value;
+            var result = await _documentService.CreateDocumentByTemplate(documentPreInfo, Guid.Parse(id));
+            return result;
+        }
+        
+        [HttpPost("create-upload-document-for-sumit")]
+        public async Task<ResponseDto> UploadDocumentForSumit([FromForm] DocumentUpload documentUpload)
+        {
+            var id = User.FindFirst("userid")?.Value;
+            var result = await _documentService.UploadDocumentForSumit(documentUpload, Guid.Parse(id));
+            return result;
+        }
+        
+        // [HttpPost("update-confirm-document-by-sumit")]
+        // public async Task<ResponseDto> UpdateConfirmDocumentBySumit([FromBody] DocumentUpload documentUpload)
         // {
         //     var id = User.FindFirst("userid")?.Value;
-        //     var result = await _documentService.CreateDocumentByTemplate(documentUploadDto, Guid.Parse(id));
+        //     var result = await _documentService.UpdateConfirmDocumentBySumit(documentUpload, Guid.Parse(id));
         //     return result;
         // }
     

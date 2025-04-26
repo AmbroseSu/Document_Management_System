@@ -26,6 +26,7 @@ using SixLabors.ImageSharp.Drawing.Processing;
 using SixLabors.Fonts;
 using SixLabors.ImageSharp.PixelFormats;
 using System.IO;
+using DocumentFormat.OpenXml.Packaging;
 using Color = SixLabors.ImageSharp.Color;
 using Font = SixLabors.Fonts.Font;
 using FontStyle = SixLabors.Fonts.FontStyle;
@@ -271,6 +272,34 @@ public class FileService : IFileService
             ;
     }
     
+    private async Task<string> ConvertDocToPdfPrivate(IFormFile file)
+    {
+        // Ensure the file is a .doc or .docx
+        var fileExtension = Path.GetExtension(file.FileName).ToLower();
+        if (fileExtension != ".doc" && fileExtension != ".docx")
+        {
+            throw new ArgumentException("Invalid file format. Only .doc and .docx are supported.");
+        }
+    
+        // Convert Word to PDF directly from the file stream
+        await using var inputStream = file.OpenReadStream();
+        using var wordDocument = new WordDocument(inputStream, FormatType.Automatic);
+        using var renderer = new DocIORenderer();
+        var pdfDocument = renderer.ConvertToPDF(wordDocument);
+        using var pdfStream = new MemoryStream();
+        pdfDocument.Save(pdfStream);
+        pdfStream.Position = 0;
+        
+        var pdfFileName = Guid.NewGuid() + ".pdf";
+        var pdfFilePath = Path.Combine(_storagePath, "tmp", pdfFileName);
+        Directory.CreateDirectory(Path.GetDirectoryName(pdfFilePath));
+        await File.WriteAllBytesAsync(pdfFilePath, pdfStream.ToArray());
+
+        return pdfFilePath;
+        // return new FileContentResult(pdfStream.ToArray(), "application/pdf")
+        //     ;
+    }
+    
     public async Task<IActionResult> ConvertDocToPdf(string path)
     {
         
@@ -322,7 +351,7 @@ public class FileService : IFileService
         }
     }
     
-    public void InsertTextAsImageToPdf(string pdfPath,string outPath, string text, float llx, float lly, float urx, float ury)
+    public void InsertTextAsImageToPdf(string pdfPath,string outPath, string text,int pageNum, float llx, float lly, float urx, float ury)
     {
         // Generate an image from the string
         using var image = new Image<Rgba32>(1, 1);
@@ -344,7 +373,7 @@ public class FileService : IFileService
 
         // Load the PDF document
         using var pdfDocument = new PdfLoadedDocument(pdfPath);
-        var page = pdfDocument.Pages[0];
+        var page = pdfDocument.Pages[pageNum-1];
 
         // Calculate the width and height of the image based on the coordinates
         var width = urx - llx;
@@ -355,7 +384,7 @@ public class FileService : IFileService
         page.Graphics.DrawImage(pdfImage, llx, page.Size.Height - ury, width, height);
 
         // Save the updated PDF
-        outPath = Path.Combine(outPath,Path.GetFileName(pdfPath));
+        // outPath = Path.Combine(outPath,Path.GetFileName(pdfPath));
         pdfDocument.Save(outPath);
         pdfDocument.Close(true);
     }
@@ -422,6 +451,40 @@ public class FileService : IFileService
         {
             FileDownloadName = outputFileName
         };
+    }
+
+    public string CreateFirstVersion(Guid documentId,string documentName, Guid versionId, Guid templateId)
+    {
+        var templatePath = Path.Combine(_storagePath, "template", templateId.ToString()+".docx");
+        var filePath = Path.Combine(_storagePath, "document", documentId.ToString(), versionId.ToString());
+        // var templateFile = Directory.GetFiles(templatePath).FirstOrDefault(x => Path.GetExtension(x)==".docx");
+        templatePath = Path.Combine(templatePath, templatePath);
+        Directory.CreateDirectory(filePath);
+        File.Copy(templatePath, Path.Combine(filePath, documentName + ".docx"));
+        return _host + "/api/Document/view-file/" + documentId + "?version=0&isArchive=false";
+    }
+
+    public async Task<string> InsertNumberDocument(IFormFile file,Guid templateId,string numberDoc,int pageNum,int llx,int lly, int urx, int ury)
+    {
+        var filePath = Path.Combine(_storagePath, "tmp", file.FileName);
+        Directory.CreateDirectory(_storagePath);
+        using (var stream = new FileStream(filePath, FileMode.Create))
+        {
+            await file.CopyToAsync(stream);
+        }
+        using (var wordDoc = WordprocessingDocument.Open(filePath, false)) // Open in read-only mode
+        {
+            var packageProperties = wordDoc.PackageProperties;
+            var identifier = packageProperties.Identifier;
+            if(identifier is null || identifier != templateId.ToString()) 
+            {
+                throw new Exception("File không phải là mẫu");
+            }
+            File.Delete(filePath);
+        }
+        var path = await ConvertDocToPdfPrivate(file);
+        InsertTextAsImageToPdf(path,path,numberDoc,pageNum,llx,lly,urx,ury);
+        return path;
     }
 
 

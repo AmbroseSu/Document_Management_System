@@ -1,4 +1,5 @@
 using DataAccess.DTO;
+using DataAccess.DTO.Request;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -24,4 +25,6 @@ public interface IDocumentService
     Task<IActionResult> GetDocumentByFileName(string documentName, Guid userId);
     Task<ResponseDto> ShowProcessDocumentDetail(Guid? documentId);
     void AddFooterToPdf(string inputFilePath, string outputFilePath);
+    Task<ResponseDto> CreateDocumentByTemplate(DocumentPreInfo documentPreInfo, Guid userId);
+    Task<ResponseDto> UploadDocumentForSumit(DocumentUpload documentUpload, Guid userId);
 }
