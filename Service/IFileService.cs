@@ -1,3 +1,5 @@
+using BusinessObject;
+using DataAccess.DTO.Request;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -29,4 +31,6 @@ public interface IFileService
 
     Task<string> InsertNumberDocument(IFormFile file, Guid templateId, string numberDoc, int pageNum, int llx, int lly,
         int urx, int ury);
+
+    Task<string> SaveNewVersionDocFromBase64(DocumentCompareDto docCompareDto,DocumentVersion documentVersion);
 }

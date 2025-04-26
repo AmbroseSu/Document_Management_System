@@ -27,4 +27,5 @@ public interface IDocumentService
     void AddFooterToPdf(string inputFilePath, string outputFilePath);
     Task<ResponseDto> CreateDocumentByTemplate(DocumentPreInfo documentPreInfo, Guid userId);
     Task<ResponseDto> UploadDocumentForSumit(DocumentUpload documentUpload, Guid userId);
+    Task<ResponseDto> UpdateConfirmDocumentBySubmit(DocumentCompareDto documentUpload, Guid userId);
 }

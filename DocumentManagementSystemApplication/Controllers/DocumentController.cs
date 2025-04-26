@@ -193,13 +193,13 @@ namespace DocumentManagementSystemApplication.Controllers
             return result;
         }
         
-        // [HttpPost("update-confirm-document-by-sumit")]
-        // public async Task<ResponseDto> UpdateConfirmDocumentBySumit([FromBody] DocumentUpload documentUpload)
-        // {
-        //     var id = User.FindFirst("userid")?.Value;
-        //     var result = await _documentService.UpdateConfirmDocumentBySumit(documentUpload, Guid.Parse(id));
-        //     return result;
-        // }
+        [HttpPost("update-confirm-document-by-sumit")]
+        public async Task<ResponseDto> UpdateConfirmDocumentBySubmit([FromBody] DocumentCompareDto documentUpload)
+        {
+            var id = User.FindFirst("userid")?.Value;
+            var result = await _documentService.UpdateConfirmDocumentBySubmit(documentUpload, Guid.Parse(id));
+            return result;
+        }
     
 }
 }

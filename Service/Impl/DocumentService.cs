@@ -887,6 +887,8 @@ public partial class DocumentService : IDocumentService
         var count = _mongoDbService.Counts.Find(filter).FirstOrDefault();
         var documentType = await _unitOfWork.DocumentTypeUOW.FindDocumentTypeByIdAsync(documentPreInfo.DocumentTypeId);
         count.Value += 1;
+        var update = Builders<Count>.Update.Set(x => x.Value, count.Value);
+        await _mongoDbService.Counts.UpdateOneAsync(filter, update);
         var versionId = Guid.NewGuid();
         var url = _fileService.CreateFirstVersion(docId, documentPreInfo.DocumentName, versionId, documentPreInfo.TemplateId);
         var doc = new Document()
@@ -924,7 +926,7 @@ public partial class DocumentService : IDocumentService
     public async Task<ResponseDto> UploadDocumentForSumit(DocumentUpload documentUpload, Guid userId)
     {
         var doc = await _unitOfWork.DocumentUOW.FindDocumentByIdAsync(documentUpload.DocumentId);
-        if(doc.ProcessingStatus != ProcessingStatus.Rejected || doc.DocumentVersions.Count >1)
+        if(doc.ProcessingStatus != ProcessingStatus.Rejected && doc.DocumentVersions.Count >1)
             return ResponseUtil.Error("File đã được gửi lên trước đó", ResponseMessages.FailedToSaveData,
                 HttpStatusCode.BadRequest);
         var template = doc.TemplateArchiveDocument;
@@ -946,18 +948,53 @@ public partial class DocumentService : IDocumentService
         aiResponse = await _externalApiService.ScanPdfAsync(url);
         var base64 = Convert.ToBase64String(await File.ReadAllBytesAsync(url));
         var isDifferent = doc.DocumentName != aiResponse.DocumentName || doc.DocumentType.DocumentTypeName != aiResponse.DocumentType;
-        var result = new
+        var result = new DocumentCompareDto()
         {
-            doc.DocumentName,
-            doc.DocumentType.DocumentTypeName,
+            DocumentId = doc.DocumentId,
+            DocumentName  = doc.DocumentName,
+            DocumentTypeName = doc.DocumentType.DocumentTypeName,
             AiDocumentName = aiResponse.DocumentName,
             AiDocumentType = aiResponse.DocumentType,
-            aiResponse.DocumentContent,
-            doc.NumberOfDocument,
+            DocumentContent = aiResponse.DocumentContent,
+            NumberOfDocument = doc.NumberOfDocument,
             IsDifferent = isDifferent,
             FileBase64 = base64,
         };
+        File.Delete(url);
+
         return ResponseUtil.GetObject(result, ResponseMessages.CreatedSuccessfully, HttpStatusCode.OK,1);
+    }
+
+    public async Task<ResponseDto> UpdateConfirmDocumentBySubmit(DocumentCompareDto documentUpload, Guid userId)
+    {
+        var doc = await _unitOfWork.DocumentUOW.FindDocumentByIdAsync(documentUpload.DocumentId);
+        doc.DocumentContent = documentUpload.DocumentContent;
+        
+        var versionId = Guid.NewGuid();
+        var versionMax = int.Parse(doc.DocumentVersions.OrderByDescending(x => x.VersionNumber).First().VersionNumber);
+        if(versionMax!=0 && doc.ProcessingStatus != ProcessingStatus.Rejected)
+            return ResponseUtil.Error("File đã được gửi lên trước đó", ResponseMessages.FailedToSaveData,
+                HttpStatusCode.BadRequest);
+        var verList = doc.DocumentVersions.Select(x => 
+        { 
+            x.IsFinalVersion = false;
+            return x;
+        });
+        verList.Select(x => _unitOfWork.DocumentVersionUOW.UpdateAsync(x));
+        var versionNow = new DocumentVersion()
+        {
+            DocumentVersionId = versionId,
+            VersionNumber = versionMax + 1.ToString(),
+            CreateDate = DateTime.Now,
+            IsFinalVersion = true,
+            DocumentId = doc.DocumentId
+        };
+        var url = await _fileService.SaveNewVersionDocFromBase64(documentUpload, versionNow);
+        versionNow.DocumentVersionUrl = url;
+        // doc.DocumentVersions.Add(versionNow);
+        await _unitOfWork.DocumentVersionUOW.AddAsync(versionNow);
+        await _unitOfWork.SaveChangesAsync();
+        return ResponseUtil.GetObject(url, ResponseMessages.CreatedSuccessfully, HttpStatusCode.OK, 1);
     }
 
     private static DateTime ParsePdfDate(string pdfDate)

@@ -26,8 +26,10 @@ using SixLabors.ImageSharp.Drawing.Processing;
 using SixLabors.Fonts;
 using SixLabors.ImageSharp.PixelFormats;
 using System.IO;
+using DataAccess.DTO.Request;
 using DocumentFormat.OpenXml.Packaging;
 using Color = SixLabors.ImageSharp.Color;
+using DocumentVersion = BusinessObject.DocumentVersion;
 using Font = SixLabors.Fonts.Font;
 using FontStyle = SixLabors.Fonts.FontStyle;
 using HorizontalAlignment = SixLabors.Fonts.HorizontalAlignment;
@@ -485,6 +487,19 @@ public class FileService : IFileService
         var path = await ConvertDocToPdfPrivate(file);
         InsertTextAsImageToPdf(path,path,numberDoc,pageNum,llx,lly,urx,ury);
         return path;
+    }
+
+    public async Task<string> SaveNewVersionDocFromBase64(DocumentCompareDto docCompareDto,DocumentVersion version)
+    {
+        var base64Data = docCompareDto.FileBase64.Contains(',') ? docCompareDto.FileBase64.Split(',')[1] : docCompareDto.FileBase64;
+        var pdfBytes = Convert.FromBase64String(base64Data);
+        var filepath = Path.Combine(_storagePath, "document", docCompareDto.DocumentId.ToString(), version.DocumentVersionId.ToString());
+        var nameFile = docCompareDto.DocumentName + ".pdf";
+        Directory.CreateDirectory(filepath);
+        filepath = Path.Combine(filepath, nameFile);
+        await File.WriteAllBytesAsync(filepath, pdfBytes);
+        var url = _host + "/api/Document/view-file/" + docCompareDto.DocumentId + $"?version={version.VersionNumber}&isArchive=false";
+        return url;
     }
 
 
