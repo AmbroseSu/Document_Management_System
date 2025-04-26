@@ -185,7 +185,7 @@ namespace DocumentManagementSystemApplication.Controllers
             return result;
         }
         
-        [HttpPost("create-upload-document-for-sumit")]
+        [HttpPost("create-upload-document-for-submit")]
         public async Task<ResponseDto> UploadDocumentForSumit([FromForm] DocumentUpload documentUpload)
         {
             var id = User.FindFirst("userid")?.Value;
@@ -193,7 +193,7 @@ namespace DocumentManagementSystemApplication.Controllers
             return result;
         }
         
-        [HttpPost("update-confirm-document-by-sumit")]
+        [HttpPost("update-confirm-document-by-submit")]
         public async Task<ResponseDto> UpdateConfirmDocumentBySubmit([FromBody] DocumentCompareDto documentUpload)
         {
             var id = User.FindFirst("userid")?.Value;
