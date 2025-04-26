@@ -72,10 +72,10 @@ namespace DocumentManagementSystemApplication.Controllers
 
         [HttpGet("view-file/{documentId}")]
         public async Task<IActionResult> DownloadDocumentByName([FromRoute] Guid documentId,
-            [FromQuery] string? version, [FromQuery] bool isArchive)
+            [FromQuery] string? version, [FromQuery] bool isArchive,[FromQuery]bool isDoc=false)
         {
             if (!isArchive)
-                return await _documentService.GetDocumentById(documentId, version);
+                return await _documentService.GetDocumentById(documentId, version,isDoc);
             else
                 return await _documentService.GetArchiveDocumentById(documentId, version);
         }

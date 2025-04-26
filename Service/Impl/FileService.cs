@@ -474,7 +474,7 @@ public class FileService : IFileService
         templatePath = Path.Combine(templatePath, templatePath);
         Directory.CreateDirectory(filePath);
         File.Copy(templatePath, Path.Combine(filePath, documentName + ".docx"));
-        return _host + "/api/Document/view-file/" + documentId + "?version=0&isArchive=false";
+        return _host + "/api/Document/view-file/" + documentId + "?version=0&isArchive=false&isDoc=true";
     }
 
     public async Task<string> InsertNumberDocument(IFormFile file,Guid templateId,string numberDoc,int pageNum,int llx,int lly, int urx, int ury)

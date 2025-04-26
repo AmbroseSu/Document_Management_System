@@ -337,7 +337,6 @@ public partial class DocumentService : IDocumentService
             DateExpires = dateExpires,
             Versions = versions.Select(v => new VersionDetailRespone()
             {
-                Sizes = GetDocumentSize(Path.Combine(Directory.GetCurrentDirectory(), "data", "storage","document",documentId.ToString(),v.DocumentVersionId.ToString(),document.DocumentName+".pdf")),
                 VersionNumber = v.VersionNumber,
                 CreatedDate = v.CreateDate,
                 Url = v.DocumentVersionUrl,
@@ -693,13 +692,13 @@ public partial class DocumentService : IDocumentService
         }
     }
 
-    public async Task<IActionResult> GetDocumentById(Guid documentId, string version)
+    public async Task<IActionResult> GetDocumentById(Guid documentId, string version,bool isDoc)
     {
         var document = await _unitOfWork.DocumentUOW.FindDocumentByIdAsync(documentId);
         var versionId1 = document.DocumentVersions.FirstOrDefault(x => x.VersionNumber == version)?.DocumentVersionId;
         var result = await _fileService.GetPdfFile(Path.Combine("document", documentId.ToString(),
             versionId1.ToString(),
-            document.DocumentName + ".pdf"));
+            document.DocumentName +( isDoc ? ".docx" : ".pdf")));
 
         return result;
     }
