@@ -37,6 +37,13 @@ public class VersionDetailRespone
     public DateTime? CreatedDate { get; set; }
     public string? Url { get; set; }
     public bool? IsFinal { get; set; }
+    public List<SizeDocumentResponse>? Sizes { get; set; }
+}
+public class SizeDocumentResponse
+{
+    public float width { get; set; }
+    public float height { get; set; }
+    public int page { get; set; }
 }
 public class TasksResponse
 {

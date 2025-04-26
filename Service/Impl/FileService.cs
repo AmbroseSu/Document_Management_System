@@ -425,6 +425,17 @@ public class FileService : IFileService
     
         // Create a new image with increased height to accommodate the text
         using var outputImage = new Image<Rgba32>(image.Width, newHeight);
+        if (file.ContentType.ToLower() != "image/png")
+        {
+            File.Delete(imagePath);
+            throw new ArgumentException("Invalid file format. Only PNG images are supported.");
+        }
+
+        if (image.Width <= 300 || image.Width >= 330 || image.Height <= 150 || image.Height >= 200)
+        {
+            File.Delete(imagePath);
+            throw new ArgumentException("Image dimensions must be greater than 300x150 and smaller than 330x200.");
+        }
         outputImage.Mutate(ctx =>
         {
             // Draw the original image

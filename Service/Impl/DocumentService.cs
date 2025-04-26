@@ -11,6 +11,7 @@ using DataAccess.DTO;
 using DataAccess.DTO.Request;
 using DataAccess.DTO.Response;
 using iText.Kernel.Colors;
+using iText.Kernel.Geom;
 using iText.Kernel.Pdf;
 using iText.Layout.Element;
 using iText.Layout.Properties;
@@ -25,6 +26,7 @@ using Repository;
 using Service.Response;
 using Service.SignalRHub;
 using Service.Utilities;
+using Path = System.IO.Path;
 
 namespace Service.Impl;
 
@@ -255,11 +257,36 @@ public partial class DocumentService : IDocumentService
         return ResponseUtil.GetObject(result, ResponseMessages.GetSuccessfully, HttpStatusCode.OK, 1);
     }
 
+    private static List<SizeDocumentResponse> GetDocumentSize(string url)
+    {
+        var list = new List<SizeDocumentResponse>();
+
+        using var reader = new PdfReader(url);
+        using var pdfDoc = new PdfDocument(reader);
+        var numberOfPages = pdfDoc.GetNumberOfPages();
+
+        for (var i = 1; i <= numberOfPages; i++) // i bắt đầu từ 1
+        {
+            var page = pdfDoc.GetPage(i);
+            var pageSize = page.GetPageSize();
+
+            var widthPt = pageSize.GetWidth();
+            var heightPt = pageSize.GetHeight();
+
+
+
+            list.Add(new SizeDocumentResponse
+            {
+                width = widthPt,
+                height = heightPt,
+                page = i
+            });
+        }
+
+        return list;
+    }
     public async Task<ResponseDto> GetDocumentDetailById(Guid documentId, Guid userId)
     {
-        
-
-
         var document = await _unitOfWork.DocumentUOW.FindDocumentByIdAsync(documentId);
         var task = await _unitOfWork.TaskUOW.FindTaskByDocumentIdAndUserIdAsync(documentId, userId);
         var user = await _unitOfWork.UserUOW.FindUserByIdAsync(userId);
@@ -300,6 +327,7 @@ public partial class DocumentService : IDocumentService
             DateExpires = dateExpires,
             Versions = versions.Select(v => new VersionDetailRespone()
             {
+                Sizes = GetDocumentSize(Path.Combine(Directory.GetCurrentDirectory(), "data", "storage","document",documentId.ToString(),v.DocumentVersionId.ToString(),document.DocumentName+".pdf")),
                 VersionNumber = v.VersionNumber,
                 CreatedDate = v.CreateDate,
                 Url = v.DocumentVersionUrl,
@@ -507,8 +535,10 @@ public partial class DocumentService : IDocumentService
             var taskStatus = user.Tasks.OrderByDescending(x => x.TaskStatus).ToList()[0].TaskStatus;
             if(taskStatus is TasksStatus.Completed or TasksStatus.InProgress)
                 version = document.DocumentVersions.FirstOrDefault(t => t.IsFinalVersion)?.VersionNumber ?? "0";
+            var v = document.DocumentVersions.FirstOrDefault(x => x.VersionNumber == version);
             var result = new DocumentDetailResponse()
             {
+                Sizes = GetDocumentSize(Path.Combine(Directory.GetCurrentDirectory(), "data", "storage","document",documentId.ToString(),v.DocumentVersionId.ToString(),document.DocumentName+".pdf")),
                 DocumentId = document.DocumentId,
                 DocumentName = document.DocumentName,
                 DocumentContent = document.DocumentContent,
@@ -670,7 +700,6 @@ public partial class DocumentService : IDocumentService
         {
             case Scope.InComing:
                 var archiveId = Guid.NewGuid();
-                //TODO Send notification
                 var taskList = document.Tasks;
                 var li = new List<UserDocumentPermission>();
                 foreach (var task in taskList)
@@ -726,12 +755,6 @@ public partial class DocumentService : IDocumentService
                 await _unitOfWork.ArchivedDocumentUOW.AddAsync(archiveDocument);
                 await _unitOfWork.SaveChangesAsync();
 
-                break;
-            case Scope.OutGoing:
-                break;
-            case Scope.Division:
-                break;
-            case Scope.School:
                 break;
             default:
                 return ResponseUtil.Error("Invalid Workflow Scope", "Operation Failed", HttpStatusCode.BadRequest);

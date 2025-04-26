@@ -39,6 +39,7 @@ public  class DocumentResponseMobile
     public string? DocumentName { get; set; }
     public DateTime? CreatedDate { get; set; }
     public string? Size { get; set; }
+    public List<SizeDocumentResponse>? Sizes { get; set; }
 }
 
 public class DocumentDetailResponse
@@ -56,6 +57,7 @@ public class DocumentDetailResponse
     public List<UserResponseMobile>? UserList { get; set; } = [];
     public List<string>? SignBys { get; set; } = [];
     public string? DocumentUrl { get; set; }
+    public List<SizeDocumentResponse>? Sizes { get; set; }
 }
 
 public class UserResponseMobile
