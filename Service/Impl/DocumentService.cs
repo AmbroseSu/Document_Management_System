@@ -264,7 +264,8 @@ public partial class DocumentService : IDocumentService
         using var reader = new PdfReader(url);
         using var pdfDoc = new PdfDocument(reader);
         var numberOfPages = pdfDoc.GetNumberOfPages();
-
+        var totalWidth = 0.0;
+        var totalHeight = 0.0;
         for (var i = 1; i <= numberOfPages; i++) // i bắt đầu từ 1
         {
             var page = pdfDoc.GetPage(i);
@@ -273,7 +274,8 @@ public partial class DocumentService : IDocumentService
             var widthPt = pageSize.GetWidth();
             var heightPt = pageSize.GetHeight();
 
-
+            totalWidth += widthPt;
+            totalHeight += heightPt;
 
             list.Add(new SizeDocumentResponse
             {
@@ -283,6 +285,14 @@ public partial class DocumentService : IDocumentService
             });
         }
 
+        list = list.Select(x =>
+        {
+            x.width = (float)(totalWidth / numberOfPages);
+            x.height = (float)(totalHeight / numberOfPages);
+            return x;
+        }
+            ).ToList();
+        
         return list;
     }
     public async Task<ResponseDto> GetDocumentDetailById(Guid documentId, Guid userId)
@@ -948,7 +958,7 @@ public partial class DocumentService : IDocumentService
             UpdatedAt = DateTime.Now,
             DocumentId = docId,
             WorkflowId = documentPreInfo.WorkFlowId,
-            CurrentWorkflowFlowId = workFlowFlow.WorkflowId
+            CurrentWorkflowFlow = workFlowFlow
             
         };
         await _unitOfWork.DocumentWorkflowStatusUOW.AddAsync(workflowStatus);
