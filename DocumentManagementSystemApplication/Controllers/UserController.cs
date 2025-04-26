@@ -94,7 +94,14 @@ public class UserController : ControllerBase
     [HttpPost("update-insert-name-signature-img")]
     public  IActionResult InsertNameSignatureImg(IFormFile file,[FromForm] string fullName)
     {
-        return _fileService.InsertTextToImage(file, fullName);
+        try
+        {
+            return _fileService.InsertTextToImage(file, fullName);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
     }
     
     [HttpPost("update-signature-img")]
