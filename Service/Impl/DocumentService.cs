@@ -20,6 +20,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using MongoDB.Driver;
 using Repository;
 using Service.Response;
 using Service.SignalRHub;
@@ -40,13 +41,14 @@ public partial class DocumentService : IDocumentService
     private readonly INotificationService _notificationService;
     private readonly MongoDbService _notificationCollection;
     private readonly IHubContext<NotificationHub> _hubContext;
+    private readonly MongoDbService _mongoDbService;
 
 
     public DocumentService(IUnitOfWork unitOfWork, IMapper mapper, IFileService fileService,
         ILogger<DocumentService> logger, IExternalApiService externalApiService,
         IDigitalCertificateService digitalCertificateService, IDocumentSignatureService documentSignatureService,
         IOptions<AppsetingOptions> options, INotificationService notificationService,
-        MongoDbService notificationCollection, IHubContext<NotificationHub> hubContext)
+        MongoDbService notificationCollection, IHubContext<NotificationHub> hubContext, MongoDbService mongoDbService)
     {
         _unitOfWork = unitOfWork;
         _mapper = mapper;
@@ -58,6 +60,7 @@ public partial class DocumentService : IDocumentService
         _notificationService = notificationService;
         _notificationCollection = notificationCollection;
         _hubContext = hubContext;
+        _mongoDbService = mongoDbService;
         _host = options.Value.Host;
     }
 
@@ -876,7 +879,87 @@ public partial class DocumentService : IDocumentService
 
         Console.WriteLine($"Footer added. Modified file saved at: {outputFilePath}");
     }
-    
+
+    public async Task<ResponseDto> CreateDocumentByTemplate(DocumentPreInfo documentPreInfo, Guid userId)
+    {
+        var docId = Guid.NewGuid();
+        var filter = Builders<Count>.Filter.Eq(x => x.Id, "base");
+        var count = _mongoDbService.Counts.Find(filter).FirstOrDefault();
+        var documentType = await _unitOfWork.DocumentTypeUOW.FindDocumentTypeByIdAsync(documentPreInfo.DocumentTypeId);
+        count.Value += 1;
+        var versionId = Guid.NewGuid();
+        var url = _fileService.CreateFirstVersion(docId, documentPreInfo.DocumentName, versionId, documentPreInfo.TemplateId);
+        var doc = new Document()
+        {
+            DocumentId = docId,
+            DocumentName = documentPreInfo.DocumentName,
+            NumberOfDocument = (count.Value < 10 ? "0"+count.Value : count.Value)+"/"+count.UpdateTime.Year+"/"+documentType.Acronym+"-TNABC",
+            CreatedDate = DateTime.Now,
+            UpdatedDate = DateTime.Now,
+            Deadline = documentPreInfo.Deadline,
+            ProcessingStatus = ProcessingStatus.InProgress,
+            DocumentPriority = DocumentPriority.High,
+            IsDeleted = false,
+            UserId = userId,
+            TemplateArchiveDocumentId = documentPreInfo.TemplateId,
+            DocumentTypeId = documentPreInfo.DocumentTypeId,
+            DocumentVersions = [
+                new DocumentVersion()
+                {
+                    DocumentVersionId = versionId,
+                    VersionNumber = "0",
+                    CreateDate = DateTime.Now,
+                    IsFinalVersion = true,
+                    DocumentVersionUrl = url
+                }
+            ]
+        };
+        await _unitOfWork.DocumentUOW.AddAsync(doc);
+        await _unitOfWork.SaveChangesAsync();
+
+        return ResponseUtil.GetObject(docId, ResponseMessages.CreatedSuccessfully, HttpStatusCode.OK, 1);
+        // throw new NotImplementedException();
+    }
+
+    public async Task<ResponseDto> UploadDocumentForSumit(DocumentUpload documentUpload, Guid userId)
+    {
+        var doc = await _unitOfWork.DocumentUOW.FindDocumentByIdAsync(documentUpload.DocumentId);
+        if(doc.ProcessingStatus != ProcessingStatus.Rejected || doc.DocumentVersions.Count >1)
+            return ResponseUtil.Error("File đã được gửi lên trước đó", ResponseMessages.FailedToSaveData,
+                HttpStatusCode.BadRequest);
+        var template = doc.TemplateArchiveDocument;
+        var aiResponse = new DocumentAiResponse();
+        var url = string.Empty;
+        if (Path.GetExtension(documentUpload.File.FileName) != ".docx")
+            return ResponseUtil.Error("File không phải là mẫu", ResponseMessages.FailedToSaveData,
+                HttpStatusCode.BadRequest);
+        try
+        { 
+            url = await _fileService.InsertNumberDocument(documentUpload.File, doc.TemplateArchiveDocumentId??Guid.Empty,
+                doc.NumberOfDocument,template.Page??1, template.Llx??0, template.Lly??0,template.Urx??0,template.Ury??0);
+        }
+        catch (Exception e)
+        {
+            return ResponseUtil.Error(e.Message, ResponseMessages.FailedToSaveData,HttpStatusCode.BadRequest);
+        }
+
+        aiResponse = await _externalApiService.ScanPdfAsync(url);
+        var base64 = Convert.ToBase64String(await File.ReadAllBytesAsync(url));
+        var isDifferent = doc.DocumentName != aiResponse.DocumentName || doc.DocumentType.DocumentTypeName != aiResponse.DocumentType;
+        var result = new
+        {
+            doc.DocumentName,
+            doc.DocumentType.DocumentTypeName,
+            AiDocumentName = aiResponse.DocumentName,
+            AiDocumentType = aiResponse.DocumentType,
+            aiResponse.DocumentContent,
+            doc.NumberOfDocument,
+            IsDifferent = isDifferent,
+            FileBase64 = base64,
+        };
+        return ResponseUtil.GetObject(result, ResponseMessages.CreatedSuccessfully, HttpStatusCode.OK,1);
+    }
+
     private static DateTime ParsePdfDate(string pdfDate)
     {
         // Bỏ tiền tố "D:"

@@ -12,6 +12,8 @@ public interface IFileService
     Task<IActionResult> GetPdfFile(string path);
     Task<(byte[] FileBytes, string FileName, string ContentType)> GetFileBytes(string filePath);
     Task<IActionResult> GetAvatar(string fileName);
+
+    string CreateFirstVersion(Guid documentId, string documentName, Guid versionId, Guid templateId);
     string CreateAVersionFromUpload(string fileName, Guid versionId, Guid documentId,string versionName);
     string ArchiveDocument(string fileName, Guid documentId, Guid versionId, Guid archiveId);
 
@@ -23,5 +25,8 @@ public interface IFileService
 
     void ConvertDocToDocx(string inputPath, string outputDir);
 
-    void InsertTextAsImageToPdf(string pdfPath,string outPath, string text, float llx, float lly, float urx, float ury);
+    void InsertTextAsImageToPdf(string pdfPath,string outPath, string text,int pageNum, float llx, float lly, float urx, float ury);
+
+    Task<string> InsertNumberDocument(IFormFile file, Guid templateId, string numberDoc, int pageNum, int llx, int lly,
+        int urx, int ury);
 }
