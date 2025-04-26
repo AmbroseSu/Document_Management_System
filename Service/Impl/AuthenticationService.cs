@@ -79,6 +79,17 @@ public class AuthenticationService : IAuthenticationService
                 var divisionDto = _mapper.Map<DivisionDto>(division);
                 userDto.DivisionDto = divisionDto;
             }
+            var listDigitalCer = await _unitOfWork.DigitalCertificateUOW.FindDigitalCertificateByUserIdAsync(user.UserId) 
+                                 ?? new List<DigitalCertificate>();
+            //if (listDigitalCer.Count() != 0)
+            //{
+                userDto.Sign = listDigitalCer
+                    .FirstOrDefault(dice => dice.IsUsb == null)?.SignatureImageUrl ?? null;
+
+                userDto.SignDigital = listDigitalCer
+                    .FirstOrDefault(dice => dice.IsUsb != null)?.SignatureImageUrl ?? null;
+            //}
+            
 
             jwtAuthResponse.UserDto = userDto;
             jwtAuthResponse.Token = jwt;

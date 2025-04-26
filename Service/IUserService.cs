@@ -22,4 +22,5 @@ public interface IUserService
     Task<ResponseDto> UploadSignatureImgAsync(UpdateSignatureRequest updateSignatureRequest, Guid userId);
     Task<ResponseDto> EnableUploadSignatureImage(Guid userId);
     Task<IActionResult> GetSignatureImg(string userId);
+    Task<ResponseDto> FindUserCanGrandPermission(Guid archivedDocId);
 }

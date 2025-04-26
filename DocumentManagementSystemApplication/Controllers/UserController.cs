@@ -120,6 +120,11 @@ public class UserController : ControllerBase
         return await _userService.GetSignatureImg(fileName);
     }
 
+    [HttpGet("view-all-user-has-not-permission-archive-doc")]
+    public async Task<ResponseDto> FindUserCanGrandPermission([FromQuery] Guid archivedDocId)
+    {
+        return await _userService.FindUserCanGrandPermission(archivedDocId);
+    }
 
 
     
