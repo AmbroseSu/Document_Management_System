@@ -1035,7 +1035,7 @@ public class TaskService : ITaskService
                 return ResponseUtil.Error(ResponseMessages.TaskHadNotYourTurn, ResponseMessages.OperationFailed,
                     HttpStatusCode.BadRequest);
 
-            var tasksInSameStep = task.Step.Tasks.OrderBy(t => t.TaskNumber).ToList();
+            var tasksInSameStep = task.Step.Tasks.Where(d => d.DocumentId == task.DocumentId).OrderBy(t => t.TaskNumber).ToList();
             var isMyTurn = tasksInSameStep
                 .Where(t => t.TaskNumber < task.TaskNumber)
                 .All(t => t.TaskStatus == TasksStatus.Completed);
@@ -1126,7 +1126,7 @@ public class TaskService : ITaskService
                 return ResponseUtil.Error(ResponseMessages.TaskHadNotYourTurn, ResponseMessages.OperationFailed,
                     HttpStatusCode.BadRequest);
 
-            var tasksInSameStep = task.Step.Tasks.OrderBy(t => t.TaskNumber).ToList();
+            var tasksInSameStep = task.Step.Tasks.Where(d => d.DocumentId == task.DocumentId).OrderBy(t => t.TaskNumber).ToList();
             var isMyTurn = tasksInSameStep
                 .Where(t => t.TaskNumber < task.TaskNumber)
                 .All(t => t.TaskStatus == TasksStatus.Completed);
@@ -1166,7 +1166,7 @@ public class TaskService : ITaskService
         var documentId = currentTask.DocumentId;
 
         // 🔍 Tìm task kế tiếp trong cùng Step
-        var tasksInStep = stepp.Tasks.OrderBy(t => t.TaskNumber).ToList();
+        var tasksInStep = stepp.Tasks.Where(d => d.DocumentId == documentId).OrderBy(t => t.TaskNumber).ToList();
         var nextTask = tasksInStep.FirstOrDefault(t => t.TaskNumber > currentTask.TaskNumber);
         var previousTask = tasksInStep
             .Where(t => t.TaskNumber < currentTask.TaskNumber)
@@ -1373,7 +1373,7 @@ public class TaskService : ITaskService
         var documentId = currentTask.DocumentId;
 
         // 🔍 Tìm task kế tiếp trong cùng Step
-        var tasksInStep = stepp.Tasks.OrderBy(t => t.TaskNumber).ToList();
+        var tasksInStep = stepp.Tasks.Where(d => d.DocumentId == documentId).OrderBy(t => t.TaskNumber).ToList();
         var nextTask = tasksInStep.FirstOrDefault(t => t.TaskNumber > currentTask.TaskNumber);
         var previousTask = tasksInStep
             .Where(t => t.TaskNumber < currentTask.TaskNumber)
