@@ -24,6 +24,12 @@ public class UserDocPermissionRepository : IUserDocPermissionRepository
         if (userDocumentPermissions == null) throw new ArgumentNullException(nameof(userDocumentPermissions));
         await _userDocumentPermission.AddRangeAsync(userDocumentPermissions);
     }
+    
+    public async Task UpdateRangeAsync(List<UserDocumentPermission> userDocumentPermissions)
+    {
+        if (userDocumentPermissions == null) throw new ArgumentNullException(nameof(userDocumentPermissions));
+        await _userDocumentPermission.UpdateRangeAsync(userDocumentPermissions);
+    }
 
     
     public async Task<bool> ExistsAsync(Guid userId, Guid archivedDocumentId)
@@ -35,5 +41,9 @@ public class UserDocPermissionRepository : IUserDocPermissionRepository
         
         return existing != null;
     }
-    
+
+    public async Task<IEnumerable<UserDocumentPermission>> GetPermissionsByDocumentIdAsync(Guid archivedDocumentId)
+    {
+        return await _userDocumentPermission.FindAsync(udp => udp.ArchivedDocumentId == archivedDocumentId);
+    }
 }
