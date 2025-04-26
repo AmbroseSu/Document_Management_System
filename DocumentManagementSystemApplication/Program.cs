@@ -219,6 +219,7 @@ builder.Services.AddScoped<IFlowService, FlowService>();
 builder.Services.AddScoped<IDocumentVersionRepository, DocumentVersionRepository>();
 builder.Services.AddScoped<ICommentRepository, CommentRepository>();
 builder.Services.AddScoped<IUserDocPermissionRepository, UserDocPermissionRepository>();
+builder.Services.AddScoped<IUserDocPermissionService, UserDocPermissionService>();
 builder.Services.AddScoped<ISignApiService, SignApiService>();
 
 builder.WebHost.UseKestrel();

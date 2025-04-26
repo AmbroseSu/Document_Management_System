@@ -280,6 +280,9 @@ public class SignApiService : ISignApiService
                 version.DocumentVersionId.ToString(),
                 document.DocumentName + ".pdf"));
             File.WriteAllBytesAsync(filePath, fileBytes);
+            
+            //TODO: noi vào signature va certificate
+            
             return ResponseUtil.GetObject(ResponseMessages.SignatureSuccessfully, ResponseMessages.CreatedSuccessfully, HttpStatusCode.Created,1);
             //return ResponseUtil.GetObject(fileDataBase64, ResponseMessages.CreatedSuccessfully, HttpStatusCode.Created,1);
         }
