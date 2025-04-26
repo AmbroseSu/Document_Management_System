@@ -842,7 +842,37 @@ public async Task<ResponseDto> UploadSignatureImgAsync(UpdateSignatureRequest up
             user.IsEnable = false;
             await _unitOfWork.UserUOW.UpdateAsync(user);
             await _unitOfWork.SaveChangesAsync();
-            return ResponseUtil.GetObject(ResponseMessages.EnableUploadSignatureImage, ResponseMessages.OperationFailed,
+            return ResponseUtil.GetObject(ResponseMessages.EnableUploadSignatureImage, ResponseMessages.UpdateSuccessfully,
+                HttpStatusCode.OK, 1);
+        }
+        catch (Exception e)
+        {
+            return ResponseUtil.Error(e.Message, ResponseMessages.OperationFailed,
+                HttpStatusCode.InternalServerError);
+        }
+    }
+
+    public async Task<ResponseDto> FindUserCanGrandPermission(Guid archivedDocId)
+    {
+        try
+        {
+            var archivedDocument = await _unitOfWork.ArchivedDocumentUOW.FindArchivedDocumentByIdAsync(archivedDocId);
+            if (archivedDocument == null)
+            {
+                return ResponseUtil.Error(ResponseMessages.DocumentNotFound, ResponseMessages.OperationFailed, HttpStatusCode.NotFound);
+            }
+            var existingPermissions = await _unitOfWork.UserDocPermissionUOW.GetPermissionsByDocumentIdAsync(archivedDocId);
+            var userIdsAlreadyGranted = existingPermissions
+                .Where(p => p.IsDeleted == false)
+                .Select(p => p.UserId)
+                .ToList();
+            var allUsers = await _unitOfWork.UserUOW.FindAllUserAsync();
+            var allUserNotDeletes = allUsers.Where(u => u.IsDeleted == false);
+            var availableUsers = allUserNotDeletes
+                .Where(u => !userIdsAlreadyGranted.Contains(u.UserId))
+                .ToList();
+            var result = _mapper.Map<List<UserDto>>(availableUsers);
+            return ResponseUtil.GetObject(result, ResponseMessages.GetSuccessfully,
                 HttpStatusCode.OK, 1);
         }
         catch (Exception e)

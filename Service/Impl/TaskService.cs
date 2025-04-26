@@ -91,7 +91,7 @@ public class TaskService : ITaskService
             var stepAllOfFlow = await _unitOfWork.StepUOW.FindStepByFlowIdAsync(firstFlowInWorkflow!.FlowId);
             var firstStepInFlow = stepAllOfFlow!.OrderBy(s => s.StepNumber).FirstOrDefault();
 
-            var isCreateSubmit = await IsSubmitAllowedInFirstTaskOfNonFirstFlow(workflowId, currentStep.StepNumber,
+            var isCreateSubmit = await IsSubmitAllowedInFirstTaskOfNonFirstFlow(currentFlow, currentStep.StepNumber,
                 nextTaskNumber, taskDto.TaskType, taskDto.UserId.Value);
 
             if (!isCreateSubmit)
