@@ -720,8 +720,7 @@ public partial class DocumentService : IDocumentService
                     await _hubContext.Clients.User(notification.UserId.ToString())
                         .SendAsync("ReceiveMessage", notification);
                 }
-
-                
+                document.FinalArchiveDocumentId = archiveId;
                 var archiveDocument = new ArchivedDocument
                 {
                     UserDocumentPermissions = li,
@@ -941,6 +940,18 @@ public partial class DocumentService : IDocumentService
                 }
             ]
         };
+        var workFlowFlow = (await _unitOfWork.WorkflowUOW.FindWorkflowByIdAsync(documentPreInfo.WorkFlowId)).WorkflowFlows.FirstOrDefault(x => x.FlowNumber == 1);
+        var workflowStatus = new DocumentWorkflowStatus()
+        {
+            StatusDocWorkflow = StatusDocWorkflow.Pending,
+            StatusDoc = StatusDoc.Pending,
+            UpdatedAt = DateTime.Now,
+            DocumentId = docId,
+            WorkflowId = documentPreInfo.WorkFlowId,
+            CurrentWorkflowFlowId = workFlowFlow.WorkflowId
+            
+        };
+        await _unitOfWork.DocumentWorkflowStatusUOW.AddAsync(workflowStatus);
         await _unitOfWork.DocumentUOW.AddAsync(doc);
         await _unitOfWork.SaveChangesAsync();
 
