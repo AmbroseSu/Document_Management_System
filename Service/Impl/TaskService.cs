@@ -1967,16 +1967,18 @@ public partial class TaskService : ITaskService
 
                     var metadata = (_documentService.CheckMetaDataFile(pathDoc) ?? []).FindAll(x => x.IsValid).ToList();
                     var taskSign = doc.Tasks.FindAll(x => x.TaskType == TaskType.Sign);
-                    if (taskSign.Count != metadata.Count)
-                    {
-                        return ResponseUtil.Error("Không đủ chữ ký, không thể lưu", ResponseMessages.FailedToSaveData,
-                            HttpStatusCode.BadRequest);
-                    }
+                    // if (taskSign.Count != metadata.Count)
+                    // {
+                    //     return ResponseUtil.Error("Không đủ chữ ký, không thể lưu", ResponseMessages.FailedToSaveData,
+                    //         HttpStatusCode.BadRequest);
+                    // }
 
-                    var pathArchive = Path.Combine(Directory.GetCurrentDirectory(), "archive_document",
-                        doc.DocumentName + ".pdf");
-                    await File.WriteAllBytesAsync(pathArchive, docFile);
+                    
+                    
                     var archiveId = Guid.NewGuid();
+                    var pathArchive = Path.Combine(Directory.GetCurrentDirectory(),"data","storage" ,"archive_document",archiveId.ToString());
+                    Directory.CreateDirectory(pathArchive);
+                    await File.WriteAllBytesAsync(Path.Combine(pathArchive,doc.DocumentName + ".pdf"), docFile);
                     var signBys = taskSign.Select(x => x.User.UserName).ToList();
                     var signByString = $"[{string.Join(", ", signBys)}]";
                     var archiveDoc = new ArchivedDocument()
@@ -1987,7 +1989,7 @@ public partial class TaskService : ITaskService
                         NumberOfDocument = doc.NumberOfDocument,
                         SignedBy = signByString,
                         CreatedDate = DateTime.Now,
-                        CreatedBy = task.User.UserName,
+                        CreatedBy = currentTask.User.UserName,
                         ArchivedDocumentStatus = ArchivedDocumentStatus.Archived,
                         DateIssued = DateTime.Now,
                         Scope = (await _unitOfWork.WorkflowUOW.FindWorkflowByIdAsync(workflowId)).Scope,
