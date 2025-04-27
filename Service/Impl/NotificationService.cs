@@ -159,18 +159,18 @@ public class NotificationService : INotificationService
             IsRead = false
         };
     }
-    public Notification CreateArchivedDocHadGrantNotification(Tasks task, Guid userId)
+    public Notification CreateArchivedDocHadGrantNotification(Guid archiveDocId, Guid userId)
     {
         return new Notification
         {
             UserId = userId.ToString(),
             Title = "Văn bản của bạn đã được chấp nhận",
-            Content = $"Văn bản {task.Document?.DocumentName} đã được chấp nhận.",
+            Content = $"Có một văn bản đã được cấp quyền cho bạn.",
             Type = "Archive Document",
-            TaskId = task.TaskId.ToString(),
-            DocumentId = task.Document?.DocumentId.ToString(),
-            WorkflowId = task.Document?.DocumentWorkflowStatuses?.FirstOrDefault()?.WorkflowId.ToString(),
-            RedirectUrl = $"/task/{task.TaskId}", // frontend sẽ định nghĩa đường dẫn cụ thể
+            TaskId = null,
+            DocumentId = archiveDocId.ToString(),
+            WorkflowId = null,
+            RedirectUrl = $"", // frontend sẽ định nghĩa đường dẫn cụ thể
             CreatedAt = DateTime.UtcNow,
             IsRead = false
         };
