@@ -1620,51 +1620,10 @@ if (lastStepInCurrentFlow != null && lastStepInCurrentFlow.StepId == taskDto.Ste
 
         }
         
-        // TODO: (Minh) Viết check document
+        
         //---------------------------------
         // var document = await _unitOfWork.DocumentUOW.FindDocumentByIdAsync(documentId);
-        if (doc.DocumentVersions != null)
-        {
-            var latestVersion = doc.DocumentVersions.FirstOrDefault(x => x.IsFinalVersion);
-            if (latestVersion == null)
-            {
-                return ResponseUtil.Error("Không tìm thấy phiên bản được khả thi", ResponseMessages.FailedToSaveData,
-                    HttpStatusCode.BadRequest);
-            }
-
-            var pathDoc = Path.Combine(Directory.GetCurrentDirectory(), "storage","document",documentId.ToString(),latestVersion.DocumentVersionId.ToString(),doc.DocumentName+".pdf");
-            if (!File.Exists(pathDoc))
-            {
-                return ResponseUtil.Error("Không có file phù hợp", ResponseMessages.FailedToSaveData,
-                    HttpStatusCode.BadRequest);
-            }
-
-            var metadata = (_documentService.CheckMetaDataFile(pathDoc) ?? []).FindAll(x => x.IsValid).ToList();
-            var taskSign = doc.Tasks.FindAll(x => x.TaskType == TaskType.Sign);
-            if (taskSign.Count != metadata.Count)
-            {
-                return ResponseUtil.Error("Không đủ chữ ký, không thể lưu", ResponseMessages.FailedToSaveData,
-                    HttpStatusCode.BadRequest);
-            }
-            var pathArchive = Path.Combine(Directory.GetCurrentDirectory(), "archive_document");
-            var archiveId = Guid.NewGuid();
-            var signBys = taskSign.Select(x => x.User.UserName).ToList();
-            var signByString = $"[{string.Join(", ", signBys)}]";
-            var archiveDoc = new ArchivedDocument()
-            {
-                ArchivedDocumentId = archiveId,
-                ArchivedDocumentName = doc.DocumentName,
-                ArchivedDocumentContent = doc.DocumentContent,
-                NumberOfDocument = doc.NumberOfDocument,
-                SignedBy = signByString,
-                
-            };
-        }   
-        else
-        {
-            return ResponseUtil.Error("Không tìm thấy phiên bản được khả thi", ResponseMessages.FailedToSaveData,
-                HttpStatusCode.BadRequest); 
-        }
+        
 
         await _unitOfWork.SaveChangesAsync();
 
@@ -1891,6 +1850,64 @@ if (lastStepInCurrentFlow != null && lastStepInCurrentFlow.StepId == taskDto.Ste
         }
         
         // TODO: (Minh) Viết check document
+        if (doc.DocumentVersions != null)
+        {
+            var latestVersion = doc.DocumentVersions.FirstOrDefault(x => x.IsFinalVersion);
+            if (latestVersion == null)
+            {
+                return ResponseUtil.Error("Không tìm thấy phiên bản được khả thi", ResponseMessages.FailedToSaveData,
+                    HttpStatusCode.BadRequest);
+            }
+
+            var pathDoc = Path.Combine(Directory.GetCurrentDirectory(), "storage","document",documentId.ToString(),latestVersion.DocumentVersionId.ToString(),doc.DocumentName+".pdf");
+            if (!File.Exists(pathDoc))
+            {
+                return ResponseUtil.Error("Không có file phù hợp", ResponseMessages.FailedToSaveData,
+                    HttpStatusCode.BadRequest);
+            }
+            
+            var docFile = await File.ReadAllBytesAsync(pathDoc);
+
+            var metadata = (_documentService.CheckMetaDataFile(pathDoc) ?? []).FindAll(x => x.IsValid).ToList();
+            var taskSign = doc.Tasks.FindAll(x => x.TaskType == TaskType.Sign);
+            if (taskSign.Count != metadata.Count)
+            {
+                return ResponseUtil.Error("Không đủ chữ ký, không thể lưu", ResponseMessages.FailedToSaveData,
+                    HttpStatusCode.BadRequest);
+            }
+            var pathArchive = Path.Combine(Directory.GetCurrentDirectory(), "archive_document",doc.DocumentName+".pdf");
+            await File.WriteAllBytesAsync(pathArchive, docFile);
+            var archiveId = Guid.NewGuid();
+            var signBys = taskSign.Select(x => x.User.UserName).ToList();
+            var signByString = $"[{string.Join(", ", signBys)}]";
+            var archiveDoc = new ArchivedDocument()
+            {
+                ArchivedDocumentId = archiveId,
+                ArchivedDocumentName = doc.DocumentName,
+                ArchivedDocumentContent = doc.DocumentContent,
+                NumberOfDocument = doc.NumberOfDocument,
+                SignedBy = signByString,
+                CreatedDate = DateTime.Now,
+                CreatedBy = task.User.UserName,
+                ArchivedDocumentStatus = ArchivedDocumentStatus.Archived,
+                DateIssued = DateTime.Now,
+                Scope = (await _unitOfWork.WorkflowUOW.FindWorkflowByIdAsync(workflowId)).Scope,
+                IsTemplate = false,
+                DocumentType = doc.DocumentType,
+                FinalDocumentId = doc.DocumentId,
+                ArchivedDocumentUrl = pathArchive
+            };
+            doc.FinalArchiveDocumentId = archiveId;
+            doc.IsDeleted = true;
+            await _unitOfWork.ArchivedDocumentUOW.AddAsync(archiveDoc);
+            await _unitOfWork.DocumentUOW.UpdateAsync(doc);
+            // await _unitOfWork.SaveChangesAsync();
+        }   
+        else
+        {
+            return ResponseUtil.Error("Không tìm thấy phiên bản được khả thi", ResponseMessages.FailedToSaveData,
+                HttpStatusCode.BadRequest); 
+        }
         
         await _unitOfWork.SaveChangesAsync();
 
