@@ -1393,7 +1393,7 @@ if (lastStepInCurrentFlow != null && lastStepInCurrentFlow.StepId == taskDto.Ste
                 return ResponseUtil.Error(ResponseMessages.TaskHadNotYourTurn, ResponseMessages.OperationFailed,
                     HttpStatusCode.BadRequest);
 
-            var tasksInSameStep = task.Step.Tasks.Where(d => d.DocumentId == task.DocumentId).OrderBy(t => t.TaskNumber).ToList();
+            var tasksInSameStep = task.Step.Tasks.Where(d => d.DocumentId == task.DocumentId && d.IsDeleted == false).OrderBy(t => t.TaskNumber).ToList();
             var isMyTurn = tasksInSameStep
                 .Where(t => t.TaskNumber < task.TaskNumber)
                 .All(t => t.TaskStatus == TasksStatus.Completed);
