@@ -1529,7 +1529,8 @@ if (lastStepInCurrentFlow != null && lastStepInCurrentFlow.StepId == taskDto.Ste
         var nextWorkflowFlow = orderedWorkflowFlows[currentWorkflowFlowIndex + 1];
         var nextFlow = nextWorkflowFlow.Flow;
         var nextSteps = nextFlow.Steps.OrderBy(s => s.StepNumber).ToList();
-        var firstStep = nextSteps.FirstOrDefault();
+        var firstSteps = nextSteps.FirstOrDefault();
+        var firstStep = await _unitOfWork.StepUOW.FindStepByIdAsync(firstSteps.StepId);
         var finalSteps = currentWorkflowFlow.Flow.Steps.OrderByDescending(s => s.StepNumber).ToList();
         var finalStep = finalSteps.FirstOrDefault();
         if (finalStep != null)
@@ -1613,7 +1614,7 @@ if (lastStepInCurrentFlow != null && lastStepInCurrentFlow.StepId == taskDto.Ste
         foreach (var orderedTask in orderedTasks)
         {
             var orUser = await _unitOfWork.UserUOW.FindUserByIdAsync(orderedTask.UserId);
-            var notification = _notificationService.CreateDocCompletedNotification(task, task.UserId);
+            var notification = _notificationService.CreateDocCompletedNotification(orderedTask, orderedTask.UserId);
             await _notificationCollection.CreateNotificationAsync(notification);
             await _notificationService.SendPushNotificationMobileAsync(orUser.FcmToken, notification);
             await _hubContext.Clients.User(orderedTask.UserId.ToString()).SendAsync("ReceiveMessage", notification);
@@ -1883,7 +1884,7 @@ if (lastStepInCurrentFlow != null && lastStepInCurrentFlow.StepId == taskDto.Ste
         foreach (var orderedTask in orderedTasks)
         {
             var orUser = await _unitOfWork.UserUOW.FindUserByIdAsync(orderedTask.UserId);
-            var notification = _notificationService.CreateDocCompletedNotification(task, task.UserId);
+            var notification = _notificationService.CreateDocCompletedNotification(orderedTask, orderedTask.UserId);
             await _notificationCollection.CreateNotificationAsync(notification);
             await _notificationService.SendPushNotificationMobileAsync(orUser.FcmToken, notification);
             await _hubContext.Clients.User(orderedTask.UserId.ToString()).SendAsync("ReceiveMessage", notification);
