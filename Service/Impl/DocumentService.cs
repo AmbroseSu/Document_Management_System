@@ -923,7 +923,8 @@ public partial class DocumentService : IDocumentService
         var update = Builders<Count>.Update.Set(x => x.Value, count.Value);
         await _mongoDbService.Counts.UpdateOneAsync(filter, update);
         var versionId = Guid.NewGuid();
-        var url = _fileService.CreateFirstVersion(docId, documentPreInfo.DocumentName, versionId, documentPreInfo.TemplateId);
+        _fileService.CreateFirstVersion(docId, documentPreInfo.DocumentName, versionId, documentPreInfo.TemplateId);
+        var url = (await _unitOfWork.ArchivedDocumentUOW.FindArchivedDocumentByIdAsync(documentPreInfo.TemplateId)).ArchivedDocumentUrl+"&isPdf=true";
         var doc = new Document()
         {
             DocumentId = docId,
