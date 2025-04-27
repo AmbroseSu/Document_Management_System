@@ -2022,9 +2022,8 @@ public partial class TaskService : ITaskService
                     //         HttpStatusCode.BadRequest);
                     // }
 
-                    var pathArchive = Path.Combine(Directory.GetCurrentDirectory(), "archive_document",
-                        doc.DocumentName + ".pdf");
-                    var archiveId = Guid.NewGuid();
+                    // var pathArchive = Path.Combine(Directory.GetCurrentDirectory(), "archive_document",
+                    //     doc.DocumentName + ".pdf");
                     var signBys = metadata.Select(x => ExtractSigners(x.SignerName)).ToList();
                     var signByString = $"[{string.Join(", ", signBys)}]";
                     doc.IsDeleted = true;

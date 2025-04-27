@@ -40,7 +40,8 @@ public class DocumentRepository : IDocumentRepository
                 .ThenInclude(f => f.Flow)
                 .Include(d => d.User).ThenInclude(u => u.Division)
                 .Include(d => d.DocumentType)
-                .Include(d => d.TemplateArchiveDocument));
+                .Include(d => d.TemplateArchiveDocument)
+                .Include(q => q.FinalArchiveDocument));
     }
     
     public async Task<Document?> FindDocumentByNameAsync(string? name)
