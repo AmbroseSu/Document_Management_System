@@ -2005,7 +2005,7 @@ public partial class TaskService : ITaskService
                 else
                 {
                     var archiveDoc = doc.FinalArchiveDocument;
-                    var pathDoc = Path.Combine(Directory.GetCurrentDirectory(), "storage", "archive_document",
+                    var pathDoc = Path.Combine(Directory.GetCurrentDirectory(), "data","storage", "archive_document",
                         archiveDoc.ArchivedDocumentId.ToString(), doc.DocumentName + ".pdf");
                     if (!File.Exists(pathDoc))
                     {
