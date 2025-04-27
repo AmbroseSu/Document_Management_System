@@ -1353,7 +1353,7 @@ if (lastStepInCurrentFlow != null && lastStepInCurrentFlow.StepId == taskDto.Ste
             if (documentVersions != null)
             {
                 var documentVersion = documentVersions.OrderByDescending(dv => dv.VersionNumber).FirstOrDefault();
-                documentVersion.IsFinalVersion = true;
+                documentVersion.IsFinalVersion = false;
                 await _unitOfWork.DocumentVersionUOW.UpdateAsync(documentVersion);
                 await _unitOfWork.SaveChangesAsync();
             }
