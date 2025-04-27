@@ -259,13 +259,15 @@ public partial class DocumentService : IDocumentService
 
     private static List<SizeDocumentResponse> GetDocumentSize(string url)
     {
-        if (!File.Exists(url + ".pdf")) url += ".docx";
-        else
+        if (!(Path.GetExtension(url) == ".docx" || Path.GetExtension(url) == ".pdf"))
         {
-            url += ".pdf";
+            if (!File.Exists(url + ".pdf")) url += ".docx";
+            else
+            {
+                url += ".pdf";
+            }
         }
-            
-            
+
         var list = new List<SizeDocumentResponse>();
 
         using var reader = new PdfReader(url);
