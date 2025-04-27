@@ -398,8 +398,8 @@ if (lastStepInCurrentFlow != null && lastStepInCurrentFlow.StepId == taskDto.Ste
             if (orderedTasks.Count == 0)
                 return ResponseUtil.Error(ResponseMessages.TaskFirstNotFound, ResponseMessages.OperationFailed,
                     HttpStatusCode.NotFound);
-            if(orderedTasks[orderedTasks.Count - 1].EndDate > taskDto.StartDate)
-                return ResponseUtil.Error(ResponseMessages.TaskStartdayLowerEndDaypreviousStepFailed, ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
+            //if(orderedTasks[orderedTasks.Count - 1].EndDate > taskDto.StartDate)
+            //    return ResponseUtil.Error(ResponseMessages.TaskStartdayLowerEndDaypreviousStepFailed, ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
             if (orderedTasks[0].TaskStatus == TasksStatus.Completed)
             {
                 var taskOfUser = orderedTasks.Where(t => t.UserId == userId && t.TaskType == TaskType.Create).ToList();
