@@ -102,7 +102,7 @@ public class TaskRepository : ITaskRepository
     public async Task<IEnumerable<Tasks>> GetTasksByStepAndDocumentAsync(Guid nextStepId, Guid documentId)
     {
         return await _taskDao.FindAsync(
-            t => t.StepId == nextStepId && t.DocumentId == documentId,
+            t => t.StepId == nextStepId && t.DocumentId == documentId && t.IsDeleted == false,
             q => q.Include(t => t.Step)
                 .ThenInclude(s => s.Flow)
                 .ThenInclude(f => f.WorkflowFlows)
