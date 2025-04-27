@@ -1433,7 +1433,7 @@ if (lastStepInCurrentFlow != null && lastStepInCurrentFlow.StepId == taskDto.Ste
         var documentId = currentTask.DocumentId;
 
         // 🔍 Tìm task kế tiếp trong cùng Step
-        var tasksInStep = stepp.Tasks.Where(d => d.DocumentId == documentId).OrderBy(t => t.TaskNumber).ToList();
+        var tasksInStep = stepp.Tasks.Where(d => d.DocumentId == documentId && d.IsDeleted == false).OrderBy(t => t.TaskNumber).ToList();
         var nextTask = tasksInStep.FirstOrDefault(t => t.TaskNumber > currentTask.TaskNumber);
         var previousTask = tasksInStep
             .Where(t => t.TaskNumber < currentTask.TaskNumber)
@@ -1684,7 +1684,7 @@ if (lastStepInCurrentFlow != null && lastStepInCurrentFlow.StepId == taskDto.Ste
         var documentId = currentTask.DocumentId;
 
         // 🔍 Tìm task kế tiếp trong cùng Step
-        var tasksInStep = stepp.Tasks.Where(d => d.DocumentId == documentId).OrderBy(t => t.TaskNumber).ToList();
+        var tasksInStep = stepp.Tasks.Where(d => d.DocumentId == documentId && d.IsDeleted == false).OrderBy(t => t.TaskNumber).ToList();
         var nextTask = tasksInStep.FirstOrDefault(t => t.TaskNumber > currentTask.TaskNumber);
         var previousTask = tasksInStep
             .Where(t => t.TaskNumber < currentTask.TaskNumber)
