@@ -278,9 +278,13 @@ public partial class DocumentService : IDocumentService
             path = await _fileService.ConvertDocToPdfPhysic(url + ".docx");
             url = path;
         }
-        else url += ".pdf";
-        
-       
+        else
+        {
+            url += ".pdf";
+            path = url;
+        }
+
+
 
         var list = new List<SizeDocumentResponse>();
 
