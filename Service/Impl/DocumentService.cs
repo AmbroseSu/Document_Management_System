@@ -281,7 +281,7 @@ public partial class DocumentService : IDocumentService
         else
         {
             url += ".pdf";
-            path = url;
+            // path = url;
         }
 
 
@@ -313,14 +313,23 @@ public partial class DocumentService : IDocumentService
         }
 
         list = list.Select(x =>
+            {
+                x.width = (float)(totalWidth / numberOfPages);
+                x.height = (float)(totalHeight / numberOfPages);
+                return x;
+            }
+        ).ToList();
+
+        try
         {
-            x.width = (float)(totalWidth / numberOfPages);
-            x.height = (float)(totalHeight / numberOfPages);
-            return x;
+            
+            File.Delete(path);
         }
-            ).ToList();
-        
-        File.Delete(path);
+        catch (Exception e)
+        {
+            return list;
+
+        }
         return list;
     }
     public async Task<ResponseDto> GetDocumentDetailById(Guid documentId, Guid userId)
