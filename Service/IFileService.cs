@@ -13,6 +13,7 @@ public interface IFileService
     Task<string> SaveAvatar(IFormFile file,string id);
     // Task<IActionResult> GetPdfFile(Guid id);
     Task<IActionResult> GetPdfFile(string path);
+    Task<string> ConvertDocToPdfPhysic(string path);
     Task<(byte[] FileBytes, string FileName, string ContentType)> GetFileBytes(string filePath);
     Task<IActionResult> GetAvatar(string fileName);
     string CreateFirstVersion(Guid documentId, string documentName, Guid versionId, Guid templateId);

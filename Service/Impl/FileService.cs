@@ -327,6 +327,28 @@ public class FileService : IFileService
             ;
     }
     
+    
+    public async Task<string> ConvertDocToPdfPhysic(string path)
+    {
+        
+        // Ensure the file is a .doc or .docx
+        var fileExtension = Path.GetExtension(path).ToLower();
+        if (fileExtension != ".doc" && fileExtension != ".docx")
+        {
+            throw new ArgumentException("Invalid file format. Only .doc and .docx are supported.");
+        }
+    
+        // Convert Word to PDF directly from the file stream
+        await using var inputStream = new FileStream(path, FileMode.Open, FileAccess.Read);
+        using var wordDocument = new WordDocument(inputStream, FormatType.Automatic);
+        using var renderer = new DocIORenderer();
+        var pdfDocument = renderer.ConvertToPDF(wordDocument);
+        using var pdfStream = new MemoryStream();
+        pdfDocument.Save(pdfStream);
+        pdfStream.Position = 0;
+        await File.WriteAllBytesAsync(Path.Combine(_storagePath,"tmp",Path.GetFileNameWithoutExtension(path)+".pdf"),pdfStream.ToArray());
+        return Path.Combine(_storagePath,"tmp",Path.GetFileNameWithoutExtension(path)+".pdf");
+    }
     public void ConvertDocToDocx(string inputPath, string outputDir)
     {
         var process = new Process

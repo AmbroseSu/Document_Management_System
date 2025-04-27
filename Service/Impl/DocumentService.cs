@@ -257,16 +257,30 @@ public partial class DocumentService : IDocumentService
         return ResponseUtil.GetObject(result, ResponseMessages.GetSuccessfully, HttpStatusCode.OK, 1);
     }
 
-    private static List<SizeDocumentResponse> GetDocumentSize(string url)
+    private async Task<List<SizeDocumentResponse>> GetDocumentSize(string url)
     {
-        if (!(Path.GetExtension(url) == ".docx" || Path.GetExtension(url) == ".pdf"))
+        // if (!(Path.GetExtension(url) == ".docx" || Path.GetExtension(url) == ".pdf"))
+        // {
+        //     if (!File.Exists(url + ".pdf")) url += ".docx";
+        //     else
+        //     {
+        //         url += ".pdf";
+        //     }
+        // }
+        var path = String.Empty;
+        if (Path.GetExtension(url) == ".docx")
         {
-            if (!File.Exists(url + ".pdf")) url += ".docx";
-            else
-            {
-                url += ".pdf";
-            }
+            path = await _fileService.ConvertDocToPdfPhysic(url);
+            url = path;
         }
+        else if (File.Exists(url + ".docx"))
+        {
+            path = await _fileService.ConvertDocToPdfPhysic(url + ".docx");
+            url = path;
+        }
+        else url += ".pdf";
+        
+       
 
         var list = new List<SizeDocumentResponse>();
 
@@ -302,6 +316,7 @@ public partial class DocumentService : IDocumentService
         }
             ).ToList();
         
+        File.Delete(path);
         return list;
     }
     public async Task<ResponseDto> GetDocumentDetailById(Guid documentId, Guid userId)
@@ -555,7 +570,7 @@ public partial class DocumentService : IDocumentService
                 version = document.DocumentVersions.FirstOrDefault(t => t.IsFinalVersion)?.VersionNumber ?? "0";
             var v = document.DocumentVersions.FirstOrDefault(x => x.VersionNumber == version);
             
-            var sizes = GetDocumentSize(Path.Combine(Directory.GetCurrentDirectory(), "data", "storage", "document",
+            var sizes = await GetDocumentSize(Path.Combine(Directory.GetCurrentDirectory(), "data", "storage", "document",
                 documentId.ToString(), v.DocumentVersionId.ToString(), document.DocumentName));
             var result = new DocumentDetailResponse()
             {
@@ -590,7 +605,7 @@ public partial class DocumentService : IDocumentService
         }).ToList();
         var resultA = new DocumentDetailResponse()
         {
-            Sizes = GetDocumentSize(Path.Combine(Directory.GetCurrentDirectory(), "data", "storage","archive_document",documentA.ArchivedDocumentId.ToString(),documentA.ArchivedDocumentName+".pdf")),
+            Sizes = await GetDocumentSize(Path.Combine(Directory.GetCurrentDirectory(), "data", "storage","archive_document",documentA.ArchivedDocumentId.ToString(),documentA.ArchivedDocumentName+".pdf")),
 
             DocumentId = documentA.ArchivedDocumentId,
             DocumentName = documentA.ArchivedDocumentName,
