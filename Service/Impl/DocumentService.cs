@@ -259,6 +259,13 @@ public partial class DocumentService : IDocumentService
 
     private static List<SizeDocumentResponse> GetDocumentSize(string url)
     {
+        if (!File.Exists(url + ".pdf")) url += ".docx";
+        else
+        {
+            url += ".pdf";
+        }
+            
+            
         var list = new List<SizeDocumentResponse>();
 
         using var reader = new PdfReader(url);
@@ -545,9 +552,12 @@ public partial class DocumentService : IDocumentService
             if(taskStatus is TasksStatus.Completed or TasksStatus.InProgress)
                 version = document.DocumentVersions.FirstOrDefault(t => t.IsFinalVersion)?.VersionNumber ?? "0";
             var v = document.DocumentVersions.FirstOrDefault(x => x.VersionNumber == version);
+            
+            var sizes = GetDocumentSize(Path.Combine(Directory.GetCurrentDirectory(), "data", "storage", "document",
+                documentId.ToString(), v.DocumentVersionId.ToString(), document.DocumentName));
             var result = new DocumentDetailResponse()
             {
-                Sizes = GetDocumentSize(Path.Combine(Directory.GetCurrentDirectory(), "data", "storage","document",documentId.ToString(),v.DocumentVersionId.ToString(),document.DocumentName+".pdf")),
+                Sizes = sizes,
                 DocumentId = document.DocumentId,
                 DocumentName = document.DocumentName,
                 DocumentContent = document.DocumentContent,
@@ -1078,7 +1088,7 @@ public partial class DocumentService : IDocumentService
 
         return dt;
     }
-    private List<MetaDataDocument>? CheckMetaDataFile(string url)
+    public List<MetaDataDocument>? CheckMetaDataFile(string url)
     {
         if (!File.Exists(url))
         {

@@ -1,5 +1,6 @@
 using BusinessObject;
 using DataAccess.DTO.Request;
+using DataAccess.DTO.Response;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -14,7 +15,6 @@ public interface IFileService
     Task<IActionResult> GetPdfFile(string path);
     Task<(byte[] FileBytes, string FileName, string ContentType)> GetFileBytes(string filePath);
     Task<IActionResult> GetAvatar(string fileName);
-
     string CreateFirstVersion(Guid documentId, string documentName, Guid versionId, Guid templateId);
     string CreateAVersionFromUpload(string fileName, Guid versionId, Guid documentId,string versionName);
     string ArchiveDocument(string fileName, Guid documentId, Guid versionId, Guid archiveId);

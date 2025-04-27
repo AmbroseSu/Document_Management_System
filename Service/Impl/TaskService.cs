@@ -25,8 +25,9 @@ public class TaskService : ITaskService
     private readonly MongoDbService _notificationCollection;
     private readonly IHubContext<NotificationHub> _hubContext;
     private readonly IFileService _fileService;
+    private readonly IDocumentService _documentService;
 
-    public TaskService(IMapper mapper, IUnitOfWork unitOfWork, INotificationService notificationService, MongoDbService notificationCollection , IHubContext<NotificationHub> hubContext, IFileService fileService)
+    public TaskService(IMapper mapper, IUnitOfWork unitOfWork, INotificationService notificationService, MongoDbService notificationCollection , IHubContext<NotificationHub> hubContext, IFileService fileService, IDocumentService documentService)
     {
         _mapper = mapper;
         _unitOfWork = unitOfWork;
@@ -34,6 +35,7 @@ public class TaskService : ITaskService
         _notificationCollection = notificationCollection;
         _hubContext = hubContext;
         _fileService = fileService;
+        _documentService = documentService;
     }
     
     public async Task<ResponseDto> CreateTask(Guid userId, TaskDto taskDto)
@@ -1354,7 +1356,51 @@ public class TaskService : ITaskService
         }
         
         // TODO: (Minh) Viết check document
-        
+        //---------------------------------
+        // var document = await _unitOfWork.DocumentUOW.FindDocumentByIdAsync(documentId);
+        if (doc.DocumentVersions != null)
+        {
+            var latestVersion = doc.DocumentVersions.FirstOrDefault(x => x.IsFinalVersion);
+            if (latestVersion == null)
+            {
+                return ResponseUtil.Error("Không tìm thấy phiên bản được khả thi", ResponseMessages.FailedToSaveData,
+                    HttpStatusCode.BadRequest);
+            }
+
+            var pathDoc = Path.Combine(Directory.GetCurrentDirectory(), "storage","document",documentId.ToString(),latestVersion.DocumentVersionId.ToString(),doc.DocumentName+".pdf");
+            if (!File.Exists(pathDoc))
+            {
+                return ResponseUtil.Error("Không có file phù hợp", ResponseMessages.FailedToSaveData,
+                    HttpStatusCode.BadRequest);
+            }
+
+            var metadata = (_documentService.CheckMetaDataFile(pathDoc) ?? []).FindAll(x => x.IsValid).ToList();
+            var taskSign = doc.Tasks.FindAll(x => x.TaskType == TaskType.Sign);
+            if (taskSign.Count != metadata.Count)
+            {
+                return ResponseUtil.Error("Không đủ chữ ký, không thể lưu", ResponseMessages.FailedToSaveData,
+                    HttpStatusCode.BadRequest);
+            }
+            var pathArchive = Path.Combine(Directory.GetCurrentDirectory(), "archive_document");
+            var archiveId = Guid.NewGuid();
+            var signBys = taskSign.Select(x => x.User.UserName).ToList();
+            var signByString = $"[{string.Join(", ", signBys)}]";
+            var archiveDoc = new ArchivedDocument()
+            {
+                ArchivedDocumentId = archiveId,
+                ArchivedDocumentName = doc.DocumentName,
+                ArchivedDocumentContent = doc.DocumentContent,
+                NumberOfDocument = doc.NumberOfDocument,
+                SignedBy = signByString,
+                
+            };
+        }   
+        else
+        {
+            return ResponseUtil.Error("Không tìm thấy phiên bản được khả thi", ResponseMessages.FailedToSaveData,
+                HttpStatusCode.BadRequest); 
+        }
+
         await _unitOfWork.SaveChangesAsync();
 
         // TODO: Gửi thông báo cho người tạo
