@@ -1955,7 +1955,7 @@ public partial class TaskService : ITaskService
 
                 if (workflow.Scope != Scope.InComing)
                 {
-                    var pathDoc = Path.Combine(Directory.GetCurrentDirectory(), "storage", "document",
+                    var pathDoc = Path.Combine(Directory.GetCurrentDirectory(), "data","storage", "document",
                         documentId.ToString(), latestVersion.DocumentVersionId.ToString(), doc.DocumentName + ".pdf");
                     if (!File.Exists(pathDoc))
                     {
