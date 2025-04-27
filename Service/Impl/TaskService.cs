@@ -36,7 +36,7 @@ public class TaskService : ITaskService
         _fileService = fileService;
     }
     
-    public async Task<ResponseDto> CreateTask(Guid userId, TaskDto taskDto)
+    public async Task<ResponseDto> CreateTaskFix(Guid userId, TaskDto taskDto)
     {
         try
         {
@@ -99,6 +99,271 @@ public class TaskService : ITaskService
                 return ResponseUtil.Error(ResponseMessages.CanCreateTaskSubmit, ResponseMessages.OperationFailed,
                     HttpStatusCode.BadRequest);
             }
+            
+            var user = await _unitOfWork.UserUOW.FindUserByIdAsync(taskDto.UserId.Value);
+            if (user == null)
+                return ResponseUtil.Error(ResponseMessages.UserNotFound, ResponseMessages.OperationFailed,
+                    HttpStatusCode.NotFound);
+            var userRoles = user.UserRoles
+                .Select(ur => ur.Role.RoleName)
+                .ToList();
+            var primaryRoles = userRoles
+                .Select(name =>
+                {
+                    // Nếu role có chứa "_", lấy phần cuối sau dấu "_"
+                    if (name.Contains("_"))
+                    {
+                        var parts = name.Split('_');
+                        return parts[^1].Trim().ToLower(); // phần cuối cùng
+                    }
+                    return name.Trim().ToLower();
+                })
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+            
+            var matchedRoles = primaryRoles.Where(role => role.Equals(currentStep.Role.RoleName.ToLower())).ToList();
+            if (!matchedRoles.Any())
+            {
+                return ResponseUtil.Error(ResponseMessages.UserNotRoleWithStep, ResponseMessages.OperationFailed,
+                    HttpStatusCode.BadRequest);
+            }
+            
+            var document = await _unitOfWork.DocumentUOW.FindDocumentByIdAsync(taskDto.DocumentId.Value);
+            var orderedTasks = await GetOrderedTasks(document.Tasks.Where(t => t.IsDeleted == false).ToList(), document.DocumentWorkflowStatuses.FirstOrDefault()?.WorkflowId ?? Guid.Empty);
+            if (orderedTasks.Count == 0)
+                return ResponseUtil.Error(ResponseMessages.TaskFirstNotFound, ResponseMessages.OperationFailed,
+                    HttpStatusCode.NotFound);
+            if(orderedTasks[orderedTasks.Count - 1].EndDate > taskDto.StartDate)
+                return ResponseUtil.Error(ResponseMessages.TaskStartdayLowerEndDaypreviousStepFailed, ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
+            if (orderedTasks[0].TaskStatus == TasksStatus.Completed)
+            {
+                var taskOfUser = orderedTasks.Where(t => t.UserId == userId && t.TaskType == TaskType.Create).ToList();
+                if (taskOfUser.Any())
+                {
+                    
+                }
+                else
+                {
+                    return ResponseUtil.Error(ResponseMessages.TaskCanNotCreate, ResponseMessages.OperationFailed,
+                        HttpStatusCode.BadRequest);
+                }
+
+                
+            }
+            
+            // neu task của người tạo là create và đã complete thì kkhoogn được tạo task nua
+            var createTasks = orderedTasks.Where(t => t.TaskType == TaskType.Create).ToList();
+            if (createTasks.Any() && taskDto.TaskType == TaskType.Create)
+            {
+                return ResponseUtil.Error(
+                    ResponseMessages.OnlyOneCreateTaskAllowed,
+                    ResponseMessages.OperationFailed,
+                    HttpStatusCode.BadRequest);
+            }
+                
+            if (taskDto.StepId == firstStepInFlow!.StepId && orderedTasks.Count == 0)
+            {
+                taskDto.TaskStatus = TasksStatus.InProgress;
+                // if (taskDto.DocumentId == null)
+                // {
+                //     return ResponseUtil.Error(ResponseMessages.DocumentIdNull, ResponseMessages.OperationFailed,
+                //         HttpStatusCode.BadRequest);
+                // }
+            }
+            else
+            {
+                taskDto.TaskStatus = TasksStatus.Waiting;
+            }
+            taskDto.TaskNumber = nextTaskNumber;
+            taskDto.CreatedDate = DateTime.Now;
+            taskDto.IsDeleted = false;
+            taskDto.IsActive = true;
+            var userCreate = await _unitOfWork.UserUOW.FindUserByIdAsync(userId);
+            taskDto.TaskId = Guid.NewGuid();
+            var task = new Tasks
+            {
+                Title = taskDto.Title,
+                Description = taskDto.Description,
+                StartDate = taskDto.StartDate,
+                EndDate = taskDto.EndDate,
+                TaskStatus = taskDto.TaskStatus ?? TasksStatus.Waiting,
+                TaskType = taskDto.TaskType,
+                CreatedDate = DateTime.Now,
+                TaskNumber = taskDto.TaskNumber,
+                IsDeleted = taskDto.IsDeleted ?? false,
+                IsActive = taskDto.IsActive ?? true,
+                StepId = taskDto.StepId ?? Guid.Empty,
+                DocumentId = taskDto.DocumentId ?? null,
+                UserId = taskDto.UserId ?? Guid.Empty,
+                CreatedBy = userCreate!.FullName,
+            };
+            await _unitOfWork.TaskUOW.AddAsync(task);
+            await _unitOfWork.SaveChangesAsync();
+            return ResponseUtil.GetObject(taskDto, ResponseMessages.CreatedSuccessfully, HttpStatusCode.Created, 1);
+            
+        }
+        catch (Exception e)
+        {
+            return ResponseUtil.Error(e.Message, ResponseMessages.OperationFailed, HttpStatusCode.InternalServerError);
+        }
+    }
+    
+    
+    public async Task<ResponseDto> CreateTask(Guid userId, TaskDto taskDto)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(taskDto.Title) || string.IsNullOrWhiteSpace(taskDto.Description))
+                return ResponseUtil.Error(ResponseMessages.ValueNull, ResponseMessages.OperationFailed,
+                    HttpStatusCode.BadRequest);
+            if (taskDto.StepId == null)
+                return ResponseUtil.Error(ResponseMessages.StepIdNull, ResponseMessages.OperationFailed,
+                    HttpStatusCode.BadRequest);
+            if (taskDto.UserId == null)
+                return ResponseUtil.Error(ResponseMessages.UserIdNull, ResponseMessages.OperationFailed,
+                    HttpStatusCode.BadRequest);
+            if (taskDto.DocumentId == null)
+                return ResponseUtil.Error(ResponseMessages.DocumentIdNull, ResponseMessages.OperationFailed,
+                    HttpStatusCode.BadRequest);
+
+            
+            // if (taskDto.StartDate < DateTime.Now || taskDto.EndDate < DateTime.Now)
+            //     return ResponseUtil.Error(ResponseMessages.TaskStartdayEndDayFailed, ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
+            //
+            // if (taskDto.EndDate <= taskDto.StartDate)
+            //     return ResponseUtil.Error(ResponseMessages.TaskEndDayFailed, ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
+            //
+            var existingTasks = await _unitOfWork.TaskUOW.FindTaskByStepIdDocIdAsync(taskDto.StepId, taskDto.DocumentId);
+            
+            var nextTaskNumber = (taskDto.TaskNumber > 0) ? taskDto.TaskNumber : (existingTasks.Count() + 1);
+            //var nextTaskNumber = existingTasks.Count() + 1;
+            
+            var isTaskNumberDuplicated = existingTasks.Any(t => t.TaskNumber == nextTaskNumber);
+            if (isTaskNumberDuplicated)
+            {
+                return ResponseUtil.Error("TaskNumber đã tồn tại trong Step này. Vui lòng chọn TaskNumber khác.", ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
+            }
+
+            
+            var currentStep = await _unitOfWork.StepUOW.FindStepByIdAsync(taskDto.StepId);
+            if (currentStep.Role.RoleName.Equals("chief", StringComparison.OrdinalIgnoreCase))
+            {
+                var signTasksInStep = existingTasks.Where(t => t.TaskType == TaskType.Sign).ToList();
+                if (signTasksInStep.Any() && taskDto.TaskType == TaskType.Sign)
+                {
+                    return ResponseUtil.Error(
+                        ResponseMessages.SignExistNotCreate,
+                        ResponseMessages.OperationFailed,
+                        HttpStatusCode.BadRequest);
+                }
+            }
+            var currentFlow = currentStep!.FlowId;
+
+            var workflowFlow = await _unitOfWork.WorkflowFlowUOW.FindWorkflowFlowByFlowIdAsync(currentFlow);
+            
+            var workflowId = workflowFlow!.WorkflowId;
+            
+            
+            var workflowFlowAll = await _unitOfWork.WorkflowFlowUOW.FindWorkflowFlowByWorkflowIdAsync(workflowId);
+            var firstFlowInWorkflow = workflowFlowAll!.OrderBy(wf => wf.FlowNumber).FirstOrDefault();
+            
+            var stepAllOfFlow = await _unitOfWork.StepUOW.FindStepByFlowIdAsync(firstFlowInWorkflow!.FlowId);
+            var firstStepInFlow = stepAllOfFlow!.OrderBy(s => s.StepNumber).FirstOrDefault();
+
+            var isCreateSubmit = await IsSubmitAllowedInFirstTaskOfNonFirstFlow(currentFlow, currentStep.StepNumber,
+                nextTaskNumber, taskDto.TaskType, taskDto.UserId.Value);
+
+            if (!isCreateSubmit)
+            {
+                return ResponseUtil.Error(ResponseMessages.CanCreateTaskSubmit, ResponseMessages.OperationFailed,
+                    HttpStatusCode.BadRequest);
+            }
+            
+            
+            ////////////////////////////////////////////////////////////////////////
+            
+            // Lấy tất cả Step trong Flow này
+            var stepsInFlow = await _unitOfWork.StepUOW.FindStepByFlowIdAsync(currentFlow);
+            var orderedStepsInFlow = stepsInFlow.OrderBy(s => s.StepNumber).ToList();
+
+            // Lấy các task trong Step hiện tại và sắp xếp theo TaskNumber
+            var tasksInCurrentStep = await _unitOfWork.TaskUOW.FindTaskByStepIdDocIdAsync(taskDto.StepId, taskDto.DocumentId);
+            var orderedTasksInCurrentStep = tasksInCurrentStep.OrderBy(t => t.TaskNumber).ToList();
+
+            // Kiểm tra giữa các Step trong Flow
+            var lastTaskInCurrentStep = orderedTasksInCurrentStep.LastOrDefault();
+            if (lastTaskInCurrentStep != null)
+            {
+                // Kiểm tra StartDate của task mới với EndDate của task cuối cùng của Step hiện tại
+                if (taskDto.StartDate <= lastTaskInCurrentStep.EndDate)
+                {
+                    return ResponseUtil.Error(ResponseMessages.TaskStartDateBeforeLastTaskEndDate, ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
+                }
+
+                // Kiểm tra EndDate của task mới với StartDate của task đầu tiên của Step tiếp theo
+                var currentStepIndex = orderedStepsInFlow.FindIndex(s => s.StepId == taskDto.StepId);
+                if (currentStepIndex >= 0 && currentStepIndex < orderedStepsInFlow.Count - 1)
+                {
+                    var nextStep = orderedStepsInFlow[currentStepIndex + 1];
+                    var firstTaskInNextStep = await _unitOfWork.TaskUOW.FindTaskByStepIdDocIdAsync(nextStep.StepId, taskDto.DocumentId);
+                    var firstTaskInNextStepOrdered = firstTaskInNextStep.OrderBy(t => t.TaskNumber).FirstOrDefault();
+                    if (firstTaskInNextStepOrdered != null)
+                    {
+                        if (taskDto.EndDate >= firstTaskInNextStepOrdered.StartDate)
+                        {
+                            return ResponseUtil.Error(ResponseMessages.TaskEndDateAfterNextStepStartDate, ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
+                        }
+                    }
+                }
+            }
+            
+            
+            
+            //////////////////////////////////////////////////////
+            
+            
+            var lastStepInCurrentFlow = orderedStepsInFlow.LastOrDefault();
+if (lastStepInCurrentFlow != null && lastStepInCurrentFlow.StepId == taskDto.StepId)
+{
+    // Lấy tất cả task trong Step cuối cùng của Flow hiện tại
+    var tasksInLastStep = await _unitOfWork.TaskUOW.FindTaskByStepIdDocIdAsync(lastStepInCurrentFlow.StepId, taskDto.DocumentId);
+    var orderedTasksInLastStep = tasksInLastStep.OrderBy(t => t.TaskNumber).ToList();
+
+    // Lấy task cuối cùng trong Step cuối cùng của Flow hiện tại
+    var lastTaskInCurrentFlow = orderedTasksInLastStep.LastOrDefault();
+
+    // Kiểm tra giữa các Flow trong Workflow, chỉ khi bước hiện tại là Step cuối trong Flow
+    var allFlows = await _unitOfWork.WorkflowFlowUOW.FindWorkflowFlowByWorkflowIdAsync(workflowId);
+    var orderedFlows = allFlows.OrderBy(f => f.FlowNumber).ToList();
+
+    // Lấy Flow tiếp theo nếu có
+    var nextWorkflowFlowFlow = orderedFlows.Where(f => f.FlowNumber == workflowFlow.FlowNumber + 1).FirstOrDefault();
+    if (nextWorkflowFlowFlow != null)
+    {
+        // Lấy Step đầu tiên của Flow tiếp theo
+        var nextFlow = await _unitOfWork.FlowUOW.FindFlowByIdAsync(nextWorkflowFlowFlow.FlowId);
+        var stepsInNextFlow = await _unitOfWork.StepUOW.FindStepByFlowIdAsync(currentFlow);
+        var orderedStepsNextInFlow = stepsInNextFlow.OrderBy(s => s.StepNumber).ToList();
+        var firstStepInNextFlow = orderedStepsNextInFlow.FirstOrDefault(s => s.FlowId == nextFlow.FlowId);
+        if (firstStepInNextFlow != null)
+        {
+            // Lấy tất cả Task trong Step đầu tiên của Flow tiếp theo
+            var firstTaskInNextFlow = await _unitOfWork.TaskUOW.FindTaskByStepIdDocIdAsync(firstStepInNextFlow.StepId, taskDto.DocumentId);
+            var firstTaskInNextFlowOrdered = firstTaskInNextFlow.OrderBy(t => t.TaskNumber).FirstOrDefault();
+            
+            // Kiểm tra EndDate của task mới với StartDate của task đầu tiên trong Step đầu tiên của Flow tiếp theo
+            if (firstTaskInNextFlowOrdered != null)
+            {
+                if (taskDto.EndDate >= firstTaskInNextFlowOrdered.StartDate)
+                {
+                    return ResponseUtil.Error(ResponseMessages.TaskEndDateAfterNextFlowStartDate, ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
+                }
+            }
+        }
+    }
+}
+            
+            
             
             var user = await _unitOfWork.UserUOW.FindUserByIdAsync(taskDto.UserId.Value);
             if (user == null)

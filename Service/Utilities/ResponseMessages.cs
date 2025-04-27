@@ -132,6 +132,9 @@ public static class ResponseMessages
     public const string TaskFirstNotFound = "Task 1 not found. Please create task 1 first.";
     public const string NotYourTurnOrSign = "It is not your turn to sign or it is not your turn to sign.";
     public const string SignExistNotCreate = "A Sign task already exists in this step. No more can be created.";
+    public const string TaskStartDateBeforeLastTaskEndDate = "Start date of the task must be greater than the end date of the last task";
+    public const string TaskEndDateAfterNextStepStartDate = "End date of the task must not be greater than the start date of the next step";
+    public const string TaskEndDateAfterNextFlowStartDate = "End date of the task must not be greater than the start date of the next flow";
 
     public const string CanCreateTaskSubmit = "You cannot create task has task type submit in here";
     //Step

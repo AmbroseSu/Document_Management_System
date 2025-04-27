@@ -1,9 +1,12 @@
 using System.Net;
 using BusinessObject;
+using DataAccess;
 using DataAccess.DTO;
 using DataAccess.DTO.Request;
+using Microsoft.AspNetCore.SignalR;
 using Repository;
 using Service.Response;
+using Service.SignalRHub;
 using Service.Utilities;
 
 namespace Service.Impl;
@@ -11,10 +14,17 @@ namespace Service.Impl;
 public class UserDocPermissionService : IUserDocPermissionService
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly INotificationService _notificationService;
+    private readonly MongoDbService _notificationCollection;
+    private readonly IHubContext<NotificationHub> _hubContext;
+    
 
-    public UserDocPermissionService(IUnitOfWork unitOfWork)
+    public UserDocPermissionService(IUnitOfWork unitOfWork, INotificationService notificationService, MongoDbService notificationCollection, IHubContext<NotificationHub> hubContext)
     {
         _unitOfWork = unitOfWork;
+        _notificationService = notificationService;
+        _notificationCollection = notificationCollection;
+        _hubContext = hubContext;
     }
 
     public async Task<ResponseDto> GrantPermissionForDocument(GrantDocumentRequest grantDocumentRequest)
@@ -38,6 +48,7 @@ public class UserDocPermissionService : IUserDocPermissionService
 
         var reactivatedPermissions = new List<UserDocumentPermission>();
         var newPermissions = new List<UserDocumentPermission>();
+        var affectedUserIds = new List<Guid>();
 
         foreach (var userId in grantDocumentRequest.UserIds)
         {
@@ -49,6 +60,7 @@ public class UserDocPermissionService : IUserDocPermissionService
                     existing.IsDeleted = false;
                     existing.CreatedDate = DateTime.UtcNow;
                     reactivatedPermissions.Add(existing);
+                    affectedUserIds.Add(userId);
                 }
                 // Nếu đã tồn tại và không bị xóa thì bỏ qua
             }
@@ -62,6 +74,7 @@ public class UserDocPermissionService : IUserDocPermissionService
                     CreatedDate = DateTime.UtcNow,
                     IsDeleted = false
                 });
+                affectedUserIds.Add(userId);
             }
         }
 
@@ -77,6 +90,19 @@ public class UserDocPermissionService : IUserDocPermissionService
             await _unitOfWork.UserDocPermissionUOW.UpdateRangeAsync(reactivatedPermissions); // Cần thêm hàm UpdateRangeAsync nếu chưa có
 
         await _unitOfWork.SaveChangesAsync();
+
+        if (affectedUserIds.Count() > 0)
+        {
+            foreach (var userId in affectedUserIds)
+            {
+                var orUser = await _unitOfWork.UserUOW.FindUserByIdAsync(userId);
+                var notification = _notificationService.CreateArchivedDocHadGrantNotification(grantDocumentRequest.DocumentId, userId);
+                await _notificationCollection.CreateNotificationAsync(notification);
+                await _notificationService.SendPushNotificationMobileAsync(orUser.FcmToken, notification);
+                await _hubContext.Clients.User(userId.ToString()).SendAsync("ReceiveMessage", notification);
+            }
+        }
+        
 
         return ResponseUtil.GetObject(ResponseMessages.GrantDocumentSuccess, ResponseMessages.OperationFailed, HttpStatusCode.OK, 1);
     }
