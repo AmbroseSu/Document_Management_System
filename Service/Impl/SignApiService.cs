@@ -283,6 +283,16 @@ public class SignApiService : ISignApiService
             
             //TODO: noi vào signature va certificate
             
+            var documentSignature = new DocumentSignature
+            {
+                DocumentVersionId = version.DocumentVersionId,
+                DigitalCertificateId = digitalCertificate.DigitalCertificateId,
+                OrderIndex = document?.DocumentVersions?.Count + 1 ?? 0,
+                SignedAt = DateTime.UtcNow
+            };
+            await _unitOfWork.DocumentSignatureUOW.AddAsync(documentSignature);
+            await _unitOfWork.SaveChangesAsync();
+            
             return ResponseUtil.GetObject(ResponseMessages.SignatureSuccessfully, ResponseMessages.CreatedSuccessfully, HttpStatusCode.Created,1);
             //return ResponseUtil.GetObject(fileDataBase64, ResponseMessages.CreatedSuccessfully, HttpStatusCode.Created,1);
         }
