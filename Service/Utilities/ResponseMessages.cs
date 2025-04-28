@@ -30,6 +30,7 @@ public static class ResponseMessages
     public const string PasswordNotMatchConfirm = "New password and confirm password do not match";
     public const string ImportSuccessfully = "Import successfully";
     public const string UserNotRoleWithStep = "User role are incorrect for this step.";
+    public const string UserNotRoleWithTaskTypeIsSign = "User role are incorrect for TaskType is Sign.";
     public const string EnableUploadSignatureImage = "Enable upload signature image successfully.";
     
 

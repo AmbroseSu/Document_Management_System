@@ -117,6 +117,7 @@ public partial class TaskService : ITaskService
             if (user == null)
                 return ResponseUtil.Error(ResponseMessages.UserNotFound, ResponseMessages.OperationFailed,
                     HttpStatusCode.NotFound);
+            
             var userRoles = user.UserRoles
                 .Select(ur => ur.Role.RoleName)
                 .ToList();
@@ -140,6 +141,18 @@ public partial class TaskService : ITaskService
             {
                 return ResponseUtil.Error(ResponseMessages.UserNotRoleWithStep, ResponseMessages.OperationFailed,
                     HttpStatusCode.BadRequest);
+            }
+
+            if (taskDto.TaskType == TaskType.Sign)
+            {
+                if (!currentStep.Role.RoleName.ToLower().Equals("leader") ||
+                    !currentStep.Role.RoleName.ToLower().Equals("leader"))
+                {
+                    ResponseUtil.Error(
+                        ResponseMessages.UserNotRoleWithTaskTypeIsSign,
+                        ResponseMessages.OperationFailed,
+                        HttpStatusCode.BadRequest);
+                }
             }
 
             var document = await _unitOfWork.DocumentUOW.FindDocumentByIdAsync(taskDto.DocumentId.Value);
