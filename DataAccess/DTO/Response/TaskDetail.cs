@@ -15,4 +15,5 @@ public class TaskDetail
     public String UserDoTask { get; set; }
     public string UserNameCreateTask { get; set; }
     public string FileSize { get; set; }
+    public Boolean? IsUsb { get; set; } 
 }

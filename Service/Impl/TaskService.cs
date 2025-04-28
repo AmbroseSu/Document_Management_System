@@ -143,17 +143,7 @@ public partial class TaskService : ITaskService
                     HttpStatusCode.BadRequest);
             }
 
-            if (taskDto.TaskType == TaskType.Sign)
-            {
-                if (!currentStep.Role.RoleName.ToLower().Equals("leader") ||
-                    !currentStep.Role.RoleName.ToLower().Equals("leader"))
-                {
-                    ResponseUtil.Error(
-                        ResponseMessages.UserNotRoleWithTaskTypeIsSign,
-                        ResponseMessages.OperationFailed,
-                        HttpStatusCode.BadRequest);
-                }
-            }
+
 
             var document = await _unitOfWork.DocumentUOW.FindDocumentByIdAsync(taskDto.DocumentId.Value);
             var orderedTasks = await GetOrderedTasks(document.Tasks.Where(t => t.IsDeleted == false).ToList(),
@@ -430,6 +420,18 @@ public partial class TaskService : ITaskService
             {
                 return ResponseUtil.Error(ResponseMessages.UserNotRoleWithStep, ResponseMessages.OperationFailed,
                     HttpStatusCode.BadRequest);
+            }
+            
+            if (taskDto.TaskType == TaskType.Sign)
+            {
+                if (!currentStep.Role.RoleName.ToLower().Equals("leader") ||
+                    !currentStep.Role.RoleName.ToLower().Equals("leader"))
+                {
+                    ResponseUtil.Error(
+                        ResponseMessages.UserNotRoleWithTaskTypeIsSign,
+                        ResponseMessages.OperationFailed,
+                        HttpStatusCode.BadRequest);
+                }
             }
 
             var document = await _unitOfWork.DocumentUOW.FindDocumentByIdAsync(taskDto.DocumentId.Value);
@@ -867,8 +869,24 @@ public partial class TaskService : ITaskService
                         HttpStatusCode.NotFound);
                 var orderedTasks = await GetOrderedTasks(document.Tasks,
                     document.DocumentWorkflowStatuses.FirstOrDefault()?.WorkflowId ?? Guid.Empty);
+                
+                
+                
                 var taskDto = _mapper.Map<TaskDto>(task);
                 var taskDetail = new TaskDetail();
+                
+                if(task.TaskType == TaskType.Sign)
+                {
+                    var listDigitalCertificates =
+                        await _unitOfWork.DigitalCertificateUOW.FindDigitalCertificateByUserIdAsync(userId);
+                    var digitalCertificate = listDigitalCertificates.Where(dc => dc.IsUsb != null).FirstOrDefault();
+                    taskDetail.IsUsb = digitalCertificate?.IsUsb;
+                }
+                else
+                {
+                    taskDetail.IsUsb = null;
+                }
+                
                 taskDetail.TaskDto = taskDto;
                 taskDetail.Scope = task.Document.DocumentWorkflowStatuses.FirstOrDefault().Workflow.Scope;
                 taskDetail.WorkflowId = task.Document.DocumentWorkflowStatuses.FirstOrDefault().WorkflowId;
@@ -927,6 +945,19 @@ public partial class TaskService : ITaskService
             if (task.TaskStatus is TasksStatus.Completed or TasksStatus.InProgress)
                 verion = task.Document.DocumentVersions.FirstOrDefault(x => x.IsFinalVersion).VersionNumber;
             var result = new TaskDetail();
+            
+            if(task.TaskType == TaskType.Sign)
+            {
+                var listDigitalCertificates =
+                    await _unitOfWork.DigitalCertificateUOW.FindDigitalCertificateByUserIdAsync(task.UserId);
+                var digitalCertificate = listDigitalCertificates.Where(dc => dc.IsUsb != null).FirstOrDefault();
+                result.IsUsb = digitalCertificate?.IsUsb;
+            }
+            else
+            {
+                result.IsUsb = null;
+            }
+            
             result.TaskDto = taskDto;
             result.Scope = task.Document.DocumentWorkflowStatuses.FirstOrDefault().Workflow.Scope;
             result.WorkflowName = task.Document.DocumentWorkflowStatuses.FirstOrDefault().Workflow.WorkflowName;
