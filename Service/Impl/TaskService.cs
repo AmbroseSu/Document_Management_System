@@ -2007,6 +2007,45 @@ public partial class TaskService : ITaskService
                     doc.IsDeleted = true;
                     await _unitOfWork.ArchivedDocumentUOW.AddAsync(archiveDoc);
                     await _unitOfWork.DocumentUOW.UpdateAsync(doc);
+                    
+                    
+                    var distinctUserIds = orderedTasks
+                        .Select(t => t.UserId)
+                        .Distinct()
+                        .ToList();
+                    var docArchiveId = doc.FinalArchiveDocumentId;
+                    if (docArchiveId == null)
+                    {
+                        return ResponseUtil.Error(ResponseMessages.DocumentHasNotArchiveDoc,
+                            ResponseMessages.OperationFailed,
+                            HttpStatusCode.BadRequest);
+                    }
+
+                    var userPermissions = new List<UserDocumentPermission>();
+
+                    foreach (var userId in distinctUserIds)
+                    {
+                        var exists = await _unitOfWork.UserDocPermissionUOW.ExistsAsync(userId, docArchiveId.Value);
+                        if (!exists)
+                        {
+                            userPermissions.Add(new UserDocumentPermission
+                            {
+                                UserId = userId,
+                                ArchivedDocumentId = docArchiveId.Value,
+                                CreatedDate = DateTime.UtcNow,
+                                IsDeleted = false
+                            });
+                        }
+                    }
+
+                    // Chỉ thêm những cái chưa có
+                    if (userPermissions.Any())
+                    {
+                        await _unitOfWork.UserDocPermissionUOW.AddRangeAsync(userPermissions);
+                    }
+
+                    await _unitOfWork.SaveChangesAsync();
+                    
                     // await _unitOfWork.SaveChangesAsync();
                 }
                 else
