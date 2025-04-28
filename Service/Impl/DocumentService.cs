@@ -1064,6 +1064,7 @@ public partial class DocumentService : IDocumentService
         var verList = doc.DocumentVersions.Select(x => 
         { 
             x.IsFinalVersion = false;
+            _unitOfWork.DocumentVersionUOW.UpdateAsync(x);
             return x;
         });
         verList.Select(x => _unitOfWork.DocumentVersionUOW.UpdateAsync(x));
