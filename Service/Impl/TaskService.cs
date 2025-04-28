@@ -4,11 +4,13 @@ using System.Text.RegularExpressions;
 using AutoMapper;
 using BusinessObject;
 using BusinessObject.Enums;
+using BusinessObject.Option;
 using DataAccess;
 using DataAccess.DTO;
 using DataAccess.DTO.Request;
 using DataAccess.DTO.Response;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.Options;
 using MongoDB.Driver;
 using MongoDB.Driver.Linq;
 using Repository;
@@ -27,10 +29,11 @@ public partial class TaskService : ITaskService
     private readonly IHubContext<NotificationHub> _hubContext;
     private readonly IFileService _fileService;
     private readonly IDocumentService _documentService;
+    private readonly string _host;
 
     public TaskService(IMapper mapper, IUnitOfWork unitOfWork, INotificationService notificationService,
         MongoDbService notificationCollection, IHubContext<NotificationHub> hubContext, IFileService fileService,
-        IDocumentService documentService)
+        IDocumentService documentService,IOptions<AppsetingOptions> options)
     {
         _mapper = mapper;
         _unitOfWork = unitOfWork;
@@ -39,6 +42,8 @@ public partial class TaskService : ITaskService
         _hubContext = hubContext;
         _fileService = fileService;
         _documentService = documentService;
+        _host = options.Value.Host;
+
     }
 
     public async Task<ResponseDto> CreateTaskFix(Guid userId, TaskDto taskDto)
@@ -1996,7 +2001,7 @@ public partial class TaskService : ITaskService
                         IsTemplate = false,
                         DocumentType = doc.DocumentType,
                         FinalDocumentId = doc.DocumentId,
-                        ArchivedDocumentUrl = pathArchive
+                        ArchivedDocumentUrl = $"{_host}/api/Document/view-file/{archiveId}?version=1&isArchive=true"
                     };
                     doc.FinalArchiveDocumentId = archiveId;
                     doc.IsDeleted = true;
