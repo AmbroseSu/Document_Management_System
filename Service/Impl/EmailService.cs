@@ -88,6 +88,10 @@ public class EmailService : IEmailService
     public async Task<ResponseDto> SendEmailWithOAuth2(EmailRequest emailRequest)
     {
         string token = ExchangeCodeForAccessToken(emailRequest.AccessToken).Result;
+        if (token.Equals("string"))
+        {
+            return ResponseUtil.Error("Please login google again", ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
+        }
         string email = await GetEmailFromAccessToken(token);
         if (email != emailRequest.YourEmail)
         {
@@ -188,7 +192,9 @@ public class EmailService : IEmailService
             { "code", code },
             { "client_id", Environment.GetEnvironmentVariable("CLIENT_ID")! },
             { "client_secret", Environment.GetEnvironmentVariable("CLIENT_SECRET")! },
-            { "redirect_uri", "http://127.0.0.1:5500/test.html" },
+            //{ "redirect_uri", "http://signdoc-core.io.vn/send-email" },
+            { "redirect_uri", "http://localhost:3000/send-email" },
+            //{ "redirect_uri", "http://127.0.0.1:5500/test.html" },
             { "grant_type", "authorization_code" }
         };
 
@@ -197,8 +203,8 @@ public class EmailService : IEmailService
         var responseString = await response.Content.ReadAsStringAsync();
         var tokenResponse = JsonDocument.Parse(responseString);
         var accessToken = tokenResponse.RootElement.GetProperty("access_token").GetString();
-
-        return accessToken;
+        
+        return accessToken == null ? "string" : accessToken;
         //return responseString; // chứa access_token, refresh_token, ...
     }
     
