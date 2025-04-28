@@ -93,12 +93,12 @@ public class EmailService : IEmailService
             return ResponseUtil.Error("Please login google again", ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
         }
         string email = await GetEmailFromAccessToken(token);
-        if (email != emailRequest.YourEmail)
+        /*if (email != emailRequest.YourEmail)
         {
             return ResponseUtil.GetObject(ResponseMessages.EmailNotMatch, ResponseMessages.OperationFailed, HttpStatusCode.BadRequest, 1);
-        }
+        }*/
         var message = new MimeMessage();
-        message.From.Add(new MailboxAddress(emailRequest.YourEmail, emailRequest.YourEmail));
+        message.From.Add(new MailboxAddress(email, email));
         message.To.Add(new MailboxAddress(emailRequest.ReceiverEmail, emailRequest.ReceiverEmail));
         message.Subject = emailRequest.Subject;
         
@@ -167,7 +167,7 @@ public class EmailService : IEmailService
         try
         {
             await client.ConnectAsync("smtp.gmail.com", 587, SecureSocketOptions.StartTls);
-            var oauth2 = new SaslMechanismOAuth2(emailRequest.YourEmail, token);
+            var oauth2 = new SaslMechanismOAuth2(email, token);
             await client.AuthenticateAsync(oauth2);
 
             await client.SendAsync(message);
