@@ -4,11 +4,13 @@ using System.Text.RegularExpressions;
 using AutoMapper;
 using BusinessObject;
 using BusinessObject.Enums;
+using BusinessObject.Option;
 using DataAccess;
 using DataAccess.DTO;
 using DataAccess.DTO.Request;
 using DataAccess.DTO.Response;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.Options;
 using MongoDB.Driver;
 using MongoDB.Driver.Linq;
 using Repository;
@@ -27,10 +29,11 @@ public partial class TaskService : ITaskService
     private readonly IHubContext<NotificationHub> _hubContext;
     private readonly IFileService _fileService;
     private readonly IDocumentService _documentService;
+    private readonly string _host;
 
     public TaskService(IMapper mapper, IUnitOfWork unitOfWork, INotificationService notificationService,
         MongoDbService notificationCollection, IHubContext<NotificationHub> hubContext, IFileService fileService,
-        IDocumentService documentService)
+        IDocumentService documentService,IOptions<AppsetingOptions> options)
     {
         _mapper = mapper;
         _unitOfWork = unitOfWork;
@@ -39,6 +42,8 @@ public partial class TaskService : ITaskService
         _hubContext = hubContext;
         _fileService = fileService;
         _documentService = documentService;
+        _host = options.Value.Host;
+
     }
 
     public async Task<ResponseDto> CreateTaskFix(Guid userId, TaskDto taskDto)
@@ -1967,16 +1972,18 @@ public partial class TaskService : ITaskService
 
                     var metadata = (_documentService.CheckMetaDataFile(pathDoc) ?? []).FindAll(x => x.IsValid).ToList();
                     var taskSign = doc.Tasks.FindAll(x => x.TaskType == TaskType.Sign);
-                    if (taskSign.Count != metadata.Count)
-                    {
-                        return ResponseUtil.Error("Không đủ chữ ký, không thể lưu", ResponseMessages.FailedToSaveData,
-                            HttpStatusCode.BadRequest);
-                    }
+                    // if (taskSign.Count != metadata.Count)
+                    // {
+                    //     return ResponseUtil.Error("Không đủ chữ ký, không thể lưu", ResponseMessages.FailedToSaveData,
+                    //         HttpStatusCode.BadRequest);
+                    // }
 
-                    var pathArchive = Path.Combine(Directory.GetCurrentDirectory(), "archive_document",
-                        doc.DocumentName + ".pdf");
-                    await File.WriteAllBytesAsync(pathArchive, docFile);
+                    
+                    
                     var archiveId = Guid.NewGuid();
+                    var pathArchive = Path.Combine(Directory.GetCurrentDirectory(),"data","storage" ,"archive_document",archiveId.ToString());
+                    Directory.CreateDirectory(pathArchive);
+                    await File.WriteAllBytesAsync(Path.Combine(pathArchive,doc.DocumentName + ".pdf"), docFile);
                     var signBys = taskSign.Select(x => x.User.UserName).ToList();
                     var signByString = $"[{string.Join(", ", signBys)}]";
                     var archiveDoc = new ArchivedDocument()
@@ -1987,14 +1994,14 @@ public partial class TaskService : ITaskService
                         NumberOfDocument = doc.NumberOfDocument,
                         SignedBy = signByString,
                         CreatedDate = DateTime.Now,
-                        CreatedBy = task.User.UserName,
+                        CreatedBy = currentTask.User.UserName,
                         ArchivedDocumentStatus = ArchivedDocumentStatus.Archived,
                         DateIssued = DateTime.Now,
                         Scope = (await _unitOfWork.WorkflowUOW.FindWorkflowByIdAsync(workflowId)).Scope,
                         IsTemplate = false,
                         DocumentType = doc.DocumentType,
                         FinalDocumentId = doc.DocumentId,
-                        ArchivedDocumentUrl = pathArchive
+                        ArchivedDocumentUrl = $"{_host}/api/Document/view-file/{archiveId}?version=1&isArchive=true"
                     };
                     doc.FinalArchiveDocumentId = archiveId;
                     doc.IsDeleted = true;
