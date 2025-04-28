@@ -2,6 +2,7 @@
 using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using BusinessObject.Enums;
 using DataAccess.DTO;
 using DataAccess.DTO.Request;
 using MailKit.Net.Smtp;
@@ -87,6 +88,20 @@ public class EmailService : IEmailService
     
     public async Task<ResponseDto> SendEmailWithOAuth2(EmailRequest emailRequest)
     {
+        var document = await _unitOfWork.ArchivedDocumentUOW.FindArchivedDocumentByIdAsync(emailRequest.DocumentId);
+        var doc = await _unitOfWork.DocumentUOW.FindDocumentByIdAsync(document.FinalDocumentId);
+        if (doc == null)
+        {
+            return ResponseUtil.Error(ResponseMessages.DocumentNotFound, ResponseMessages.OperationFailed,
+                HttpStatusCode.BadRequest);
+        }
+
+        var scope = doc.DocumentWorkflowStatuses?.FirstOrDefault(w => w.DocumentId == doc.DocumentId).Workflow.Scope;
+        if (scope != Scope.OutGoing)
+        {
+            return ResponseUtil.Error(ResponseMessages.CanNotSendEmail, ResponseMessages.OperationFailed,
+                HttpStatusCode.BadRequest);
+        }
         string token = ExchangeCodeForAccessToken(emailRequest.AccessToken).Result;
         if (token.Equals("string"))
         {
@@ -131,7 +146,7 @@ public class EmailService : IEmailService
         var textPart = new TextPart("plain") { Text = emailRequest.Body };
         multipart.Add(textPart);
         
-        var document = await _unitOfWork.ArchivedDocumentUOW.FindArchivedDocumentByIdAsync(emailRequest.DocumentId);
+        
         var (bytes, fileName, contentType) = await _fileService.GetFileBytes(Path.Combine("archive_document", emailRequest.DocumentId.ToString(),
             document.ArchivedDocumentName + ".pdf"));
         
