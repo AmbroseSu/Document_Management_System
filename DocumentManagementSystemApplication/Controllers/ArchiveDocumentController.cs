@@ -39,7 +39,7 @@ namespace DocumentManagementSystemApplication.Controllers
         
         
         [HttpPost("create-send-email")]
-        public async Task<ResponseDto> SendEmail([FromForm] EmailRequest emailRequest)
+        public async Task<ResponseDto> SendEmail([FromBody] EmailRequest emailRequest)
         {
             var result = await _emailService.SendEmailWithOAuth2(emailRequest);
             return result;

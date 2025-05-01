@@ -117,6 +117,7 @@ public partial class TaskService : ITaskService
             if (user == null)
                 return ResponseUtil.Error(ResponseMessages.UserNotFound, ResponseMessages.OperationFailed,
                     HttpStatusCode.NotFound);
+            
             var userRoles = user.UserRoles
                 .Select(ur => ur.Role.RoleName)
                 .ToList();
@@ -141,6 +142,8 @@ public partial class TaskService : ITaskService
                 return ResponseUtil.Error(ResponseMessages.UserNotRoleWithStep, ResponseMessages.OperationFailed,
                     HttpStatusCode.BadRequest);
             }
+
+
 
             var document = await _unitOfWork.DocumentUOW.FindDocumentByIdAsync(taskDto.DocumentId.Value);
             var orderedTasks = await GetOrderedTasks(document.Tasks.Where(t => t.IsDeleted == false).ToList(),
@@ -417,6 +420,18 @@ public partial class TaskService : ITaskService
             {
                 return ResponseUtil.Error(ResponseMessages.UserNotRoleWithStep, ResponseMessages.OperationFailed,
                     HttpStatusCode.BadRequest);
+            }
+            
+            if (taskDto.TaskType == TaskType.Sign)
+            {
+                if (!currentStep.Role.RoleName.ToLower().Equals("leader") ||
+                    !currentStep.Role.RoleName.ToLower().Equals("leader"))
+                {
+                    ResponseUtil.Error(
+                        ResponseMessages.UserNotRoleWithTaskTypeIsSign,
+                        ResponseMessages.OperationFailed,
+                        HttpStatusCode.BadRequest);
+                }
             }
 
             var document = await _unitOfWork.DocumentUOW.FindDocumentByIdAsync(taskDto.DocumentId.Value);
@@ -854,8 +869,24 @@ public partial class TaskService : ITaskService
                         HttpStatusCode.NotFound);
                 var orderedTasks = await GetOrderedTasks(document.Tasks,
                     document.DocumentWorkflowStatuses.FirstOrDefault()?.WorkflowId ?? Guid.Empty);
+                
+                
+                
                 var taskDto = _mapper.Map<TaskDto>(task);
                 var taskDetail = new TaskDetail();
+                
+                if(task.TaskType == TaskType.Sign)
+                {
+                    var listDigitalCertificates =
+                        await _unitOfWork.DigitalCertificateUOW.FindDigitalCertificateByUserIdAsync(userId);
+                    var digitalCertificate = listDigitalCertificates.Where(dc => dc.IsUsb != null).FirstOrDefault();
+                    taskDetail.IsUsb = digitalCertificate?.IsUsb;
+                }
+                else
+                {
+                    taskDetail.IsUsb = null;
+                }
+                
                 taskDetail.TaskDto = taskDto;
                 taskDetail.Scope = task.Document.DocumentWorkflowStatuses.FirstOrDefault().Workflow.Scope;
                 taskDetail.WorkflowId = task.Document.DocumentWorkflowStatuses.FirstOrDefault().WorkflowId;
@@ -914,6 +945,19 @@ public partial class TaskService : ITaskService
             if (task.TaskStatus is TasksStatus.Completed or TasksStatus.InProgress)
                 verion = task.Document.DocumentVersions.FirstOrDefault(x => x.IsFinalVersion).VersionNumber;
             var result = new TaskDetail();
+            
+            if(task.TaskType == TaskType.Sign)
+            {
+                var listDigitalCertificates =
+                    await _unitOfWork.DigitalCertificateUOW.FindDigitalCertificateByUserIdAsync(task.UserId);
+                var digitalCertificate = listDigitalCertificates.Where(dc => dc.IsUsb != null).FirstOrDefault();
+                result.IsUsb = digitalCertificate?.IsUsb;
+            }
+            else
+            {
+                result.IsUsb = null;
+            }
+            
             result.TaskDto = taskDto;
             result.Scope = task.Document.DocumentWorkflowStatuses.FirstOrDefault().Workflow.Scope;
             result.WorkflowName = task.Document.DocumentWorkflowStatuses.FirstOrDefault().Workflow.WorkflowName;
@@ -2007,6 +2051,45 @@ public partial class TaskService : ITaskService
                     doc.IsDeleted = true;
                     await _unitOfWork.ArchivedDocumentUOW.AddAsync(archiveDoc);
                     await _unitOfWork.DocumentUOW.UpdateAsync(doc);
+                    
+                    
+                    var distinctUserIds = orderedTasks
+                        .Select(t => t.UserId)
+                        .Distinct()
+                        .ToList();
+                    var docArchiveId = doc.FinalArchiveDocumentId;
+                    if (docArchiveId == null)
+                    {
+                        return ResponseUtil.Error(ResponseMessages.DocumentHasNotArchiveDoc,
+                            ResponseMessages.OperationFailed,
+                            HttpStatusCode.BadRequest);
+                    }
+
+                    var userPermissions = new List<UserDocumentPermission>();
+
+                    foreach (var userId in distinctUserIds)
+                    {
+                        var exists = await _unitOfWork.UserDocPermissionUOW.ExistsAsync(userId, docArchiveId.Value);
+                        if (!exists)
+                        {
+                            userPermissions.Add(new UserDocumentPermission
+                            {
+                                UserId = userId,
+                                ArchivedDocumentId = docArchiveId.Value,
+                                CreatedDate = DateTime.UtcNow,
+                                IsDeleted = false
+                            });
+                        }
+                    }
+
+                    // Chỉ thêm những cái chưa có
+                    if (userPermissions.Any())
+                    {
+                        await _unitOfWork.UserDocPermissionUOW.AddRangeAsync(userPermissions);
+                    }
+
+                    await _unitOfWork.SaveChangesAsync();
+                    
                     // await _unitOfWork.SaveChangesAsync();
                 }
                 else
