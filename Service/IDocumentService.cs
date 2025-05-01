@@ -31,4 +31,6 @@ public interface IDocumentService
     Task<ResponseDto> CreateDocumentByTemplate(DocumentPreInfo documentPreInfo, Guid userId);
     Task<ResponseDto> UploadDocumentForSumit(DocumentUpload documentUpload, Guid userId);
     Task<ResponseDto> UpdateConfirmDocumentBySubmit(DocumentCompareDto documentUpload, Guid userId);
+    Task<ResponseDto> GetDocumentForUsb(Guid documentId, Guid userId);
+    Task<ResponseDto> UpdateDocumentFromUsb(DocumentForSignByUsb documentForSignByUsb,Guid documentId, Guid userId);
 }

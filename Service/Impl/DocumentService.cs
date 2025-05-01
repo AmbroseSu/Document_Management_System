@@ -44,6 +44,7 @@ public partial class DocumentService : IDocumentService
     private readonly MongoDbService _notificationCollection;
     private readonly IHubContext<NotificationHub> _hubContext;
     private readonly MongoDbService _mongoDbService;
+    private readonly string _storagePath = Path.Combine(Directory.GetCurrentDirectory(), "data", "storage");
 
 
     public DocumentService(IUnitOfWork unitOfWork, IMapper mapper, IFileService fileService,
@@ -91,7 +92,8 @@ public partial class DocumentService : IDocumentService
                             DocumentTypeId = dt.DocumentTypeId,
                             DocumentTypeName = dt.DocumentTypeName,
                             DocumentResponseMobiles = dt.Documents
-                                .Where(d => !d.IsDeleted && d.DocumentWorkflowStatuses.Any(dws => dws.WorkflowId == x.WorkflowId))
+                                .Where(d => !d.IsDeleted &&
+                                            d.DocumentWorkflowStatuses.Any(dws => dws.WorkflowId == x.WorkflowId))
                                 .Select(d => new DocumentResponseMobile()
                                 {
                                     Id = d.DocumentId,
@@ -285,7 +287,6 @@ public partial class DocumentService : IDocumentService
         }
 
 
-
         var list = new List<SizeDocumentResponse>();
 
         using var reader = new PdfReader(url);
@@ -322,16 +323,16 @@ public partial class DocumentService : IDocumentService
 
         try
         {
-            
             File.Delete(path);
         }
         catch (Exception e)
         {
             return list;
-
         }
+
         return list;
     }
+
     public async Task<ResponseDto> GetDocumentDetailById(Guid documentId, Guid userId)
     {
         var document = await _unitOfWork.DocumentUOW.FindDocumentByIdAsync(documentId);
@@ -341,7 +342,7 @@ public partial class DocumentService : IDocumentService
         var taskStatus = user.Tasks.OrderByDescending(t => t.TaskStatus).ToList()[0].TaskStatus;
         if (taskStatus is TasksStatus.Completed or TasksStatus.InProgress)
         {
-            version = document?.DocumentVersions?.Find(t => t.IsFinalVersion)?.VersionNumber??"0";
+            version = document?.DocumentVersions?.Find(t => t.IsFinalVersion)?.VersionNumber ?? "0";
         }
 
         var versions = document.DocumentVersions.Where(x => int.Parse(x.VersionNumber) <= int.Parse(version)).ToList();
@@ -445,7 +446,7 @@ public partial class DocumentService : IDocumentService
     //     return orderedTasks;
     // }
 
-    public async Task<ResponseDto> GetMySelfDocument(Guid userId, string? searchText,int page,int pageSize)
+    public async Task<ResponseDto> GetMySelfDocument(Guid userId, string? searchText, int page, int pageSize)
     {
         var user = await _unitOfWork.UserUOW.FindUserByIdAsync(userId);
         List<DocumentJsonDto> doc;
@@ -457,12 +458,13 @@ public partial class DocumentService : IDocumentService
             doc = cache;
         }
         else
-        { 
+        {
             var tmp = (await _unitOfWork.DocumentUOW.FindAllDocumentMySelf(userId)).ToList();
             if (user.UserRoles.Any(x => x.Role.RoleName.Split("_")[^1] == "Chief" && x.Role.IsDeleted == false)) ;
             {
                 var docCa = await _unitOfWork.DocumentUOW.FindAllDocumentAsync();
-                docCa = docCa.Where(x => x.DocumentWorkflowStatuses?.FirstOrDefault()?.Workflow?.Scope == Scope.InComing);
+                docCa = docCa.Where(
+                    x => x.DocumentWorkflowStatuses?.FirstOrDefault()?.Workflow?.Scope == Scope.InComing);
                 if (docCa != null)
                 {
                     var li = docCa.Select(x => x.Tasks).ToList();
@@ -488,8 +490,8 @@ public partial class DocumentService : IDocumentService
             // var docCA = await _unitOfWork.DocumentUOW.
             // doc.ToList();
             // _unitOfWork.RedisCacheUOW.SetData("GetAllMySeflDoc_userId_" + userId, doc, TimeSpan.FromMinutes(2)); 
-
         }
+
         var result = doc.Where(x => x.DocumentName.Contains(searchText)).Select(x =>
         {
             return new
@@ -500,7 +502,7 @@ public partial class DocumentService : IDocumentService
                 Status = x.ProcessingStatus.ToString(),
                 Type = x.DocumentType?.DocumentTypeName ?? string.Empty,
                 Workflow = x.DocumentWorkflowStatuses.FirstOrDefault().Workflow.WorkflowName,
-                Scope =  x.DocumentWorkflowStatuses.FirstOrDefault().Workflow.Scope.ToString(),
+                Scope = x.DocumentWorkflowStatuses.FirstOrDefault().Workflow.Scope.ToString(),
                 x.Deadline,
                 x.NumberOfDocument,
                 SignBy = ExtractSigners(
@@ -512,14 +514,15 @@ public partial class DocumentService : IDocumentService
         }).ToList();
         var finalResult = result.Skip((page - 1) * pageSize).Take(pageSize).ToList();
         var totalPage = (int)Math.Ceiling((double)result.Count / pageSize);
-        return ResponseUtil.GetCollection(finalResult, ResponseMessages.GetSuccessfully, HttpStatusCode.OK, result.Count, page,
+        return ResponseUtil.GetCollection(finalResult, ResponseMessages.GetSuccessfully, HttpStatusCode.OK,
+            result.Count, page,
             pageSize, totalPage);
-            // throw new NotImplementedException();
+        // throw new NotImplementedException();
     }
 
     public async Task<IActionResult> GetDocumentByFileName(string documentName, Guid userId)
     {
-        var result = await _fileService.GetPdfFile(Path.Combine("document","UploadedFiles",documentName));
+        var result = await _fileService.GetPdfFile(Path.Combine("document", "UploadedFiles", documentName));
         return result;
     }
 
@@ -560,12 +563,12 @@ public partial class DocumentService : IDocumentService
         if (!isArchive)
         {
             var document = await _unitOfWork.DocumentUOW.FindDocumentByIdAsync(documentId);
-            
+
             var users = new List<User> { document.User };
-            if(document.DocumentVersions.FirstOrDefault(t => t.IsFinalVersion) != null)
+            if (document.DocumentVersions.FirstOrDefault(t => t.IsFinalVersion) != null)
                 users.AddRange(document.DocumentVersions.FirstOrDefault(t => t.IsFinalVersion).DocumentSignatures
-                .Select(t => t.DigitalCertificate.User)
-                .ToList());
+                    .Select(t => t.DigitalCertificate.User)
+                    .ToList());
             users.AddRange(document.Tasks.Select(x => x.User).ToList());
             users = users.Distinct().ToList();
             users = users.Where(u => u != null).ToList();
@@ -579,11 +582,12 @@ public partial class DocumentService : IDocumentService
             var version = "0";
             var user = await _unitOfWork.UserUOW.FindUserByIdAsync(userId);
             var taskStatus = user.Tasks.OrderByDescending(x => x.TaskStatus).ToList()[0].TaskStatus;
-            if(taskStatus is TasksStatus.Completed or TasksStatus.InProgress)
+            if (taskStatus is TasksStatus.Completed or TasksStatus.InProgress)
                 version = document.DocumentVersions.FirstOrDefault(t => t.IsFinalVersion)?.VersionNumber ?? "0";
             var v = document.DocumentVersions.FirstOrDefault(x => x.VersionNumber == version);
-            
-            var sizes = await GetDocumentSize(Path.Combine(Directory.GetCurrentDirectory(), "data", "storage", "document",
+
+            var sizes = await GetDocumentSize(Path.Combine(Directory.GetCurrentDirectory(), "data", "storage",
+                "document",
                 documentId.ToString(), v.DocumentVersionId.ToString(), document.DocumentName));
             var result = new DocumentDetailResponse()
             {
@@ -601,7 +605,8 @@ public partial class DocumentService : IDocumentService
                 UserList = userList,
                 SignBys = ExtractSigners(document.DocumentVersions.FirstOrDefault(x => x.VersionNumber == version)
                     .DocumentSignatures),
-                DocumentUrl = document.DocumentVersions.FirstOrDefault(x => x.VersionNumber == version).DocumentVersionUrl
+                DocumentUrl = document.DocumentVersions.FirstOrDefault(x => x.VersionNumber == version)
+                    .DocumentVersionUrl
             };
             return ResponseUtil.GetObject(result, ResponseMessages.GetSuccessfully, HttpStatusCode.OK, 1);
         }
@@ -618,7 +623,8 @@ public partial class DocumentService : IDocumentService
         }).ToList();
         var resultA = new DocumentDetailResponse()
         {
-            Sizes = await GetDocumentSize(Path.Combine(Directory.GetCurrentDirectory(), "data", "storage","archive_document",documentA.ArchivedDocumentId.ToString(),documentA.ArchivedDocumentName+".pdf")),
+            Sizes = await GetDocumentSize(Path.Combine(Directory.GetCurrentDirectory(), "data", "storage",
+                "archive_document", documentA.ArchivedDocumentId.ToString(), documentA.ArchivedDocumentName + ".pdf")),
 
             DocumentId = documentA.ArchivedDocumentId,
             DocumentName = documentA.ArchivedDocumentName,
@@ -732,13 +738,13 @@ public partial class DocumentService : IDocumentService
         }
     }
 
-    public async Task<IActionResult> GetDocumentById(Guid documentId, string version,bool isDoc)
+    public async Task<IActionResult> GetDocumentById(Guid documentId, string version, bool isDoc)
     {
         var document = await _unitOfWork.DocumentUOW.FindDocumentByIdAsync(documentId);
         var versionId1 = document.DocumentVersions.FirstOrDefault(x => x.VersionNumber == version)?.DocumentVersionId;
         var result = await _fileService.GetPdfFile(Path.Combine("document", documentId.ToString(),
             versionId1.ToString(),
-            document.DocumentName +( isDoc ? ".docx" : ".pdf")));
+            document.DocumentName + (isDoc ? ".docx" : ".pdf")));
 
         return result;
     }
@@ -769,6 +775,7 @@ public partial class DocumentService : IDocumentService
                     await _hubContext.Clients.User(notification.UserId.ToString())
                         .SendAsync("ReceiveMessage", notification);
                 }
+
                 document.FinalArchiveDocumentId = archiveId;
                 var archiveDocument = new ArchivedDocument
                 {
@@ -846,13 +853,12 @@ public partial class DocumentService : IDocumentService
             { "WorkflowId", null },
             { "Deadline", null },
             { "NewSignerName", null },
-            {"validTo", metaData?.MaxBy(x => x.ExpirationDate).ExpirationDate},
-            {"validFrom", metaData?.MinBy(x => x.ValidFrom).ValidFrom},
-            {"signerName", metaData?.Select(x => ExtractSigners(x.SignerName)).ToList()},
-            {"url", _host+"/api/document/view-file-by-name?documentName=" + fileName}
-
+            { "validTo", metaData?.MaxBy(x => x.ExpirationDate).ExpirationDate },
+            { "validFrom", metaData?.MinBy(x => x.ValidFrom).ValidFrom },
+            { "signerName", metaData?.Select(x => ExtractSigners(x.SignerName)).ToList() },
+            { "url", _host + "/api/document/view-file-by-name?documentName=" + fileName }
         };
-        
+
         var cannotChange = new Dictionary<string, object?>
         {
             { "SignatureName", metaData?.Select(x => x.SignatureName).ToList() },
@@ -964,12 +970,14 @@ public partial class DocumentService : IDocumentService
         await _mongoDbService.Counts.UpdateOneAsync(filter, update);
         var versionId = Guid.NewGuid();
         _fileService.CreateFirstVersion(docId, documentPreInfo.DocumentName, versionId, documentPreInfo.TemplateId);
-        var url = (await _unitOfWork.ArchivedDocumentUOW.FindArchivedDocumentByIdAsync(documentPreInfo.TemplateId)).ArchivedDocumentUrl+"&isPdf=true";
+        var url = (await _unitOfWork.ArchivedDocumentUOW.FindArchivedDocumentByIdAsync(documentPreInfo.TemplateId))
+            .ArchivedDocumentUrl + "&isPdf=true";
         var doc = new Document()
         {
             DocumentId = docId,
             DocumentName = documentPreInfo.DocumentName,
-            NumberOfDocument = (count.Value < 10 ? "0"+count.Value : count.Value)+"/"+count.UpdateTime.Year+"/"+documentType.Acronym+"-TNABC",
+            NumberOfDocument = (count.Value < 10 ? "0" + count.Value : count.Value) + "/" + count.UpdateTime.Year +
+                               "/" + documentType.Acronym + "-TNABC",
             CreatedDate = DateTime.Now,
             UpdatedDate = DateTime.Now,
             Deadline = documentPreInfo.Deadline,
@@ -979,7 +987,8 @@ public partial class DocumentService : IDocumentService
             UserId = userId,
             TemplateArchiveDocumentId = documentPreInfo.TemplateId,
             DocumentTypeId = documentPreInfo.DocumentTypeId,
-            DocumentVersions = [
+            DocumentVersions =
+            [
                 new DocumentVersion()
                 {
                     DocumentVersionId = versionId,
@@ -990,7 +999,9 @@ public partial class DocumentService : IDocumentService
                 }
             ]
         };
-        var workFlowFlow = (await _unitOfWork.WorkflowUOW.FindWorkflowByIdAsync(documentPreInfo.WorkFlowId)).WorkflowFlows.FirstOrDefault(x => x.FlowNumber == 1);
+        var workFlowFlow =
+            (await _unitOfWork.WorkflowUOW.FindWorkflowByIdAsync(documentPreInfo.WorkFlowId)).WorkflowFlows
+            .FirstOrDefault(x => x.FlowNumber == 1);
         var workflowStatus = new DocumentWorkflowStatus()
         {
             StatusDocWorkflow = StatusDocWorkflow.Pending,
@@ -999,7 +1010,6 @@ public partial class DocumentService : IDocumentService
             DocumentId = docId,
             WorkflowId = documentPreInfo.WorkFlowId,
             CurrentWorkflowFlow = workFlowFlow
-            
         };
         await _unitOfWork.DocumentWorkflowStatusUOW.AddAsync(workflowStatus);
         await _unitOfWork.DocumentUOW.AddAsync(doc);
@@ -1012,7 +1022,7 @@ public partial class DocumentService : IDocumentService
     public async Task<ResponseDto> UploadDocumentForSumit(DocumentUpload documentUpload, Guid userId)
     {
         var doc = await _unitOfWork.DocumentUOW.FindDocumentByIdAsync(documentUpload.DocumentId);
-        if(doc.ProcessingStatus != ProcessingStatus.Rejected && doc.DocumentVersions.Count >1)
+        if (doc.ProcessingStatus != ProcessingStatus.Rejected && doc.DocumentVersions.Count > 1)
             return ResponseUtil.Error("File đã được gửi lên trước đó", ResponseMessages.FailedToSaveData,
                 HttpStatusCode.BadRequest);
         var template = doc.TemplateArchiveDocument;
@@ -1022,22 +1032,25 @@ public partial class DocumentService : IDocumentService
             return ResponseUtil.Error("File không phải là mẫu", ResponseMessages.FailedToSaveData,
                 HttpStatusCode.BadRequest);
         try
-        { 
-            url = await _fileService.InsertNumberDocument(documentUpload.File, doc.TemplateArchiveDocumentId??Guid.Empty,
-                doc.NumberOfDocument,template.Page??1, template.Llx??0, template.Lly??0,template.Urx??0,template.Ury??0);
+        {
+            url = await _fileService.InsertNumberDocument(documentUpload.File,
+                doc.TemplateArchiveDocumentId ?? Guid.Empty,
+                doc.NumberOfDocument, template.Page ?? 1, template.Llx ?? 0, template.Lly ?? 0, template.Urx ?? 0,
+                template.Ury ?? 0);
         }
         catch (Exception e)
         {
-            return ResponseUtil.Error(e.Message, ResponseMessages.FailedToSaveData,HttpStatusCode.BadRequest);
+            return ResponseUtil.Error(e.Message, ResponseMessages.FailedToSaveData, HttpStatusCode.BadRequest);
         }
 
         aiResponse = await _externalApiService.ScanPdfAsync(url);
         var base64 = Convert.ToBase64String(await File.ReadAllBytesAsync(url));
-        var isDifferent = doc.DocumentName != aiResponse.DocumentName || doc.DocumentType.DocumentTypeName != aiResponse.DocumentType;
+        var isDifferent = doc.DocumentName != aiResponse.DocumentName ||
+                          doc.DocumentType.DocumentTypeName != aiResponse.DocumentType;
         var result = new DocumentCompareDto()
         {
             DocumentId = doc.DocumentId,
-            DocumentName  = doc.DocumentName,
+            DocumentName = doc.DocumentName,
             DocumentTypeName = doc.DocumentType.DocumentTypeName,
             AiDocumentName = aiResponse.DocumentName,
             AiDocumentType = aiResponse.DocumentType,
@@ -1048,21 +1061,21 @@ public partial class DocumentService : IDocumentService
         };
         File.Delete(url);
 
-        return ResponseUtil.GetObject(result, ResponseMessages.CreatedSuccessfully, HttpStatusCode.OK,1);
+        return ResponseUtil.GetObject(result, ResponseMessages.CreatedSuccessfully, HttpStatusCode.OK, 1);
     }
 
     public async Task<ResponseDto> UpdateConfirmDocumentBySubmit(DocumentCompareDto documentUpload, Guid userId)
     {
         var doc = await _unitOfWork.DocumentUOW.FindDocumentByIdAsync(documentUpload.DocumentId);
         doc.DocumentContent = documentUpload.DocumentContent;
-        
+
         var versionId = Guid.NewGuid();
         var versionMax = int.Parse(doc.DocumentVersions.OrderByDescending(x => x.VersionNumber).First().VersionNumber);
-        if(versionMax!=0 && doc.ProcessingStatus != ProcessingStatus.Rejected)
+        if (versionMax != 0 && doc.ProcessingStatus != ProcessingStatus.Rejected)
             return ResponseUtil.Error("File đã được gửi lên trước đó", ResponseMessages.FailedToSaveData,
                 HttpStatusCode.BadRequest);
-        var verList = doc.DocumentVersions.Select(x => 
-        { 
+        var verList = doc.DocumentVersions.Select(x =>
+        {
             x.IsFinalVersion = false;
             _unitOfWork.DocumentVersionUOW.UpdateAsync(x);
             return x;
@@ -1084,6 +1097,188 @@ public partial class DocumentService : IDocumentService
         return ResponseUtil.GetObject(url, ResponseMessages.CreatedSuccessfully, HttpStatusCode.OK, 1);
     }
 
+    public async Task<ResponseDto> GetDocumentForUsb(Guid documentId, Guid parse)
+    {
+        var user = await _unitOfWork.UserUOW.FindUserByIdAsync(parse);
+        string resultFile;
+        string resultCertificate;
+
+        #region Handle file to Base 64
+
+        var document = await _unitOfWork.DocumentUOW.FindDocumentByIdAsync(documentId);
+        if (document != null)
+        {
+            if (document.DocumentVersions != null)
+            {
+                var version = document.DocumentVersions.FirstOrDefault(t => t.IsFinalVersion);
+                if (version != null)
+                {
+                    var fileByte = await
+                        _fileService.GetFileBytes(
+                            $"document/{documentId}/{version.DocumentVersionId}/{document.DocumentName}.pdf");
+                    resultFile = Convert.ToBase64String(fileByte.FileBytes);
+                }
+                else
+                {
+                    return ResponseUtil.Error("Version latest not found", ResponseMessages.OperationFailed,
+                        HttpStatusCode.NotFound);
+                }
+            }
+            else
+            {
+                return ResponseUtil.Error("Dont have any version", ResponseMessages.OperationFailed,
+                    HttpStatusCode.NotFound);
+            }
+        }
+        else
+        {
+            return ResponseUtil.Error("Document not found", ResponseMessages.OperationFailed,
+                HttpStatusCode.NotFound);
+        }
+
+        #endregion
+
+        #region Handle digital certificate user
+
+        if (user != null)
+        {
+            if (user.DigitalCertificates != null)
+            {
+                var certificate = user.DigitalCertificates.FirstOrDefault(x => x.IsUsb == true);
+                if (certificate != null)
+                {
+                    var fileByte = await _fileService.GetFileBytes(
+                        $"signature/{certificate.DigitalCertificateId}.png");
+                    resultCertificate = Convert.ToBase64String(fileByte.FileBytes);
+                }
+                else
+                {
+                    return ResponseUtil.Error("Certificate not found", ResponseMessages.OperationFailed,
+                        HttpStatusCode.NotFound);
+                }
+            }
+            else
+            {
+                return ResponseUtil.Error("Certificate not found", ResponseMessages.OperationFailed,
+                    HttpStatusCode.NotFound);
+            }
+        }
+        else
+        {
+            return ResponseUtil.Error("User not found", ResponseMessages.OperationFailed,
+                HttpStatusCode.NotFound);
+        }
+
+        #endregion
+
+        #region Handle result
+
+        var result = new DocumentForSignByUsb()
+        {
+            File = resultFile,
+            Image = resultCertificate
+        };
+
+        #endregion
+
+        return ResponseUtil.GetObject(result,
+            ResponseMessages.GetSuccessfully, HttpStatusCode.OK, 1);
+    }
+
+    public async Task<ResponseDto> UpdateDocumentFromUsb(DocumentForSignByUsb documentForSignByUsb, Guid documentId,
+        Guid userId)
+    {
+        var user = await _unitOfWork.UserUOW.FindUserByIdAsync(userId);
+        var documentBase64 = documentForSignByUsb.File;
+        var documentByte = Convert.FromBase64String(documentBase64);
+        var pathTmp = Path.Combine(_storagePath, "tmp", Guid.NewGuid() + ".pdf");
+        await File.WriteAllBytesAsync(pathTmp, documentByte);
+        var metaData = CheckMetaDataFile(pathTmp);
+        var document = await _unitOfWork.DocumentUOW.FindDocumentByIdAsync(documentId);
+        if (document != null)
+        {
+            if (document.DocumentVersions != null)
+            {
+                var version = document.DocumentVersions.FirstOrDefault(x => x.IsFinalVersion);
+                if (version != null)
+                {
+
+                    // if (metaData?.Any(meta => !meta.IsValid) == true)
+                    //     return ResponseUtil.Error("null", "Signature is not valid", HttpStatusCode.BadRequest);
+                    if (user != null)
+                    {
+                        if (user.DigitalCertificates != null)
+                        {
+                            var cer = user.DigitalCertificates.FirstOrDefault(x => x.IsUsb == true);
+                            if (cer is { SerialNumber: null })
+                            {
+                                if (metaData != null)
+                                {
+                                    cer.SerialNumber = metaData[^1].SerialNumber;
+                                    cer.Issuer = metaData[^1].Issuer;
+                                    cer.Subject = metaData[^1].SignerName;
+                                    cer.ValidFrom = metaData[^1].ValidFrom;
+                                    cer.ValidTo = metaData[^1].ExpirationDate;
+                                    await _unitOfWork.DigitalCertificateUOW.UpdateAsync(cer);
+                                    File.Copy(pathTmp, 
+                                        Path.Combine(_storagePath, "document", documentId.ToString(),version.DocumentId.ToString(),document.DocumentName+".pdf"));
+                                    await _unitOfWork.SaveChangesAsync();
+                                    return ResponseUtil.GetObject("Sign success",
+                                        ResponseMessages.GetSuccessfully, HttpStatusCode.OK, 1);
+                                }
+                                else
+                                {
+                                    return ResponseUtil.Error("Sign not success", ResponseMessages.OperationFailed,
+                                        HttpStatusCode.NotFound);
+                                }
+                            }
+                            else
+                            {
+                                if (cer != null && metaData != null && cer.SerialNumber != metaData[^1].SerialNumber)
+                                {
+                                    return ResponseUtil.Error("Wrong certificate", ResponseMessages.OperationFailed,
+                                        HttpStatusCode.NotFound);
+                                }
+
+                                File.Copy(pathTmp, 
+                                    Path.Combine(_storagePath, "document", documentId.ToString(),version.DocumentId.ToString(),document.DocumentName+".pdf"));
+                                return ResponseUtil.GetObject("Sign success",
+                                    ResponseMessages.GetSuccessfully, HttpStatusCode.OK, 1);
+                            }
+                        }
+                        else
+                        {
+                            return ResponseUtil.Error("Certificate not found", ResponseMessages.OperationFailed,
+                                HttpStatusCode.NotFound);
+                        }
+                    }
+                    else
+                    {
+                        return ResponseUtil.Error("User not found", ResponseMessages.OperationFailed,
+                            HttpStatusCode.NotFound);
+                    }
+                }
+                else
+                {
+                    return ResponseUtil.Error("Not have version active", ResponseMessages.OperationFailed,
+                        HttpStatusCode.NotFound);
+                }
+            }
+            else
+            {
+                return ResponseUtil.Error("Version not found", ResponseMessages.OperationFailed,
+                    HttpStatusCode.NotFound);
+            }
+        }
+        else
+        {
+            return ResponseUtil.Error("Document not found", ResponseMessages.OperationFailed,
+                HttpStatusCode.NotFound);
+        }
+
+        // throw new NotImplementedException();
+    }
+
     private static DateTime ParsePdfDate(string pdfDate)
     {
         // Bỏ tiền tố "D:"
@@ -1098,7 +1293,7 @@ public partial class DocumentService : IDocumentService
         if (tzIndex >= 0)
         {
             dateTimePart = pdfDate.Substring(0, tzIndex);
-            timeZonePart = pdfDate.Substring(tzIndex+1).Replace("'", "");
+            timeZonePart = pdfDate.Substring(tzIndex + 1).Replace("'", "");
         }
 
         // Parse datetime cơ bản
@@ -1119,6 +1314,7 @@ public partial class DocumentService : IDocumentService
 
         return dt;
     }
+
     public List<MetaDataDocument>? CheckMetaDataFile(string url)
     {
         if (!File.Exists(url))
@@ -1199,14 +1395,14 @@ public partial class DocumentService : IDocumentService
                     HttpStatusCode.NotFound);
             var workflowFlows = await _unitOfWork.WorkflowFlowUOW.FindWorkflowFlowByWorkflowIdAsync(workflowId);
             var workflowFlowIds = workflowFlows.Select(wf => wf.WorkflowFlowId).ToList();
-            
+
             var transitions = await _unitOfWork.WorkflowFlowTransitionUOW.FindByWorkflowFlowIdsAsync(workflowFlowIds);
-            
+
             var flowIds = workflowFlows.Select(wf => wf.FlowId).ToList();
             var flows = await _unitOfWork.FlowUOW.FindByIdsAsync(flowIds);
-            
+
             var steps = await _unitOfWork.StepUOW.FindByFlowIdsAsync(flowIds);
-            
+
             // var flowDtoList = workflowFlows
             //     .OrderBy(wf => wf.FlowNumber) // 🔹 Thêm dòng này để sắp xếp
             //     .Select(workflowFlow =>
@@ -1252,7 +1448,7 @@ public partial class DocumentService : IDocumentService
             //     })
             //     .Where(flowDto => flowDto != null) // ✅ Loại bỏ flow null
             //     .ToList();
-            
+
             var flowDtoList = new List<FlowDto>();
 
             foreach (var workflowFlow in workflowFlows.OrderBy(wf => wf.FlowNumber))
@@ -1265,7 +1461,7 @@ public partial class DocumentService : IDocumentService
 
                 var tasksInFlow = await _unitOfWork.TaskUOW.FindTasksByStepIdsAsync(stepIdsInFlow, documentId);
                 var taskDtosInFlow = _mapper.Map<List<TaskDto>>(tasksInFlow);
-                
+
                 var stepDtos = stepsInFlow
                     .OrderBy(s => s.StepNumber)
                     .Select(s => new StepDto
@@ -1297,7 +1493,7 @@ public partial class DocumentService : IDocumentService
 
                 flowDtoList.Add(flowDto);
             }
-            
+
 
             var workflowResponse = new WorkflowRequest
             {
@@ -1309,13 +1505,11 @@ public partial class DocumentService : IDocumentService
                 CreateBy = workflow.CreateBy ?? Guid.Empty,
                 Flows = flowDtoList
             };
-            
+
             documentDetailAllWorkflowResponse.WorkflowRequest = workflowResponse;
-            
+
             return ResponseUtil.GetObject(documentDetailAllWorkflowResponse,
                 ResponseMessages.GetSuccessfully, HttpStatusCode.OK, 1);
-            
-            
         }
         catch (Exception ex)
         {
@@ -1323,8 +1517,4 @@ public partial class DocumentService : IDocumentService
                 HttpStatusCode.InternalServerError);
         }
     }
-    
-    
-    
-    
 }

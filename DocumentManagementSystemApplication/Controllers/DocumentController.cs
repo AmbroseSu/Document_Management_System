@@ -199,6 +199,22 @@ namespace DocumentManagementSystemApplication.Controllers
             var id = User.FindFirst("userid")?.Value;
             var result = await _documentService.UpdateConfirmDocumentBySubmit(documentUpload, Guid.Parse(id));
             return result;
+        }   
+        
+        [HttpGet("view-document-for-usb")]
+        public async Task<ResponseDto> ViewDocumentForUsb([FromQuery] Guid documentId)
+        {
+            var id = User.FindFirst("userid")?.Value;
+            var result = await _documentService.GetDocumentForUsb(documentId, Guid.Parse(id));
+            return result;
+        }
+        
+        [HttpPost("update-document-from-usb/{documentId}")]
+        public async Task<ResponseDto> UpdateDocumentFromUsb([FromBody] DocumentForSignByUsb documentForSignByUsb,[FromRoute] Guid documentId)
+        {
+            var id = User.FindFirst("userid")?.Value;
+            var result = await _documentService.UpdateDocumentFromUsb(documentForSignByUsb,documentId, Guid.Parse(id));
+            return result;
         }
     
 }
