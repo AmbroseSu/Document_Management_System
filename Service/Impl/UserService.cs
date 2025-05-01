@@ -812,12 +812,15 @@ public async Task<ResponseDto> UploadSignatureImgAsync(UpdateSignatureRequest up
                         return ResponseUtil.Error("File chữ ký không đúng định dạng, vui lòng chọn lại file",
                             ResponseMessages.FailedToSaveData, HttpStatusCode.BadRequest);
                 }
-
-                if (normalSign == null) continue;
-                await _fileService.SaveSignature(normalSign, cer.DigitalCertificateId.ToString());
-                if(!Path.GetExtension(normalSign.FileName).Equals(".png", StringComparison.CurrentCultureIgnoreCase))
-                    return ResponseUtil.Error("File chữ ký không đúng định dạng, vui lòng chọn lại file",
-                        ResponseMessages.FailedToSaveData, HttpStatusCode.BadRequest);
+                else
+                {
+                    if (normalSign == null) continue;
+                    await _fileService.SaveSignature(normalSign, cer.DigitalCertificateId.ToString());
+                    if (!Path.GetExtension(normalSign.FileName)
+                            .Equals(".png", StringComparison.CurrentCultureIgnoreCase))
+                        return ResponseUtil.Error("File chữ ký không đúng định dạng, vui lòng chọn lại file",
+                            ResponseMessages.FailedToSaveData, HttpStatusCode.BadRequest);
+                }
             }
         }
 
