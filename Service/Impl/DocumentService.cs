@@ -1220,8 +1220,8 @@ public partial class DocumentService : IDocumentService
                                     cer.ValidFrom = metaData[^1].ValidFrom;
                                     cer.ValidTo = metaData[^1].ExpirationDate;
                                     await _unitOfWork.DigitalCertificateUOW.UpdateAsync(cer);
-                                    File.Copy(pathTmp, 
-                                        Path.Combine(_storagePath, "document", documentId.ToString(),version.DocumentVersionId.ToString(),document.DocumentName+".pdf"));
+                                    File.Replace(pathTmp, 
+                                        Path.Combine(_storagePath, "document", documentId.ToString(),version.DocumentVersionId.ToString(),document.DocumentName+".pdf"),null);
                                     await _unitOfWork.SaveChangesAsync();
                                     return ResponseUtil.GetObject("Sign success",
                                         ResponseMessages.GetSuccessfully, HttpStatusCode.OK, 1);
