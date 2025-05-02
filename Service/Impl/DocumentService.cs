@@ -1240,8 +1240,8 @@ public partial class DocumentService : IDocumentService
                                         HttpStatusCode.NotFound);
                                 }
 
-                                File.Copy(pathTmp, 
-                                    Path.Combine(_storagePath, "document", documentId.ToString(),version.DocumentId.ToString(),document.DocumentName+".pdf"));
+                                File.Replace(pathTmp, 
+                                        Path.Combine(_storagePath, "document", documentId.ToString(),version.DocumentVersionId.ToString(),document.DocumentName+".pdf"),null);
                                 return ResponseUtil.GetObject("Sign success",
                                     ResponseMessages.GetSuccessfully, HttpStatusCode.OK, 1);
                             }
