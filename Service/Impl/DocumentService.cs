@@ -624,7 +624,7 @@ public partial class DocumentService : IDocumentService
         var resultA = new DocumentDetailResponse()
         {
             Sizes = await GetDocumentSize(Path.Combine(Directory.GetCurrentDirectory(), "data", "storage",
-                "archive_document", documentA.ArchivedDocumentId.ToString(), documentA.ArchivedDocumentName + ".pdf")),
+                "archive_document", documentA.ArchivedDocumentId.ToString(), documentA.ArchivedDocumentName )),
 
             DocumentId = documentA.ArchivedDocumentId,
             DocumentName = documentA.ArchivedDocumentName,
