@@ -200,6 +200,13 @@ public class UserService : IUserService
                 var divisionDto = _mapper.Map<DivisionDto>(division);
                 result.DivisionDto = divisionDto;
             }
+            
+            var listDocuments = await _unitOfWork.DocumentUOW.FindDocumentByUserIdAsync(userId);
+            var listArchiveDocuments = await _unitOfWork.ArchivedDocumentUOW.FindArchivedDocumentByUserIdAsync(userId);
+            result.NumberOfDocuments = listDocuments.Count();
+            result.NumberOfArchiveDocuments = listArchiveDocuments.Count();
+            
+            
             return ResponseUtil.GetObject(result, ResponseMessages.GetSuccessfully, HttpStatusCode.OK, 1);
         }
         catch (Exception ex)
