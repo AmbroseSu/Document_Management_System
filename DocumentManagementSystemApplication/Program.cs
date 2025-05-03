@@ -32,7 +32,7 @@ builder.WebHost.ConfigureKestrel(serverOptions =>
 {
     serverOptions.Limits.KeepAliveTimeout = TimeSpan.FromMinutes(2);
     serverOptions.Limits.RequestHeadersTimeout = TimeSpan.FromMinutes(2);
-    serverOptions.Limits.MinRequestBodyDataRate = null;
+    //serverOptions.Limits.MinRequestBodyDataRate = null;
 });
 builder.Services.Configure<AppsetingOptions>(
     builder.Configuration.GetSection("ApiConfig")
