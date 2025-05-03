@@ -1074,13 +1074,12 @@ public partial class DocumentService : IDocumentService
         if (versionMax != 0 && doc.ProcessingStatus != ProcessingStatus.Rejected)
             return ResponseUtil.Error("File đã được gửi lên trước đó", ResponseMessages.FailedToSaveData,
                 HttpStatusCode.BadRequest);
-        var verList = doc.DocumentVersions.Select(x =>
+        
+        foreach (var ver in doc.DocumentVersions.Where(ver => ver.IsFinalVersion))
         {
-            x.IsFinalVersion = false;
-            _unitOfWork.DocumentVersionUOW.UpdateAsync(x);
-            return x;
-        });
-        verList.Select(x => _unitOfWork.DocumentVersionUOW.UpdateAsync(x));
+            ver.IsFinalVersion = false;
+            await _unitOfWork.DocumentVersionUOW.UpdateAsync(ver);
+        }
         var versionNow = new DocumentVersion()
         {
             DocumentVersionId = versionId,
@@ -1228,16 +1227,18 @@ public partial class DocumentService : IDocumentService
                                 }
                                 else
                                 {
-                                    return ResponseUtil.Error("Sign not success", ResponseMessages.OperationFailed,
-                                        HttpStatusCode.NotFound);
+                                    // return ResponseUtil.Error("Sign not success", ResponseMessages.OperationFailed,
+                                    //     HttpStatusCode.NotFound);
+                                    throw new Exception("Sign not success");
                                 }
                             }
                             else
                             {
                                 if (cer != null && metaData != null && cer.SerialNumber != metaData[^1].SerialNumber)
                                 {
-                                    return ResponseUtil.Error("Wrong certificate", ResponseMessages.OperationFailed,
-                                        HttpStatusCode.NotFound);
+                                    // return ResponseUtil.Error("Wrong certificate", ResponseMessages.OperationFailed,
+                                    //     HttpStatusCode.NotFound);
+                                    throw new Exception("Wrong certificate");
                                 }
 
                                 File.Copy(pathTmp, 
@@ -1248,32 +1249,37 @@ public partial class DocumentService : IDocumentService
                         }
                         else
                         {
-                            return ResponseUtil.Error("Certificate not found", ResponseMessages.OperationFailed,
-                                HttpStatusCode.NotFound);
+                            // return ResponseUtil.Error("Certificate not found", ResponseMessages.OperationFailed,
+                            //     HttpStatusCode.NotFound);
+                            throw new Exception("Certificate not found");
                         }
                     }
                     else
                     {
-                        return ResponseUtil.Error("User not found", ResponseMessages.OperationFailed,
-                            HttpStatusCode.NotFound);
+                        // return ResponseUtil.Error("User not found", ResponseMessages.OperationFailed,
+                        //     HttpStatusCode.NotFound);
+                        throw new Exception("User not found");
                     }
                 }
                 else
                 {
-                    return ResponseUtil.Error("Not have version active", ResponseMessages.OperationFailed,
-                        HttpStatusCode.NotFound);
+                    // return ResponseUtil.Error("Not have version active", ResponseMessages.OperationFailed,
+                    //     HttpStatusCode.NotFound);
+                    throw new Exception("Not have version active");
                 }
             }
             else
             {
-                return ResponseUtil.Error("Version not found", ResponseMessages.OperationFailed,
-                    HttpStatusCode.NotFound);
+                // return ResponseUtil.Error("Version not found", ResponseMessages.OperationFailed,
+                //     HttpStatusCode.NotFound);
+                throw new Exception("Version not found");
             }
         }
         else
         {
-            return ResponseUtil.Error("Document not found", ResponseMessages.OperationFailed,
-                HttpStatusCode.NotFound);
+            // return ResponseUtil.Error("Document not found", ResponseMessages.OperationFailed,
+            //     HttpStatusCode.NotFound);
+            throw new Exception("Document not found");
         }
 
         // throw new NotImplementedException();

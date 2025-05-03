@@ -186,7 +186,7 @@ namespace DocumentManagementSystemApplication.Controllers
         }
         
         [HttpPost("create-upload-document-for-submit")]
-        public async Task<ResponseDto> UploadDocumentForSumit([FromForm] DocumentUpload documentUpload)
+        public async Task<ResponseDto> UploadDocumentForSubmit([FromForm] DocumentUpload documentUpload)
         {
             var id = User.FindFirst("userid")?.Value;
             var result = await _documentService.UploadDocumentForSumit(documentUpload, Guid.Parse(id));
