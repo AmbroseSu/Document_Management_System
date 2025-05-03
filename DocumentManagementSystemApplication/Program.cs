@@ -31,7 +31,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.WebHost.ConfigureKestrel(serverOptions =>
 {
     serverOptions.Limits.KeepAliveTimeout = TimeSpan.FromMinutes(2);
-    serverOptions.Limits.RequestHeadersTimeout = TimeSpan.FromSeconds(30);
+    serverOptions.Limits.RequestHeadersTimeout = TimeSpan.FromMinutes(2);
 });
 builder.Services.Configure<AppsetingOptions>(
     builder.Configuration.GetSection("ApiConfig")
