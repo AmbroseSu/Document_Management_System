@@ -27,6 +27,9 @@ public class UserDto
     public bool IsEnable { get; set; }
     public string? Sign { get; set; }
     public string? SignDigital { get; set; }
+    
+    public int? NumberOfDocuments { get; set; }
+    public int? NumberOfArchiveDocuments { get; set; }
 
     public Guid? DivisionId { get; set; }
     public DivisionDto? DivisionDto { get; set; }

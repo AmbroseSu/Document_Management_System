@@ -424,10 +424,10 @@ public partial class TaskService : ITaskService
             
             if (taskDto.TaskType == TaskType.Sign)
             {
-                if (!currentStep.Role.RoleName.ToLower().Equals("leader") ||
-                    !currentStep.Role.RoleName.ToLower().Equals("leader"))
+                if (!(currentStep.Role.RoleName.ToLower().Equals("leader") ||
+                    currentStep.Role.RoleName.ToLower().Equals("chief")))
                 {
-                    ResponseUtil.Error(
+                   return ResponseUtil.Error(
                         ResponseMessages.UserNotRoleWithTaskTypeIsSign,
                         ResponseMessages.OperationFailed,
                         HttpStatusCode.BadRequest);
@@ -442,6 +442,43 @@ public partial class TaskService : ITaskService
                     HttpStatusCode.NotFound);
             //if(orderedTasks[orderedTasks.Count - 1].EndDate > taskDto.StartDate)
             //    return ResponseUtil.Error(ResponseMessages.TaskStartdayLowerEndDaypreviousStepFailed, ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
+            
+            
+            
+            // Flatten tất cả các Step trong tất cả các Flow, kèm theo FlowNumber để dễ so sánh
+            var allStepsWithFlowNumber = workflowFlowAll
+                .SelectMany(wf => wf.Flow.Steps.Select(s => new
+                {
+                    Step = s,
+                    FlowNumber = wf.FlowNumber,
+                    StepNumber = s.StepNumber
+                }))
+                .ToList();
+            
+            var currentFlowNumber = workflowFlowAll
+                .FirstOrDefault(wf => wf.FlowId == currentFlow)?.FlowNumber ?? 0;
+
+             // Lọc ra các Step nằm "trước" currentStep theo thứ tự FlowNumber và StepNumber
+            var previousSteps = allStepsWithFlowNumber
+                .Where(x => 
+                    (x.FlowNumber < currentFlowNumber) ||
+                    (x.FlowNumber == currentFlowNumber && x.StepNumber < currentStep.StepNumber))
+                .OrderByDescending(x => x.FlowNumber)
+                .ThenByDescending(x => x.StepNumber)
+                .ToList();
+
+            var previousStep = previousSteps.FirstOrDefault()?.Step;
+            if (previousStep != null)
+            {
+                var taskInPreviousStep =
+                    await _unitOfWork.TaskUOW.FindTaskByStepIdDocIdAsync(previousStep.StepId, taskDto.DocumentId);
+                if (taskInPreviousStep.Count() < 0)
+                {
+                    return ResponseUtil.Error(ResponseMessages.TaskInPreviousStepNotFound,
+                        ResponseMessages.OperationFailed, HttpStatusCode.NotFound);
+                }
+            }
+            
             if (orderedTasks[0].TaskStatus == TasksStatus.Completed)
             {
                 var taskOfUser = orderedTasks.Where(t => t.UserId == userId && t.TaskType == TaskType.Create).ToList();
