@@ -472,7 +472,7 @@ public class WorkflowService : IWorkflowService
         }
     }
     
-    public async Task<ResponseDto> GetAllWorkflowAsync(string? workflowName, int page, int limit)
+    public async Task<ResponseDto> GetAllWorkflowAsync(string? workflowName, Scope? scope, int page, int limit)
     {
         try
         {
@@ -482,6 +482,12 @@ public class WorkflowService : IWorkflowService
             {
                 workflows = workflows
                     .Where(w => w.WorkflowName.ToLower().Contains(workflowName.ToLower()))
+                    .ToList();
+            }
+            if (scope != null)
+            {
+                workflows = workflows
+                    .Where(w => w.Scope == scope)
                     .ToList();
             }
             
