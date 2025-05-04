@@ -437,6 +437,13 @@ public partial class TaskService : ITaskService
             }
 
             var document = await _unitOfWork.DocumentUOW.FindDocumentByIdAsync(taskDto.DocumentId.Value);
+
+            if (document.Deadline < taskDto.EndDate)
+            {
+                return ResponseUtil.Error(ResponseMessages.TaskEndDateGreaterDeadline,
+                    ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
+            }
+            
             var orderedTasks = await GetOrderedTasks(document.Tasks.Where(t => t.IsDeleted == false).ToList(),
                 document.DocumentWorkflowStatuses.FirstOrDefault()?.WorkflowId ?? Guid.Empty);
             if (orderedTasks.Count == 0)
@@ -1567,6 +1574,27 @@ public partial class TaskService : ITaskService
                             ResponseMessages.OperationFailed,
                             HttpStatusCode.BadRequest);
 
+                    var workflow = await _unitOfWork.WorkflowUOW
+                        .FindWorkflowByIdAsync(document.DocumentWorkflowStatuses.FirstOrDefault()?.WorkflowId);
+                    if (workflow.Scope != Scope.InComing)
+                    {
+                        if (orderedTasks[1].TaskType != TaskType.Upload)
+                        {
+                            return ResponseUtil.Error("Task 2 step 1 must be upload", ResponseMessages.OperationFailed,
+                                         HttpStatusCode.NotFound);
+                        }
+                    }
+
+                    foreach (var orderedTask in orderedTasks)
+                    {
+                        if (orderedTask.StartDate == DateTime.MinValue)
+                        {
+                            return ResponseUtil.Error($"Please update start date and end date of task: {orderedTask.Title}", ResponseMessages.OperationFailed,
+                                HttpStatusCode.NotFound);
+                        }
+                    }
+
+
                     task.TaskStatus = TasksStatus.Completed;
                     task.UpdatedDate = DateTime.UtcNow;
                     await _unitOfWork.TaskUOW.UpdateAsync(task);
@@ -2266,22 +2294,22 @@ public partial class TaskService : ITaskService
             await _unitOfWork.TaskUOW.UpdateAsync(task);
             await _unitOfWork.SaveChangesAsync();
 
-            // 2. Cập nhật trạng thái tài liệu
+             //2. Cập nhật trạng thái tài liệu
             //var document = task.Document;
-            // if (document == null)
-            //     return ResponseUtil.Error(ResponseMessages.DocumentNotFound, ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
-            //
-            // document.ProcessingStatus = ProcessingStatus.Rejected;
-            // document.UpdatedDate = DateTime.UtcNow;
+             //if (document == null)
+                // return ResponseUtil.Error(ResponseMessages.DocumentNotFound, ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
+            
+             document.ProcessingStatus = ProcessingStatus.Rejected;
+             document.UpdatedDate = DateTime.UtcNow;
 
-            // 3. Hủy tất cả task còn lại (nếu chưa xử lý)
-            // var allPendingTasks = await _unitOfWork.TaskUOW.FindAllPendingTaskByDocumentIdAsync(task.DocumentId!.Value);
-            //
-            // foreach (var pendingTask in allPendingTasks)
-            // {
-            //     pendingTask.TaskStatus = TasksStatus.Revised; // Hoặc đặt là Rejected nếu bạn muốn thể hiện bị từ chối
-            //     pendingTask.UpdatedDate = DateTime.UtcNow;
-            // }
+             //3. Hủy tất cả task còn lại (nếu chưa xử lý)
+             var allPendingTasks = await _unitOfWork.TaskUOW.FindAllPendingTaskByDocumentIdAsync(task.DocumentId!.Value);
+            
+             foreach (var pendingTask in allPendingTasks)
+             {
+                 pendingTask.TaskStatus = TasksStatus.Revised; // Hoặc đặt là Rejected nếu bạn muốn thể hiện bị từ chối
+                 pendingTask.UpdatedDate = DateTime.UtcNow;
+             }
 
             var firstTask = orderedTasks[0].TaskId;
             foreach (var orderedTask in orderedTasks)
