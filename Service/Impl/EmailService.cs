@@ -114,7 +114,22 @@ public class EmailService : IEmailService
         }*/
         var message = new MimeMessage();
         message.From.Add(new MailboxAddress(email, email));
-        message.To.Add(new MailboxAddress(emailRequest.ReceiverEmail, emailRequest.ReceiverEmail));
+        // message.To.Add(new MailboxAddress(emailRequest.ReceiverEmail, emailRequest.ReceiverEmail));
+        emailRequest.ReceiverEmail = emailRequest.ReceiverEmail?
+            .Where(to => !string.IsNullOrWhiteSpace(to))
+            .ToList();
+
+        if (emailRequest.ReceiverEmail != null && emailRequest.ReceiverEmail.Any())
+        {
+            foreach (var to in emailRequest.ReceiverEmail)
+            {
+                message.To.Add(new MailboxAddress(to, to));
+            }
+        }
+        else
+        {
+            return ResponseUtil.Error("ReceiverEmail is required", ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
+        }
         message.Subject = emailRequest.Subject;
         
         emailRequest.CcEmails = emailRequest.CcEmails?

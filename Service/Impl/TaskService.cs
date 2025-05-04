@@ -243,12 +243,7 @@ public partial class TaskService : ITaskService
                     HttpStatusCode.BadRequest);
 
 
-            // if (taskDto.StartDate < DateTime.Now || taskDto.EndDate < DateTime.Now)
-            //     return ResponseUtil.Error(ResponseMessages.TaskStartdayEndDayFailed, ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
-            //
-            // if (taskDto.EndDate <= taskDto.StartDate)
-            //     return ResponseUtil.Error(ResponseMessages.TaskEndDayFailed, ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
-            //
+
             var existingTasks =
                 await _unitOfWork.TaskUOW.FindTaskByStepIdDocIdAsync(taskDto.StepId, taskDto.DocumentId);
 
@@ -297,6 +292,13 @@ public partial class TaskService : ITaskService
                 return ResponseUtil.Error(ResponseMessages.CanCreateTaskSubmit, ResponseMessages.OperationFailed,
                     HttpStatusCode.BadRequest);
             }
+
+            
+            if (taskDto.StartDate < DateTime.Now || taskDto.EndDate < DateTime.Now)
+                return ResponseUtil.Error(ResponseMessages.TaskStartdayEndDayFailed, ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
+            
+            if (taskDto.EndDate <= taskDto.StartDate)
+                return ResponseUtil.Error(ResponseMessages.TaskEndDayFailed, ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
 
 
             ////////////////////////////////////////////////////////////////////////
@@ -472,10 +474,10 @@ public partial class TaskService : ITaskService
             {
                 var taskInPreviousStep =
                     await _unitOfWork.TaskUOW.FindTaskByStepIdDocIdAsync(previousStep.StepId, taskDto.DocumentId);
-                if (taskInPreviousStep.Count() < 0)
+                if (taskInPreviousStep.Count() == 0)
                 {
                     return ResponseUtil.Error(ResponseMessages.TaskInPreviousStepNotFound,
-                        ResponseMessages.OperationFailed, HttpStatusCode.NotFound);
+                        ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
                 }
             }
             
@@ -1446,6 +1448,8 @@ public partial class TaskService : ITaskService
 
                     task.TaskStatus = TasksStatus.Completed;
                     task.UpdatedDate = DateTime.UtcNow;
+                    
+                    //TODO: Ky Nhay 
                     await _unitOfWork.TaskUOW.UpdateAsync(task);
                     await _unitOfWork.SaveChangesAsync();
 
@@ -1482,10 +1486,10 @@ public partial class TaskService : ITaskService
                         return ResponseUtil.Error(ResponseMessages.DocumentNotFound, ResponseMessages.OperationFailed,
                             HttpStatusCode.BadRequest);
 
-                    document.ProcessingStatus = ProcessingStatus.Rejected;
-                    document.UpdatedDate = DateTime.UtcNow;
-                    await _unitOfWork.DocumentUOW.UpdateAsync(document);
-                    await _unitOfWork.SaveChangesAsync();
+                    //document.ProcessingStatus = ProcessingStatus.Rejected;
+                    //document.UpdatedDate = DateTime.UtcNow;
+                    //await _unitOfWork.DocumentUOW.UpdateAsync(document);
+                    //await _unitOfWork.SaveChangesAsync();
                     var documentVersions =
                         await _unitOfWork.DocumentVersionUOW.FindDocumentVersionByDocumentIdAsync(document.DocumentId);
                     if (documentVersions != null)
@@ -1498,16 +1502,18 @@ public partial class TaskService : ITaskService
                     }
 
                     // 3. Hủy tất cả task còn lại (nếu chưa xử lý)
-                    var allPendingTasks =
-                        await _unitOfWork.TaskUOW.FindAllPendingTaskByDocumentIdAsync(task.DocumentId!.Value);
+                    // var allPendingTasks =
+                    //     await _unitOfWork.TaskUOW.FindAllPendingTaskByDocumentIdAsync(task.DocumentId!.Value);
+                    //
+                    // foreach (var pendingTask in allPendingTasks)
+                    // {
+                    //     pendingTask.TaskStatus =
+                    //         TasksStatus.Revised; // Hoặc đặt là Rejected nếu bạn muốn thể hiện bị từ chối
+                    //     pendingTask.UpdatedDate = DateTime.UtcNow;
+                    //     await _unitOfWork.TaskUOW.UpdateAsync(pendingTask);
+                    // }
 
-                    foreach (var pendingTask in allPendingTasks)
-                    {
-                        pendingTask.TaskStatus =
-                            TasksStatus.Revised; // Hoặc đặt là Rejected nếu bạn muốn thể hiện bị từ chối
-                        pendingTask.UpdatedDate = DateTime.UtcNow;
-                        await _unitOfWork.TaskUOW.UpdateAsync(pendingTask);
-                    }
+                    var firstTask = orderedTasks[0].TaskId;
 
                     foreach (var orderedTask in orderedTasks)
                     {
@@ -1517,14 +1523,29 @@ public partial class TaskService : ITaskService
                         await _notificationService.SendPushNotificationMobileAsync(userFinal.FcmToken, notification);
                         await _hubContext.Clients.User(orderedTask.UserId.ToString())
                             .SendAsync("ReceiveMessage", notification);
+                        
+                        
+                        if (orderedTask.TaskId == firstTask)
+                        {
+                            orderedTask.TaskStatus = TasksStatus.InProgress;
+                        }
+                        else
+                        {
+                            orderedTask.TaskStatus = TasksStatus.Waiting;
+                            orderedTask.StartDate = DateTime.MinValue;
+                            orderedTask.EndDate = DateTime.MinValue;
+                            orderedTask.UpdatedDate = DateTime.UtcNow;
+                            await _unitOfWork.TaskUOW.UpdateAsync(orderedTask);
+                        }
+                        
                     }
 
                     await _unitOfWork.SaveChangesAsync();
                     // 4. Gửi thông báo
                     // TODO: Gửi thông báo cho người tạo tài liệu + người liên quan: "Tài liệu đã bị từ chối ở bước XYZ bởi User A"
                     await transaction.CommitAsync();
-                    return ResponseUtil.GetObject(ResponseMessages.DocumentRejected, ResponseMessages.OperationFailed,
-                        HttpStatusCode.BadRequest, 1);
+                    return ResponseUtil.GetObject(ResponseMessages.DocumentRejected, ResponseMessages.CreatedSuccessfully,
+                        HttpStatusCode.OK, 1);
                 }
 
                 case TaskAction.SubmitDocument:
@@ -1768,6 +1789,8 @@ public partial class TaskService : ITaskService
             doc.ProcessingStatus = ProcessingStatus.Completed;
             doc.UpdatedDate = DateTime.UtcNow;
 
+            
+            //TODO: Luu vao archive
 
             var orderedTasks = await GetOrderedTasks(doc.Tasks,
                 doc.DocumentWorkflowStatuses.FirstOrDefault()?.WorkflowId ?? Guid.Empty);
