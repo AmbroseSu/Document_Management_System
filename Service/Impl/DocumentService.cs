@@ -187,7 +187,7 @@ public partial class DocumentService : IDocumentService
         #region GetAllTypeDocumentsMobile_ver2
 
         // Generate a cache key for the user
-        string cacheKey = $"GetAllTypeDocumentsMobile_{userId}";
+        string cacheKey = "GetAllTypeDocumentsMobile_userId_" + userId;
     
         // Attempt to retrieve cached data
         var cachedResult = await _unitOfWork.RedisCacheUOW.GetDataAsync<List<AllDocumentResponseMobile>>(cacheKey);

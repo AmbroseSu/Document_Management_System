@@ -1864,6 +1864,7 @@ public partial class TaskService : ITaskService
             var archivedDoc = new ArchivedDocument()
             {
                 ArchivedDocumentId = archivedDocId,
+                ArchivedDocumentName = doc.DocumentName,
                 ArchivedDocumentContent = doc.DocumentContent,
                 NumberOfDocument = doc.NumberOfDocument,
                 SignedBy = signBy,
@@ -1885,6 +1886,8 @@ public partial class TaskService : ITaskService
                 UserDocumentPermissions = userPermission,
                 ArchiveDocumentSignatures = listSignArchive
             };
+            doc.ProcessingStatus = ProcessingStatus.Archived;
+            await _unitOfWork.DocumentUOW.AddAsync(doc);
             await _unitOfWork.ArchivedDocumentUOW.AddAsync(archivedDoc);
             // await _unitOfWork.SaveChangesAsync();
             
