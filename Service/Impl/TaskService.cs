@@ -1791,6 +1791,47 @@ public partial class TaskService : ITaskService
 
             
             //TODO: Luu vao archive
+            var archivedDocId = Guid.NewGuid();
+            var latestVer = doc.DocumentVersions?.FirstOrDefault(x => x.IsFinalVersion);
+            if (latestVer is not { DocumentSignatures: not null })
+            {
+            }
+            else
+            {
+                var signByList = latestVer.DocumentSignatures.Select(x => x.DigitalCertificate).Select(x => x.User);
+                var signBy = string.Join(", ", signByList.Select(x => x.FullName));
+                if (doc.DocumentWorkflowStatuses == null)
+                {
+                    return ResponseUtil.Error("DocumentWorkflowStatuses not found",
+                        ResponseMessages.OperationFailed,
+                        HttpStatusCode.BadRequest);
+                }
+
+
+                var scopeDoc = doc.DocumentWorkflowStatuses.Select(x => x.Workflow).FirstOrDefault()!.Scope;
+                var archivedDoc = new ArchivedDocument()
+                {
+                    ArchivedDocumentId = archivedDocId,
+                    ArchivedDocumentContent = doc.DocumentContent,
+                    NumberOfDocument = doc.NumberOfDocument,
+                    SignedBy = signBy,
+                    ArchivedDocumentUrl = "", //TODO add sau
+                    CreatedDate = DateTime.Now,
+                    Sender = null,
+                    CreatedBy = doc.User.FullName,
+                    ExternalPartner = null,
+                    ArchivedDocumentStatus = ArchivedDocumentStatus.Archived,
+                    DateIssued = DateTime.Now,
+                    DateReceived = null,
+                    DateSented = null,
+                    DocumentRevokes = null,
+                    DocumentReplaces = null,
+                    Scope = scopeDoc,
+                    IsTemplate = false,
+                    DocumentTypeId = doc.DocumentTypeId ?? Guid.NewGuid(),
+                    FinalDocumentId = doc.DocumentId,
+                };
+            }
 
             var orderedTasks = await GetOrderedTasks(doc.Tasks,
                 doc.DocumentWorkflowStatuses.FirstOrDefault()?.WorkflowId ?? Guid.Empty);

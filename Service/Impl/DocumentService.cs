@@ -502,7 +502,7 @@ public partial class DocumentService : IDocumentService
             version = document?.DocumentVersions?.Find(t => t.IsFinalVersion)?.VersionNumber ?? "0";
         }
 
-        var versions = document.DocumentVersions.Where(x => int.Parse(x.VersionNumber) <= int.Parse(version)).ToList();
+        var versions = document.DocumentVersions.ToList();
         var signature = document.DocumentVersions.FirstOrDefault(x => x.IsFinalVersion)?.DocumentSignatures;
         var dateExpires = DateTime.MaxValue;
         if (signature != null)
@@ -533,6 +533,7 @@ public partial class DocumentService : IDocumentService
             Versions = versions.Select(v => new VersionDetailRespone()
             {
                 VersionNumber = v.VersionNumber,
+                
                 CreatedDate = v.CreateDate,
                 Url = v.DocumentVersionUrl,
                 IsFinal = v.IsFinalVersion
@@ -1224,13 +1225,31 @@ public partial class DocumentService : IDocumentService
     public async Task<ResponseDto> UpdateConfirmDocumentBySubmit(DocumentCompareDto documentUpload, Guid userId)
     {
         var doc = await _unitOfWork.DocumentUOW.FindDocumentByIdAsync(documentUpload.DocumentId);
+        // var user = await _unitOfWork.UserUOW.FindUserByIdAsync(userId);
+        if (doc == null)
+        {
+            return ResponseUtil.Error("Document not found", ResponseMessages.OperationFailed,
+                HttpStatusCode.NotFound);
+        }
+        
+        // var taskList = doc.Tasks;
+        // if (taskList != null)
+        // {
+        //     var task = taskList.FindAll(x => x.Step is { StepNumber: 1 }).FindAll(x => x is { TaskNumber: 2, TaskType: TaskType.Upload });
+        //     if (task.Count == 0)
+        //     {
+        //         return ResponseUtil.Error("Task 2 step 1 must be upload", ResponseMessages.OperationFailed,
+        //             HttpStatusCode.NotFound);
+        //     }
+        // }
+
         doc.DocumentContent = documentUpload.DocumentContent;
 
         var versionId = Guid.NewGuid();
         var versionMax = int.Parse(doc.DocumentVersions.OrderByDescending(x => x.VersionNumber).First().VersionNumber);
-        if (versionMax != 0 && doc.ProcessingStatus != ProcessingStatus.Rejected)
-            return ResponseUtil.Error("File đã được gửi lên trước đó", ResponseMessages.FailedToSaveData,
-                HttpStatusCode.BadRequest);
+        // if (versionMax != 0 && doc.ProcessingStatus != ProcessingStatus.Rejected)
+        //     return ResponseUtil.Error("File đã được gửi lên trước đó", ResponseMessages.FailedToSaveData,
+        //         HttpStatusCode.BadRequest);
 
         foreach (var ver in doc.DocumentVersions.Where(ver => ver.IsFinalVersion))
         {
