@@ -2253,6 +2253,12 @@ public partial class TaskService : ITaskService
             await _unitOfWork.DocumentVersionUOW.UpdateAsync(documentVersion);
             await _unitOfWork.SaveChangesAsync();
 
+            var documentVersion0 = document.DocumentVersions
+                .Where(d => d.VersionNumber.Equals("0"))
+                .FirstOrDefault();
+            documentVersion0.IsFinalVersion = true;
+            await _unitOfWork.DocumentVersionUOW.UpdateAsync(documentVersion0);
+            await _unitOfWork.SaveChangesAsync();
 
             // 1. Cập nhật trạng thái task hiện tại
             task.TaskStatus = TasksStatus.Completed;
