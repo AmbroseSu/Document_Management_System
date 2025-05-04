@@ -28,6 +28,13 @@ builder.Services.AddControllers()
     .AddJsonOptions(options => { options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()); });
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
+builder.WebHost.ConfigureKestrel(serverOptions =>
+{
+    serverOptions.Limits.KeepAliveTimeout = TimeSpan.FromMinutes(5);
+    serverOptions.Limits.RequestHeadersTimeout = TimeSpan.FromMinutes(5);
+    serverOptions.Limits.MaxRequestBodySize = 209_715_200;
+    //serverOptions.Limits.MinRequestBodyDataRate = null;
+});
 builder.Services.Configure<AppsetingOptions>(
     builder.Configuration.GetSection("ApiConfig")
 );

@@ -51,7 +51,8 @@ public class ResourceService : IResourceService
             var routes = new List<ResourceDto>();
 
             foreach (var x in _actionDescriptorProvider.ActionDescriptors.Items
-                         .Where(x => x is ControllerActionDescriptor)
+                         .Where(x => x is ControllerActionDescriptor cad &&
+                                     cad.ControllerTypeInfo.Name != "AuthenticationController")
                          .Cast<ControllerActionDescriptor>())
             {
                 var normalizedRoute = NormalizeRoute(x.AttributeRouteInfo?.Template);
