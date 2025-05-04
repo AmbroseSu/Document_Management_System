@@ -3,11 +3,13 @@ using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using BusinessObject.Enums;
+using BusinessObject.Option;
 using DataAccess.DTO;
 using DataAccess.DTO.Request;
 using MailKit.Net.Smtp;
 using MailKit.Security;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 using MimeKit;
 using MimeKit.Text;
 using Repository;
@@ -21,13 +23,15 @@ public class EmailService : IEmailService
     private readonly IConfiguration _config;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IFileService _fileService;
+    private readonly string _host;
 
 
-    public EmailService(IConfiguration config, IUnitOfWork unitOfWork, IFileService fileService)
+    public EmailService(IConfiguration config, IUnitOfWork unitOfWork, IFileService fileService, IOptions<AppsetingOptions> options)
     {
         _config = config;
         _unitOfWork = unitOfWork;
         _fileService = fileService;
+        _host = options.Value.redirect_uri;
     }
 
     public async Task<ResponseDto> SendEmail(string emailResponse, string subject, string content)
@@ -223,7 +227,7 @@ public class EmailService : IEmailService
             { "client_id", Environment.GetEnvironmentVariable("CLIENT_ID")! },
             { "client_secret", Environment.GetEnvironmentVariable("CLIENT_SECRET")! },
             //{ "redirect_uri", "http://signdoc-core.io.vn/send-email" },
-            { "redirect_uri", "http://localhost:3000/send-email" },
+            { "redirect_uri", _host },
             //{ "redirect_uri", "http://127.0.0.1:5500/test.html" },
             { "grant_type", "authorization_code" }
         };
