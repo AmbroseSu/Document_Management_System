@@ -137,6 +137,7 @@ public static class ResponseMessages
     public const string TaskEndDateAfterNextStepStartDate = "End date of the task must not be greater than the start date of the next step";
     public const string TaskEndDateAfterNextFlowStartDate = "End date of the task must not be greater than the start date of the next flow";
     public const string TaskInPreviousStepNotFound = "Task in previous step not found";
+    public const string TaskEndDateGreaterDeadline = "End date of the task must not be greater than the deadline";
 
     public const string CanCreateTaskSubmit = "You cannot create task has task type submit in here";
     //Step
