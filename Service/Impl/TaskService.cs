@@ -1528,6 +1528,7 @@ public partial class TaskService : ITaskService
                         if (orderedTask.TaskId == firstTask)
                         {
                             orderedTask.TaskStatus = TasksStatus.InProgress;
+                            await _unitOfWork.TaskUOW.UpdateAsync(orderedTask);
                         }
                         else
                         {
@@ -2293,6 +2294,12 @@ public partial class TaskService : ITaskService
             await _unitOfWork.DocumentVersionUOW.UpdateAsync(documentVersion);
             await _unitOfWork.SaveChangesAsync();
 
+            var documentVersion0 = document.DocumentVersions
+                .Where(d => d.VersionNumber.Equals("0"))
+                .FirstOrDefault();
+            documentVersion0.IsFinalVersion = true;
+            await _unitOfWork.DocumentVersionUOW.UpdateAsync(documentVersion0);
+            await _unitOfWork.SaveChangesAsync();
 
             // 1. Cập nhật trạng thái task hiện tại
             task.TaskStatus = TasksStatus.Completed;
@@ -2309,19 +2316,38 @@ public partial class TaskService : ITaskService
             // document.UpdatedDate = DateTime.UtcNow;
 
             // 3. Hủy tất cả task còn lại (nếu chưa xử lý)
-            var allPendingTasks = await _unitOfWork.TaskUOW.FindAllPendingTaskByDocumentIdAsync(task.DocumentId!.Value);
+            // var allPendingTasks = await _unitOfWork.TaskUOW.FindAllPendingTaskByDocumentIdAsync(task.DocumentId!.Value);
+            //
+            // foreach (var pendingTask in allPendingTasks)
+            // {
+            //     pendingTask.TaskStatus = TasksStatus.Revised; // Hoặc đặt là Rejected nếu bạn muốn thể hiện bị từ chối
+            //     pendingTask.UpdatedDate = DateTime.UtcNow;
+            // }
 
-            foreach (var pendingTask in allPendingTasks)
-            {
-                pendingTask.TaskStatus = TasksStatus.Revised; // Hoặc đặt là Rejected nếu bạn muốn thể hiện bị từ chối
-                pendingTask.UpdatedDate = DateTime.UtcNow;
-            }
-
+            var firstTask = orderedTasks[0].TaskId;
             foreach (var orderedTask in orderedTasks)
             {
+                var userFinal = await _unitOfWork.UserUOW.FindUserByIdAsync(orderedTask.UserId);
                 var notification = _notificationService.CreateDocRejectedNotification(task, orderedTask.UserId);
                 await _notificationCollection.CreateNotificationAsync(notification);
-                await _hubContext.Clients.User(orderedTask.UserId.ToString()).SendAsync("ReceiveMessage", notification);
+                await _notificationService.SendPushNotificationMobileAsync(userFinal.FcmToken, notification);
+                await _hubContext.Clients.User(orderedTask.UserId.ToString())
+                    .SendAsync("ReceiveMessage", notification);
+                        
+                        
+                if (orderedTask.TaskId == firstTask)
+                {
+                    orderedTask.TaskStatus = TasksStatus.InProgress;
+                    await _unitOfWork.TaskUOW.UpdateAsync(orderedTask);
+                }
+                else
+                {
+                    orderedTask.TaskStatus = TasksStatus.Waiting;
+                    orderedTask.StartDate = DateTime.MinValue;
+                    orderedTask.EndDate = DateTime.MinValue;
+                    orderedTask.UpdatedDate = DateTime.UtcNow;
+                    await _unitOfWork.TaskUOW.UpdateAsync(orderedTask);
+                }
             }
 
             await _unitOfWork.SaveChangesAsync();
