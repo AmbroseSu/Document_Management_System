@@ -1887,7 +1887,7 @@ public partial class TaskService : ITaskService
                 ArchiveDocumentSignatures = listSignArchive
             };
             doc.ProcessingStatus = ProcessingStatus.Archived;
-            await _unitOfWork.DocumentUOW.AddAsync(doc);
+            await _unitOfWork.DocumentUOW.UpdateAsync(doc);
             await _unitOfWork.ArchivedDocumentUOW.AddAsync(archivedDoc);
             // await _unitOfWork.SaveChangesAsync();
             
