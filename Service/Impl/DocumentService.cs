@@ -1180,9 +1180,9 @@ public partial class DocumentService : IDocumentService
     public async Task<ResponseDto> UploadDocumentForSumit(DocumentUpload documentUpload, Guid userId)
     {
         var doc = await _unitOfWork.DocumentUOW.FindDocumentByIdAsync(documentUpload.DocumentId);
-        if (doc.ProcessingStatus != ProcessingStatus.Rejected && doc.DocumentVersions.Count > 1)
-            return ResponseUtil.Error("File đã được gửi lên trước đó", ResponseMessages.FailedToSaveData,
-                HttpStatusCode.BadRequest);
+        // if (doc.ProcessingStatus != ProcessingStatus.Rejected && doc.DocumentVersions.Count > 1)
+        //     return ResponseUtil.Error("File đã được gửi lên trước đó", ResponseMessages.FailedToSaveData,
+        //         HttpStatusCode.BadRequest);
         var template = doc.TemplateArchiveDocument;
         var aiResponse = new DocumentAiResponse();
         var url = string.Empty;
