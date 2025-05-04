@@ -1528,6 +1528,7 @@ public partial class TaskService : ITaskService
                         if (orderedTask.TaskId == firstTask)
                         {
                             orderedTask.TaskStatus = TasksStatus.InProgress;
+                            await _unitOfWork.TaskUOW.UpdateAsync(orderedTask);
                         }
                         else
                         {
