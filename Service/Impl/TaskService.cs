@@ -1887,6 +1887,8 @@ public partial class TaskService : ITaskService
                 ArchiveDocumentSignatures = listSignArchive
             };
             doc.ProcessingStatus = ProcessingStatus.Archived;
+            doc.FinalArchiveDocumentId = archivedDocId;
+            doc.IsDeleted = true;
             await _unitOfWork.DocumentUOW.UpdateAsync(doc);
             await _unitOfWork.ArchivedDocumentUOW.AddAsync(archivedDoc);
             // await _unitOfWork.SaveChangesAsync();
@@ -2208,6 +2210,7 @@ public partial class TaskService : ITaskService
                     };
                     doc.FinalArchiveDocumentId = archiveId;
                     doc.IsDeleted = true;
+                    doc.ProcessingStatus = ProcessingStatus.Archived;
                     await _unitOfWork.ArchivedDocumentUOW.AddAsync(archiveDoc);
                     await _unitOfWork.DocumentUOW.UpdateAsync(doc);
                     

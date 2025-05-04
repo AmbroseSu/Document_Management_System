@@ -590,7 +590,8 @@ public partial class DocumentService : IDocumentService
                                      lTask.Where(x => x.UserId == userId && x is
                                      {
                                          TaskType: TaskType.Create,
-                                         TaskStatus: TasksStatus.InProgress or TasksStatus.Completed
+                                         TaskStatus: TasksStatus.InProgress or TasksStatus.Completed,
+                                         IsDeleted: false
                                      }).Select(x => x.Document).ToList()).Select(t2 => t2.Distinct().ToList()))
                     {
                         kk.AddRange(t2);
