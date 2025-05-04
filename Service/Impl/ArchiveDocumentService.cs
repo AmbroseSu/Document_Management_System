@@ -102,9 +102,9 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
     }
 }*/
 
-    public async Task<ResponseDto> GetAllArchiveDocuments(Guid userId, int page, int pageSize)
+    public async Task<ResponseDto> GetAllArchiveDocuments(GetAllArchiveRequestDto getAllArchiveRequestDto, Guid userId,int page,int pageSize)
     {
-        var cache = _unitOfWork.RedisCacheUOW.GetData<List<ArchiveResponseDto>>("ArchiveDocumentUserId" + userId);
+        var cache = await _unitOfWork.RedisCacheUOW.GetDataAsync<List<ArchiveResponseDto>>("ArchiveDocumentUserId" + userId);
         IEnumerable<ArchivedDocument> aDoc;
         if (cache == null)
         {
@@ -112,7 +112,26 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
         }
         else
         {
-            return ResponseUtil.GetCollection(cache.Skip((page - 1) * pageSize).Take(pageSize).ToList(), ResponseMessages.GetSuccessfully, HttpStatusCode.OK, 10, page,
+            
+            if (!string.IsNullOrEmpty(getAllArchiveRequestDto.Name))
+            {
+                cache = cache.FindAll(x => x.Name.Contains(getAllArchiveRequestDto.Name));
+            }
+
+            if (getAllArchiveRequestDto.Scope != null)
+            {
+                cache = cache.FindAll(x => x.Scope == getAllArchiveRequestDto.Scope.ToString());
+            }
+
+            if (getAllArchiveRequestDto.CreatedDate != null)
+            {
+                cache = cache.FindAll(x => x.CreatedDate == getAllArchiveRequestDto.CreatedDate);
+            }
+            if (getAllArchiveRequestDto.Status != null)
+            {
+                cache = cache.FindAll(x => x.Status == getAllArchiveRequestDto.Status.ToString());
+            }
+            return ResponseUtil.GetCollection(cache.Skip((page - 1) * pageSize).Take(pageSize).ToList(), ResponseMessages.GetSuccessfully, HttpStatusCode.OK, pageSize, page,
                 pageSize, cache.Count);
         }
 
@@ -139,12 +158,32 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
                 DateReceived = x.DateReceived,
                 DateSented = x.DateSented
             }).ToList();
+    
+        await _unitOfWork.RedisCacheUOW.SetDataAsync("ArchiveDocumentUserId" + userId, response,TimeSpan.FromMinutes(1));
+        
+        if (!string.IsNullOrEmpty(getAllArchiveRequestDto.Name))
+        {
+            response = response.FindAll(x => x.Name.Contains(getAllArchiveRequestDto.Name));
+        }
 
-        _unitOfWork.RedisCacheUOW.SetData("ArchiveDocumentUserId" + userId, response,TimeSpan.FromMinutes(1));
-        var final = response.Skip((page - 1) * pageSize).Take(pageSize).ToList();
-        var total = (int)Math.Ceiling((double)(response.Count / pageSize));
-        return ResponseUtil.GetCollection(final, ResponseMessages.GetSuccessfully, HttpStatusCode.OK, response.Count, page,
-            pageSize, total);
+        if (getAllArchiveRequestDto.Scope != null)
+        {
+            response = response.FindAll(x => x.Scope == getAllArchiveRequestDto.Scope.ToString());
+        }
+
+        if (getAllArchiveRequestDto.CreatedDate != null)
+        {
+            response = response.FindAll(x => x.CreatedDate == getAllArchiveRequestDto.CreatedDate);
+        }
+
+        if (getAllArchiveRequestDto.Status != null)
+        {
+            response = response.FindAll(x => x.Status == getAllArchiveRequestDto.Status.ToString());
+        }
+        // var final = response.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+        // var total = (int)Math.Ceiling((double)(response.Count / pageSize));
+        return ResponseUtil.GetCollection(response.Skip((page - 1) * pageSize).Take(pageSize).ToList(), ResponseMessages.GetSuccessfully, HttpStatusCode.OK, response.Count, page,
+            pageSize, response.Count);
     }
 
     public async Task<ResponseDto> GetAllArchiveTemplates(string? documentType,string? name,int page, int pageSize)

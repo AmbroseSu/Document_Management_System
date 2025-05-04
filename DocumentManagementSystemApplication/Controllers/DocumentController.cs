@@ -209,7 +209,7 @@ namespace DocumentManagementSystemApplication.Controllers
             return result;
         }
         
-        [HttpPost("update-document-from-usb/{documentId}")]
+        [HttpPost("update-document-from-usb/{documentId:guid}")]
         public async Task<ResponseDto> UpdateDocumentFromUsb([FromBody] DocumentForSignByUsb documentForSignByUsb,[FromRoute] Guid documentId)
         {
             var id = User.FindFirst("userid")?.Value;
