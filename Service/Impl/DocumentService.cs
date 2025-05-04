@@ -1260,7 +1260,7 @@ public partial class DocumentService : IDocumentService
         var versionNow = new DocumentVersion()
         {
             DocumentVersionId = versionId,
-            VersionNumber = versionMax + 1.ToString(),
+            VersionNumber = (versionMax + 1).ToString(),
             CreateDate = DateTime.Now,
             IsFinalVersion = true,
             DocumentId = doc.DocumentId
