@@ -175,6 +175,10 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
     /// <returns>A paginated and filtered ResponseDto containing the archived documents.</returns>
     private static ResponseDto FilterAndPaginateResponse(List<ArchiveResponseDto> data, GetAllArchiveRequestDto request, int page, int pageSize)
     {
+        if (request.StartCreatedDate != null)
+            request.StartCreatedDate = request.StartCreatedDate.Value.AddHours(23).AddMinutes(59).AddSeconds(59);
+        if (request.EndCreatedDate != null)
+            request.EndCreatedDate = request.EndCreatedDate.Value.AddHours(23).AddMinutes(59).AddSeconds(59);
         data = ApplyFilters(data, request);
     
         data = request.SortByCreatedDate == SortByCreatedDate.Ascending
