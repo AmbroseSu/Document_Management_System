@@ -102,49 +102,91 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
     }
 }*/
 
-    public async Task<ResponseDto> GetAllArchiveDocuments(Guid userId, int page, int pageSize)
+    /// <summary>
+    /// Retrieves all archived documents for a specific user, applies filters, and paginates the results.
+    /// </summary>
+    /// <param name="getAllArchiveRequestDto">The request DTO containing filter criteria.</param>
+    /// <param name="userId">The unique identifier of the user.</param>
+    /// <param name="page">The page number for pagination.</param>
+    /// <param name="pageSize">The number of items per page for pagination.</param>
+    /// <returns>A paginated and filtered list of archived documents wrapped in a ResponseDto.</returns>
+    public async Task<ResponseDto> GetAllArchiveDocuments(GetAllArchiveRequestDto getAllArchiveRequestDto, Guid userId, int page, int pageSize)
     {
-        var cache = _unitOfWork.RedisCacheUOW.GetData<List<ArchiveResponseDto>>("ArchiveDocumentUserId" + userId);
-        IEnumerable<ArchivedDocument> aDoc;
-        if (cache == null)
+        var cacheKey = "ArchiveDocumentUserId" + userId;
+        var cache = await _unitOfWork.RedisCacheUOW.GetDataAsync<List<ArchiveResponseDto>>(cacheKey);
+    
+        if (cache != null) return FilterAndPaginateResponse(cache, getAllArchiveRequestDto, page, pageSize);
+        var aDoc = await _unitOfWork.ArchivedDocumentUOW.FindArchivedDocumentByUserIdAsync(userId);
+        var response = aDoc.Select(x => new ArchiveResponseDto
         {
-            aDoc = await _unitOfWork.ArchivedDocumentUOW.FindArchivedDocumentByUserIdAsync(userId);
-        }
-        else
-        {
-            return ResponseUtil.GetCollection(cache.Skip((page - 1) * pageSize).Take(pageSize).ToList(), ResponseMessages.GetSuccessfully, HttpStatusCode.OK, 10, page,
-                pageSize, cache.Count);
-        }
-
-        
-        var response = aDoc.Select(x =>
-            new ArchiveResponseDto()
-            {
-                Id = x.ArchivedDocumentId,
-                Name = x.ArchivedDocumentName,
-                CreateDate = x.CreatedDate,
-                Status = x.ArchivedDocumentStatus.ToString(),
-                Type = x.DocumentType?.DocumentTypeName ?? string.Empty,
-                SignBy = ExtractSigners(
-                    x.ArchiveDocumentSignatures?
-                        .Select(c => c.DigitalCertificate)
-                        .FirstOrDefault()?.Subject ?? string.Empty
-                ),
-                CreateBy = x.CreatedBy,
-                NumberOfDocument = x.NumberOfDocument,
-                CreatedDate = x.CreatedDate,
-                Scope = x.Scope.ToString(),
-                Sender = x.Sender,
-                ExternalPartner = x.ExternalPartner,
-                DateReceived = x.DateReceived,
-                DateSented = x.DateSented
-            }).ToList();
-
-        _unitOfWork.RedisCacheUOW.SetData("ArchiveDocumentUserId" + userId, response,TimeSpan.FromMinutes(1));
-        var final = response.Skip((page - 1) * pageSize).Take(pageSize).ToList();
-        var total = (int)Math.Ceiling((double)(response.Count / pageSize));
-        return ResponseUtil.GetCollection(final, ResponseMessages.GetSuccessfully, HttpStatusCode.OK, response.Count, page,
-            pageSize, total);
+            Id = x.ArchivedDocumentId,
+            Name = x.ArchivedDocumentName,
+            CreateDate = x.CreatedDate,
+            Status = x.ArchivedDocumentStatus.ToString(),
+            Type = x.DocumentType?.DocumentTypeName ?? string.Empty,
+            SignBy = ExtractSigners(x.ArchiveDocumentSignatures?.Select(c => c.DigitalCertificate).FirstOrDefault()?.Subject ?? string.Empty),
+            CreateBy = x.CreatedBy,
+            NumberOfDocument = x.NumberOfDocument,
+            CreatedDate = x.CreatedDate,
+            Scope = x.Scope.ToString(),
+            Sender = x.Sender,
+            ExternalPartner = x.ExternalPartner,
+            DateReceived = x.DateReceived,
+            DateSented = x.DateSented
+        }).ToList();
+    
+        await _unitOfWork.RedisCacheUOW.SetDataAsync(cacheKey, response, TimeSpan.FromMinutes(1));
+        return FilterAndPaginateResponse(response, getAllArchiveRequestDto, page, pageSize);
+    }
+    
+    /// <summary>
+    /// Applies filters to a list of archived documents based on the provided request criteria.
+    /// </summary>
+    /// <param name="data">The list of archived documents to filter.</param>
+    /// <param name="request">The request DTO containing filter criteria.</param>
+    /// <returns>A filtered list of archived documents.</returns>
+    private static List<ArchiveResponseDto> ApplyFilters(List<ArchiveResponseDto> data, GetAllArchiveRequestDto request)
+    {
+        if (!string.IsNullOrEmpty(request.Name))
+            data = data.FindAll(x => x.Name.Contains(request.Name));
+    
+        if (request.Scope != null)
+            data = data.FindAll(x => x.Scope == request.Scope.ToString());
+    
+        if (request.StartCreatedDate != null)
+            data = data.FindAll(x => x.CreatedDate.CompareTo(request.StartCreatedDate) >= 0);
+    
+        if (request.EndCreatedDate != null)
+            data = data.FindAll(x => x.CreatedDate.CompareTo(request.EndCreatedDate) <= 0);
+    
+        if (request.Status != null)
+            data = data.FindAll(x => x.Status == request.Status.ToString());
+    
+        return data;
+    }
+    
+    /// <summary>
+    /// Filters and paginates a list of archived documents based on the provided request criteria.
+    /// </summary>
+    /// <param name="data">The list of archived documents to filter and paginate.</param>
+    /// <param name="request">The request DTO containing filter and sorting criteria.</param>
+    /// <param name="page">The page number for pagination.</param>
+    /// <param name="pageSize">The number of items per page for pagination.</param>
+    /// <returns>A paginated and filtered ResponseDto containing the archived documents.</returns>
+    private static ResponseDto FilterAndPaginateResponse(List<ArchiveResponseDto> data, GetAllArchiveRequestDto request, int page, int pageSize)
+    {
+        if (request.StartCreatedDate != null)
+            request.StartCreatedDate = request.StartCreatedDate.Value.AddHours(-7);
+        if (request.EndCreatedDate != null)
+            request.EndCreatedDate = request.EndCreatedDate.Value.AddHours(16).AddMinutes(59).AddSeconds(59);
+        data = ApplyFilters(data, request);
+    
+        data = request.SortByCreatedDate == SortByCreatedDate.Ascending
+            ? data.OrderBy(x => x.CreatedDate).ToList()
+            : data.OrderByDescending(x => x.CreatedDate).ToList();
+    
+        var paginatedData = data.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+        return ResponseUtil.GetCollection(paginatedData, ResponseMessages.GetSuccessfully, HttpStatusCode.OK, data.Count, page, pageSize, data.Count);
     }
 
     public async Task<ResponseDto> GetAllArchiveTemplates(string? documentType,string? name,int page, int pageSize)

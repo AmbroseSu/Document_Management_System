@@ -287,7 +287,7 @@ public class SignApiService : ISignApiService
             {
                 DocumentVersionId = version.DocumentVersionId,
                 DigitalCertificateId = digitalCertificate.DigitalCertificateId,
-                OrderIndex = document?.DocumentVersions?.Count + 1 ?? 0,
+                OrderIndex = version?.DocumentSignatures?.Count + 1 ?? 0,
                 SignedAt = DateTime.UtcNow
             };
             await _unitOfWork.DocumentSignatureUOW.AddAsync(documentSignature);

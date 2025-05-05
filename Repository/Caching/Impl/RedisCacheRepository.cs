@@ -12,9 +12,10 @@ public class RedisCacheRepository : IRedisCacheRepository
         _cache = cache;
     }
 
-    public T? GetData<T>(string key)
+    public async Task<T>? GetDataAsync<T>(string key)
     {
-        var data = _cache.GetString(key);
+        var data = await _cache.GetStringAsync(key);
+        
         if (data == null)
         {
             return default;
@@ -22,7 +23,7 @@ public class RedisCacheRepository : IRedisCacheRepository
         return JsonSerializer.Deserialize<T>(data);
     }
 
-    public void SetData<T>(string key, T data, TimeSpan? expiry = null)
+    public async Task SetDataAsync<T>(string key, T data, TimeSpan? expiry = null)
     {
         if (expiry is null)
         {
@@ -34,14 +35,14 @@ public class RedisCacheRepository : IRedisCacheRepository
             throw new ArgumentOutOfRangeException(nameof(expiry), "Expiry must be a positive timespan.");
         }
 
-        _cache.SetString(key, JsonSerializer.Serialize(data), new DistributedCacheEntryOptions
+        await _cache.SetStringAsync(key, JsonSerializer.Serialize(data), new DistributedCacheEntryOptions
         {
             AbsoluteExpirationRelativeToNow = expiry
         });
     }
 
-    public void RemoveData(string key)
+    public async Task RemoveDataAsync(string key)
     {
-        _cache.Remove(key);
+        await _cache.RemoveAsync(key);
     }
 }

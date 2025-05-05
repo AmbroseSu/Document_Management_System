@@ -162,12 +162,12 @@ namespace DocumentManagementSystemApplication.Controllers
             return result;
         }
 
-        [HttpGet("view-my-self-document")]
-        public async Task<ResponseDto> ViewMySelfDocument([FromQuery] string? searchText, [FromQuery] int page = 1,
+        [HttpPost("view-my-self-document")]
+        public async Task<ResponseDto> ViewMySelfDocument([FromBody] GetAllMySelfRequestDto getAllMySelfRequestDto, [FromQuery] int page = 1,
             int pageSize = 10)
         {
             var id = User.FindFirst("userid")?.Value;
-            var result = await _documentService.GetMySelfDocument(Guid.Parse(id), searchText, page, pageSize);
+            var result = await _documentService.GetMySelfDocument(Guid.Parse(id), getAllMySelfRequestDto, page, pageSize);
             return result;
         }
 
@@ -209,7 +209,7 @@ namespace DocumentManagementSystemApplication.Controllers
             return result;
         }
         
-        [HttpPost("update-document-from-usb/{documentId}")]
+        [HttpPost("update-document-from-usb/{documentId:guid}")]
         public async Task<ResponseDto> UpdateDocumentFromUsb([FromBody] DocumentForSignByUsb documentForSignByUsb,[FromRoute] Guid documentId)
         {
             var id = User.FindFirst("userid")?.Value;

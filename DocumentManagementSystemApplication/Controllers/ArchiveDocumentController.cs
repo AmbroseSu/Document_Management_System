@@ -52,11 +52,13 @@ namespace DocumentManagementSystemApplication.Controllers
             return Ok(new { message = "Notification sent" });
         }
         
-        [HttpGet("view-all-documents")]
-        public async Task<ResponseDto> GetAllDocuments([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+        [HttpPost("view-all-documents")]
+        public async Task<ResponseDto> GetAllDocuments([FromBody]GetAllArchiveRequestDto getAllArchiveRequestDto, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
+            
+            //search name, scope, created date, status
             var id = User.FindFirst("userid")?.Value;
-            var documents = await _archiveDocumentService.GetAllArchiveDocuments(Guid.Parse(id),page,pageSize);
+            var documents = await _archiveDocumentService.GetAllArchiveDocuments(getAllArchiveRequestDto,Guid.Parse(id),page,pageSize);
             return documents;
         }
 

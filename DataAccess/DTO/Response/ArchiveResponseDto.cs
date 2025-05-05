@@ -49,4 +49,23 @@ public class ArchiveResponseDto
 
     [JsonPropertyName("dateSented")]
     public DateTime? DateSented { get; set; }
+
+    private sealed class CreateDateEqualityComparer : IEqualityComparer<ArchiveResponseDto>
+    {
+        public bool Equals(ArchiveResponseDto? x, ArchiveResponseDto? y)
+        {
+            if (ReferenceEquals(x, y)) return true;
+            if (x is null) return false;
+            if (y is null) return false;
+            if (x.GetType() != y.GetType()) return false;
+            return x.CreateDate.Equals(y.CreateDate);
+        }
+
+        public int GetHashCode(ArchiveResponseDto obj)
+        {
+            return obj.CreateDate.GetHashCode();
+        }
+    }
+
+    public static IEqualityComparer<ArchiveResponseDto> CreateDateComparer { get; } = new CreateDateEqualityComparer();
 }

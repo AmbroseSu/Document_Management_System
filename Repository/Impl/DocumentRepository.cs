@@ -89,6 +89,10 @@ public class DocumentRepository : IDocumentRepository
                 .ThenInclude(dws => dws.Workflow)
                 .Include(d => d.Tasks)
                 .ThenInclude(t => t.User)
+                .Include(x => x.DocumentType)
+                .Include(x => x.DocumentVersions)
+                .ThenInclude(y => y.DocumentSignatures)
+                .ThenInclude(z => z.DigitalCertificate)
 
                 
             );

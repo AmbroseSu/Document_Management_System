@@ -24,5 +24,6 @@ jobs:
            
             docker compose build
             docker compose down
+            docker image prune -f
             docker compose up -d
           EOF
