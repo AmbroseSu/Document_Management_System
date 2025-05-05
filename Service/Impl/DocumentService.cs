@@ -515,7 +515,7 @@ public partial class DocumentService : IDocumentService
             ).ToList(),
             ApprovalSignatures = signature.Where(x => x.DigitalCertificate!=null).Where(x => x.DigitalCertificate.IsUsb == null).Select(x => new SignatureResponse()
             {
-                SignerName = ExtractSigners(x.DigitalCertificate.Subject),
+                SignerName = x.DigitalCertificate.User.FullName,
                 ImgUrl = x.DigitalCertificate.SignatureImageUrl,
                 SignedDate = x.SignedAt,
                 IsDigital = false

@@ -243,7 +243,7 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
             }).ToList(),
             ApprovalSignatures = docA.ArchiveDocumentSignatures?.Where(x => x.DigitalCertificate!=null).Where(x =>x.DigitalCertificate.IsUsb==null).Select(x => new SignatureResponse()
             {
-                SignerName = ExtractSigners(x.DigitalCertificate.Subject),
+                SignerName = x.DigitalCertificate.User.FullName,
                 SignedDate = x.SignedAt,
                 IsDigital = false,
             }).ToList()
