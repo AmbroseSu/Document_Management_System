@@ -626,7 +626,7 @@ public partial class DocumentService : IDocumentService
             var workflow = x.DocumentWorkflowStatuses?.FirstOrDefault()?.Workflow;
             if (workflow == null) return null;
             var documentSignatures = x.DocumentVersions?.FirstOrDefault(v => v.IsFinalVersion)?.DocumentSignatures;
-            if (documentSignatures != null)
+            
                 return new
                 {
                     Id = x.DocumentId,
@@ -644,7 +644,6 @@ public partial class DocumentService : IDocumentService
                     )
                 };
     
-            return null;
         }).ToList();
     
         // Apply filters based on the request
