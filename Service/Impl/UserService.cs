@@ -853,6 +853,17 @@ public async Task<ResponseDto> UploadSignatureImgAsync(UpdateSignatureRequest up
                 return ResponseUtil.Error(ResponseMessages.UserHasDeleted, ResponseMessages.OperationFailed,
                     HttpStatusCode.BadRequest);
             user.IsEnable = false;
+            var listCer = await _unitOfWork.DigitalCertificateUOW.FindDigitalCertificateByUserIdAsync(userId);
+            if (listCer != null && listCer.Count() > 0)
+            {
+                var cer = listCer.FirstOrDefault(c => c.IsUsb == true);
+                if (cer != null)
+                {
+                    cer.SerialNumber = null;
+                    await _unitOfWork.DigitalCertificateUOW.UpdateAsync(cer);
+                    await _unitOfWork.SaveChangesAsync();
+                }
+            }
             await _unitOfWork.UserUOW.UpdateAsync(user);
             await _unitOfWork.SaveChangesAsync();
             return ResponseUtil.GetObject(ResponseMessages.EnableUploadSignatureImage, ResponseMessages.UpdateSuccessfully,
