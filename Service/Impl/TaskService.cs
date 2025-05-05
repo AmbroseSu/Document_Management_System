@@ -270,10 +270,11 @@ public partial class TaskService : ITaskService
                         HttpStatusCode.BadRequest);
                 }
             }
+            var document = await _unitOfWork.DocumentUOW.FindDocumentByIdAsync(taskDto.DocumentId.Value);
 
             var currentFlow = currentStep!.FlowId;
 
-            var workflowFlow = await _unitOfWork.WorkflowFlowUOW.FindWorkflowFlowByFlowIdAsync(currentFlow);
+            var workflowFlow = await _unitOfWork.WorkflowFlowUOW.FindWorkflowFlowByWorkflowIdAndFlowIdAsync(document.DocumentWorkflowStatuses.FirstOrDefault()?.WorkflowId, currentFlow);
 
             var workflowId = workflowFlow!.WorkflowId;
 
@@ -436,7 +437,7 @@ public partial class TaskService : ITaskService
                 }
             }
 
-            var document = await _unitOfWork.DocumentUOW.FindDocumentByIdAsync(taskDto.DocumentId.Value);
+            
 
             if (document.Deadline < taskDto.EndDate)
             {
