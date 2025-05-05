@@ -19,7 +19,9 @@ public class DocumentResponse
     public DateTime? DateIssued { get; set; }
     public DateTime? DateExpires { get; set; }
     public string? Scope { get; set; }
-    public List<SignatureResponse>? Signatures { get; set; } = [];
+    public List<SignatureResponse>? DigitalSignatures { get; set; } = [];
+    public List<SignatureResponse>? ApprovalSignatures { get; set; } = [];
+
     public List<VersionDetailRespone>? Versions { get; set; } = [];  
     public List<TasksResponse>? Tasks { get; set; } = [];
 }
@@ -27,6 +29,7 @@ public class DocumentResponse
 public class SignatureResponse
 {
     public string? SignerName { get; set; }
+    public string? ImgUrl { get; set; }
     public DateTime? SignedDate { get; set; }
     public bool IsDigital {get;set;}
 }

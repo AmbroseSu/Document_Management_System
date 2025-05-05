@@ -504,13 +504,23 @@ public partial class DocumentService : IDocumentService
                 TaskType = t.TaskType.ToString(),
                 Status = t.TaskStatus.ToString()
             }).ToList(),
-            Signatures = signature.Select(x => new SignatureResponse()
+            DigitalSignatures = signature.Where(x => x.DigitalCertificate!=null).Where(x => x.DigitalCertificate.IsUsb != null).Select(x => new SignatureResponse()
                 {
                     SignerName = ExtractSigners(x.DigitalCertificate.Subject),
+                    ImgUrl = x.DigitalCertificate.SignatureImageUrl,
                     SignedDate = x.SignedAt,
-                    IsDigital = x.DigitalCertificate.SerialNumber != null
+                    IsDigital = true
                 }
-            ).ToList()
+            
+            ).ToList(),
+            ApprovalSignatures = signature.Where(x => x.DigitalCertificate!=null).Where(x => x.DigitalCertificate.IsUsb == null).Select(x => new SignatureResponse()
+            {
+                SignerName = ExtractSigners(x.DigitalCertificate.Subject),
+                ImgUrl = x.DigitalCertificate.SignatureImageUrl,
+                SignedDate = x.SignedAt,
+                IsDigital = false
+            }
+            ).ToList(),
         };
 
         return ResponseUtil.GetObject(result, ResponseMessages.GetSuccessfully, HttpStatusCode.OK, 1);

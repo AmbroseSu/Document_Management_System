@@ -1458,6 +1458,56 @@ public partial class TaskService : ITaskService
                     task.UpdatedDate = DateTime.UtcNow;
                     
                     //TODO: Ky Nhay 
+                    if (user == null)
+                    {
+                        return ResponseUtil.Error("User not found", ResponseMessages.OperationFailed,
+                            HttpStatusCode.NotFound);
+                    }
+
+                    if (user.DigitalCertificates == null)
+                    {
+                        return ResponseUtil.Error("User's digital certificates not found", ResponseMessages.OperationFailed,
+                            HttpStatusCode.NotFound);
+                    }
+                    var cer = user.DigitalCertificates.FirstOrDefault(x => x.IsUsb == null);
+                    var documentSignId = Guid.NewGuid();
+                    if (document.DocumentVersions == null)
+                    {
+                        return ResponseUtil.Error("Document versions not found", ResponseMessages.OperationFailed,
+                            HttpStatusCode.NotFound);
+                    }
+                    
+
+                    var latestVer = document.DocumentVersions.FirstOrDefault(x => x.IsFinalVersion);
+
+
+                    if (latestVer == null)
+                    {
+                        return ResponseUtil.Error("Latest version not found", ResponseMessages.OperationFailed,
+                            HttpStatusCode.NotFound);
+                    }
+
+                    if (latestVer.DocumentSignatures == null)
+                    {
+                        return ResponseUtil.Error("Document signatures not found", ResponseMessages.OperationFailed,
+                            HttpStatusCode.NotFound);
+                    }
+
+                    if (cer == null)
+                    {
+                        return ResponseUtil.Error("Digital certificate not found", ResponseMessages.OperationFailed,
+                            HttpStatusCode.NotFound);
+                    }
+                    var documentSign = new DocumentSignature()
+                    {
+                        DocumentSignatureId = documentSignId,
+                        SignedAt = DateTime.Now,
+                        OrderIndex = latestVer.DocumentSignatures.Count + 1,
+                        DigitalCertificateId = cer.DigitalCertificateId,
+                        DocumentVersionId = latestVer.DocumentVersionId,
+                    };
+                    
+                    await _unitOfWork.DocumentSignatureUOW.AddAsync(documentSign); 
                     await _unitOfWork.TaskUOW.UpdateAsync(task);
                     await _unitOfWork.SaveChangesAsync();
 
