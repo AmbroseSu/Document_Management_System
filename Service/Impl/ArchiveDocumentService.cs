@@ -176,7 +176,7 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
     private static ResponseDto FilterAndPaginateResponse(List<ArchiveResponseDto> data, GetAllArchiveRequestDto request, int page, int pageSize)
     {
         if (request.StartCreatedDate != null)
-            request.StartCreatedDate = request.StartCreatedDate.Value.AddHours(16).AddMinutes(59).AddSeconds(59);
+            request.StartCreatedDate = request.StartCreatedDate.Value.AddHours(-7);
         if (request.EndCreatedDate != null)
             request.EndCreatedDate = request.EndCreatedDate.Value.AddHours(16).AddMinutes(59).AddSeconds(59);
         data = ApplyFilters(data, request);
