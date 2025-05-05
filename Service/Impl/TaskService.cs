@@ -808,6 +808,16 @@ public partial class TaskService : ITaskService
                     );
                 }
             }
+            
+            var nexTask = orderedTasks[currentIndex + 1];
+            if (nexTask.StartDate < taskRequest.EndDate)
+            {
+                return ResponseUtil.Error(
+                    ResponseMessages.TaskStartdayNextTaskLowerEndDayCurrentTask,
+                    ResponseMessages.OperationFailed,
+                    HttpStatusCode.BadRequest
+                );
+            }
 
             if (orderedTasks[0].TaskId == taskRequest.TaskId)
             {
