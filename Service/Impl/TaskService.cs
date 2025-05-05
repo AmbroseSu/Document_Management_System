@@ -1584,6 +1584,14 @@ public partial class TaskService : ITaskService
                             return ResponseUtil.Error("Task 2 step 1 must be upload", ResponseMessages.OperationFailed,
                                          HttpStatusCode.NotFound);
                         }
+
+                        if (document.ProcessingStatus != ProcessingStatus.InProgress)
+                        {
+                            document.ProcessingStatus = ProcessingStatus.InProgress;
+                            document.UpdatedDate = DateTime.UtcNow;
+                            await _unitOfWork.DocumentUOW.UpdateAsync(document);
+                            await _unitOfWork.SaveChangesAsync();
+                        }
                     }
 
                     foreach (var orderedTask in orderedTasks)
