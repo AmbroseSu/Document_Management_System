@@ -22,7 +22,7 @@ public interface IDocumentService
     Task<ResponseDto> GetAllDocumentsByTypeMobile(Guid documentTypeId, Guid userId);
     Task<ResponseDto> GetDocumentByNameMobile(string documentName, Guid userId);
     Task<ResponseDto> GetDocumentDetailById(Guid documentId, Guid userId);
-    Task<ResponseDto> GetMySelfDocument(Guid userId, string? searchText, int page, int pageSize);
+    Task<ResponseDto> GetMySelfDocument(Guid userId, GetAllMySelfRequestDto getAllMySelfRequestDto, int page, int pageSize);
     Task<IActionResult> GetDocumentByFileName(string documentName, Guid userId);
     Task<ResponseDto> ShowProcessDocumentDetail(Guid? documentId);
     void AddFooterToPdf(string inputFilePath, string outputFilePath);

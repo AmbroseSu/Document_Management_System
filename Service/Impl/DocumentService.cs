@@ -218,7 +218,7 @@ public partial class DocumentService : IDocumentService
                                         d.DocumentVersions.FirstOrDefault(t => t.IsFinalVersion)?.DocumentVersionId ??
                                         Guid.Empty,
                                         d.DocumentName
-                                    )
+                                    ) ?? "0 KB"
                                 }).ToList()
                         })
                         .Where(dtr => dtr.DocumentResponseMobiles.Any())
@@ -254,7 +254,7 @@ public partial class DocumentService : IDocumentService
                                 ad.ArchivedDocumentId,
                                 Guid.Empty,
                                 ad.ArchivedDocumentName
-                            )
+                            ) ?? "0 Kb"
                         }
                     );
             }
@@ -562,12 +562,22 @@ public partial class DocumentService : IDocumentService
     //     return orderedTasks;
     // }
 
-    public async Task<ResponseDto> GetMySelfDocument(Guid userId, string? searchText, int page, int pageSize)
+    /// <summary>
+    /// Retrieves a paginated list of documents for the specified user, applying filters and sorting based on the provided request.
+    /// </summary>
+    /// <param name="userId">The unique identifier of the user.</param>
+    /// <param name="getAllMySelfRequestDto">The request object containing filter and sorting criteria.</param>
+    /// <param name="page">The page number for pagination.</param>
+    /// <param name="pageSize">The number of items per page for pagination.</param>
+    /// <returns>A response containing the filtered, sorted, and paginated list of documents.</returns>
+    public async Task<ResponseDto> GetMySelfDocument(Guid userId, GetAllMySelfRequestDto getAllMySelfRequestDto, int page, int pageSize)
     {
+        // Retrieve the user by their ID
         var user = await _unitOfWork.UserUOW.FindUserByIdAsync(userId);
         List<DocumentJsonDto> doc;
-        searchText ??= "";
-        var cache = await _unitOfWork.RedisCacheUOW.GetDataAsync<List<DocumentJsonDto>>(
+    
+        // Attempt to retrieve documents from the cache
+        var cache = await _unitOfWork.RedisCacheUOW.GetDataAsync<List<DocumentJsonDto>?>(
             "GetAllMySeflDoc_userId_" + userId);
         if (cache != null)
         {
@@ -575,66 +585,92 @@ public partial class DocumentService : IDocumentService
         }
         else
         {
+            // Fetch documents directly from the database if not found in cache
             var tmp = (await _unitOfWork.DocumentUOW.FindAllDocumentMySelf(userId)).ToList();
-            if (user.UserRoles.Any(x => x.Role.RoleName.Split("_")[^1] == "Chief" && x.Role.IsDeleted == false)) ;
+    
+            // Include additional documents if the user has a "Chief" role
+            if (user is { UserRoles: not null } && user.UserRoles.Any(x => x.Role is { RoleName: not null } && x.Role.RoleName.Split("_")[^1] == "Chief" && x.Role.IsDeleted == false))
             {
                 var docCa = await _unitOfWork.DocumentUOW.FindAllDocumentAsync();
                 docCa = docCa.Where(
                     x => x.DocumentWorkflowStatuses?.FirstOrDefault()?.Workflow?.Scope == Scope.InComing);
-                if (docCa != null)
                 {
                     var li = docCa.Select(x => x.Tasks).ToList();
                     var kk = new List<Document>();
                     foreach (var t2 in li
                                  .Select(lTask =>
-                                     lTask.Where(x => x.UserId == userId && x is
+                                 {
+                                     return lTask?.Where(x => x.UserId == userId && x is
                                      {
                                          TaskType: TaskType.Create,
                                          TaskStatus: TasksStatus.InProgress or TasksStatus.Completed,
                                          IsDeleted: false
-                                     }).Select(x => x.Document).ToList()).Select(t2 => t2.Distinct().ToList()))
+                                     }).Select(x => x.Document).ToList();
+                                 }).Select(t2 => t2?.Distinct().ToList()))
                     {
-                        kk.AddRange(t2);
+                        if (t2 != null) kk.AddRange(t2!);
                     }
-
+    
                     kk = kk.Distinct().ToList();
                     tmp.AddRange(kk);
                 }
             }
-
+    
+            // Map the documents to the DTO format
             doc = _mapper.Map<List<DocumentJsonDto>>(tmp);
-
-            // var docCA = await _unitOfWork.DocumentUOW.
-            // doc.ToList();
-            // _unitOfWork.RedisCacheUOW.SetData("GetAllMySeflDoc_userId_" + userId, doc, TimeSpan.FromMinutes(2)); 
         }
-
-        var result = doc.Where(x => x.DocumentName.Contains(searchText)).Select(x =>
+    
+        // Transform the documents into a result list with additional details
+        var result = doc.Select(x =>
         {
-            return new
-            {
-                Id = x.DocumentId,
-                Name = x.DocumentName,
-                CreateDate = x.CreatedDate,
-                Status = x.ProcessingStatus.ToString(),
-                Type = x.DocumentType?.DocumentTypeName ?? string.Empty,
-                Workflow = x.DocumentWorkflowStatuses.FirstOrDefault().Workflow.WorkflowName,
-                Scope = x.DocumentWorkflowStatuses.FirstOrDefault().Workflow.Scope.ToString(),
-                x.Deadline,
-                x.NumberOfDocument,
-                SignBy = ExtractSigners(
-                    x.DocumentVersions.FirstOrDefault(v => v.IsFinalVersion)?.DocumentSignatures
-                        .Select(c => c.DigitalCertificate)
-                        .FirstOrDefault()?.Subject ?? string.Empty
-                )
-            };
+            var workflow = x.DocumentWorkflowStatuses?.FirstOrDefault()?.Workflow;
+            if (workflow == null) return null;
+            var documentSignatures = x.DocumentVersions?.FirstOrDefault(v => v.IsFinalVersion)?.DocumentSignatures;
+            if (documentSignatures != null)
+                return new
+                {
+                    Id = x.DocumentId,
+                    Name = x.DocumentName,
+                    CreateDate = x.CreatedDate,
+                    Status = x.ProcessingStatus.ToString(),
+                    Type = x.DocumentType?.DocumentTypeName ?? string.Empty,
+                    Workflow = workflow?.WorkflowName,
+                    Scope = workflow?.Scope.ToString(),
+                    x.Deadline,
+                    x.NumberOfDocument,
+                    SignBy = ExtractSigners(
+                        documentSignatures?.Select(c => c.DigitalCertificate)
+                            .FirstOrDefault()?.Subject ?? string.Empty
+                    )
+                };
+    
+            return null;
         }).ToList();
+    
+        // Apply filters based on the request
+        if (getAllMySelfRequestDto.Name != null) 
+            result = result.Where(x => x?.Name != null && x.Name.Contains(getAllMySelfRequestDto.Name, StringComparison.OrdinalIgnoreCase)).ToList();
+        if (getAllMySelfRequestDto.Scope != null)
+            result = result.Where(x => x?.Scope == getAllMySelfRequestDto.Scope.ToString()).ToList();
+        if (getAllMySelfRequestDto.StartCreatedDate != null)
+            result = result.Where(x => x?.CreateDate.CompareTo(getAllMySelfRequestDto.StartCreatedDate) >= 0).ToList();
+        if (getAllMySelfRequestDto.EndCreatedDate != null)
+            result = result.Where(x => x?.CreateDate.CompareTo(getAllMySelfRequestDto.EndCreatedDate) <= 0).ToList();
+        if (getAllMySelfRequestDto.Status != null)
+            result = result.Where(x => x?.Status == getAllMySelfRequestDto.Status.ToString()).ToList();
+    
+        // Sort the results based on the creation date
+        result = getAllMySelfRequestDto.SortByCreatedDate == SortByCreatedDate.Ascending 
+            ? result.OrderBy(x => x?.CreateDate).ToList() : result.OrderByDescending(x => x?.CreateDate).ToList();
+    
+        // Paginate the results
         var finalResult = result.Skip((page - 1) * pageSize).Take(pageSize).ToList();
         var totalPage = (int)Math.Ceiling((double)result.Count / pageSize);
+    
+        // Return the paginated response
         return ResponseUtil.GetCollection(finalResult, ResponseMessages.GetSuccessfully, HttpStatusCode.OK,
             result.Count, page,
             pageSize, totalPage);
-        // throw new NotImplementedException();
     }
 
     public async Task<IActionResult> GetDocumentByFileName(string documentName, Guid userId)
