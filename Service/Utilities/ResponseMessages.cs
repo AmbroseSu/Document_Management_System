@@ -114,6 +114,7 @@ public static class ResponseMessages
     //Tasks
     public const string TaskStartdayEndDayFailed = "Start and end times must be greater than current";
     public const string TaskStartdayLowerEndDaypreviousStepFailed = "Start times of current task must be greater than end task of previous task";
+    public const string TaskStartdayNextTaskLowerEndDayCurrentTask = "End times of current task must be less than start times task of next task";
     public const string TaskEndDayFailed = "End date must be greater than start date";
     public const string TaskNotFound = "Task not found";
     public const string TaskAlreadyDeleted = "Task already deleted";
