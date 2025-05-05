@@ -654,13 +654,13 @@ public partial class DocumentService : IDocumentService
             result = result.Where(x => x?.Scope == getAllMySelfRequestDto.Scope.ToString()).ToList();
         if (getAllMySelfRequestDto.StartCreatedDate != null)
         {
-            getAllMySelfRequestDto.StartCreatedDate = getAllMySelfRequestDto.StartCreatedDate.Value.AddHours(23)
+            getAllMySelfRequestDto.StartCreatedDate = getAllMySelfRequestDto.StartCreatedDate.Value.AddHours(16)
                 .AddMinutes(59).AddSeconds(59);
             result = result.Where(x => x?.CreateDate.CompareTo(getAllMySelfRequestDto.StartCreatedDate) >= 0).ToList();
         }
         if (getAllMySelfRequestDto.EndCreatedDate != null)
         {
-            getAllMySelfRequestDto.EndCreatedDate = getAllMySelfRequestDto.EndCreatedDate.Value.AddHours(23)
+            getAllMySelfRequestDto.EndCreatedDate = getAllMySelfRequestDto.EndCreatedDate.Value.AddHours(16)
                 .AddMinutes(59).AddSeconds(59);
 
             result = result.Where(x => x?.CreateDate.CompareTo(getAllMySelfRequestDto.EndCreatedDate) <= 0).ToList();
