@@ -34,6 +34,7 @@ public class UserRepository : IUserRepository
     }
     
 
+
     public async Task<User?> FindUserByIdAsync(Guid? id)
     {
         if (id == null) throw new ArgumentNullException(nameof(id));

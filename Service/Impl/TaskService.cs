@@ -1595,7 +1595,7 @@ public partial class TaskService : ITaskService
                                          HttpStatusCode.NotFound);
                         }
 
-                        if (document.ProcessingStatus != ProcessingStatus.InProgress)
+                        if (document.ProcessingStatus == ProcessingStatus.Rejected)
                         {
                             document.ProcessingStatus = ProcessingStatus.InProgress;
                             document.UpdatedDate = DateTime.UtcNow;
@@ -1838,6 +1838,8 @@ public partial class TaskService : ITaskService
         {
             doc.ProcessingStatus = ProcessingStatus.Completed;
             doc.UpdatedDate = DateTime.UtcNow;
+            
+            //TODO: Minh archive
 
             
             var archivedDocId = Guid.NewGuid();
