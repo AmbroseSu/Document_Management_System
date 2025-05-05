@@ -235,12 +235,19 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
             CreatedBy = docA.CreatedBy,
             DateIssued = docA.DateIssued,
             DateExpires = DateTime.MaxValue,
-            Signatures = docA.ArchiveDocumentSignatures?.Select(x => new SignatureResponse()
+            DigitalSignatures = docA.ArchiveDocumentSignatures?.Where(x => x.DigitalCertificate!=null).Where(x =>x.DigitalCertificate.IsUsb!=null).Select(x => new SignatureResponse()
             {
-                SignerName = ExtractSigners(x.DigitalCertificate?.Subject),
+                SignerName = ExtractSigners(x.DigitalCertificate.Subject),
                 SignedDate = x.SignedAt,
-                IsDigital = x.DigitalCertificate is { SerialNumber: not null },
+                IsDigital = true,
             }).ToList(),
+            ApprovalSignatures = docA.ArchiveDocumentSignatures?.Where(x => x.DigitalCertificate!=null).Where(x =>x.DigitalCertificate.IsUsb==null).Select(x => new SignatureResponse()
+            {
+                SignerName = ExtractSigners(x.DigitalCertificate.Subject),
+                SignedDate = x.SignedAt,
+                IsDigital = false,
+            }).ToList()
+            ,
             Versions = [
                 new VersionDetailRespone()
                 {
