@@ -1402,6 +1402,16 @@ public partial class DocumentService : IDocumentService
                             {
                                 if (metaData != null)
                                 {
+                                    var signDocId = Guid.NewGuid();
+                                    var signDoc = new DocumentSignature()
+                                    {
+                                        DocumentSignatureId = signDocId,
+                                        SignedAt = DateTime.Now,
+                                        OrderIndex = version.DocumentSignatures.Count +1,
+                                        DigitalCertificateId = cer.DigitalCertificateId,
+                                        DocumentVersionId = version.DocumentVersionId,
+                                    };
+                                    await _unitOfWork.DocumentSignatureUOW.AddAsync(signDoc);
                                     cer.SerialNumber = metaData[^1].SerialNumber;
                                     cer.Issuer = metaData[^1].Issuer;
                                     cer.Subject = metaData[^1].SignerName;
