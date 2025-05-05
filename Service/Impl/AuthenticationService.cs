@@ -34,14 +34,16 @@ public class AuthenticationService : IAuthenticationService
             {
                 return ResponseUtil.Error("Invalid email format", "Failed", HttpStatusCode.BadRequest);
             }*/
-            var user = await _unitOfWork.UserUOW.FindUserByEmailAsync(signInRequest.Email.ToLower());
+            var user = await _unitOfWork.UserUOW.FindUserByEmailAsync(signInRequest.Email.ToLower()) 
+                       ?? await _unitOfWork.UserUOW.FindUserByUserNameAsync(signInRequest.Email.ToLower());
             if (user == null || !BCrypt.Net.BCrypt.Verify(signInRequest.Password, user.Password))
-                return ResponseUtil.Error(ResponseMessages.EmailNotExists + " or " + ResponseMessages.PasswordNotExists,
+                return ResponseUtil.Error(ResponseMessages.EmailOrUsernameNotExists + " or " + ResponseMessages.PasswordNotExists,
                     ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
 
             if (user.IsDeleted)
                 return ResponseUtil.Error(ResponseMessages.UserHasDeleted, ResponseMessages.OperationFailed,
                     HttpStatusCode.BadRequest);
+
 
             if (!signInRequest.FcmToken.Equals(user.FcmToken) && !signInRequest.FcmToken.Equals("string"))
                 user.FcmToken = signInRequest.FcmToken;

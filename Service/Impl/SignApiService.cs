@@ -208,7 +208,7 @@ public class SignApiService : ISignApiService
             
             var listDigitalCertificates =
                 await _unitOfWork.DigitalCertificateUOW.FindDigitalCertificateByUserIdAsync(userId);
-            var digitalCertificate = listDigitalCertificates.Where(dc => dc.SerialNumber != null).FirstOrDefault();
+            var digitalCertificate = listDigitalCertificates.Where(dc => dc.IsUsb == false).FirstOrDefault();
             var signFile = await _fileService.GetFileBytes(Path.Combine("signature", digitalCertificate.DigitalCertificateId + ".png"));
             var signFileBytes = signFile.FileBytes;
             string signData = Convert.ToBase64String(signFileBytes);

@@ -206,6 +206,11 @@ public class EmailService : IEmailService
 
             await client.SendAsync(message);
             await client.DisconnectAsync(true);
+            document.ArchivedDocumentStatus = ArchivedDocumentStatus.Sent;
+            document.DateSented = DateTime.UtcNow;
+            document.Sender = email;
+            await _unitOfWork.ArchivedDocumentUOW.UpdateAsync(document);
+            await _unitOfWork.SaveChangesAsync();
         }
         catch (Exception ex)
         {
@@ -256,3 +261,5 @@ public class EmailService : IEmailService
         return email;
     }
 }
+
+

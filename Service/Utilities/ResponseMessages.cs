@@ -15,6 +15,7 @@ public static class ResponseMessages
     public const string InvalidEmailFormat = "Please insert a valid email format";
     public const string EmailAlreadyExists = "Email already exists";
     public const string EmailNotExists = "Email not exists";
+    public const string EmailOrUsernameNotExists = "Email or username not exists";
     public const string EmailFormatInvalid = "Invalid email format";
     public const string UserIdInvalid = "Invalid user id";
     public const string UserHasUpdatedInformation = "User has updated information";
