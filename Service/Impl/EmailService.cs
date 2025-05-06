@@ -108,11 +108,7 @@ public class EmailService : IEmailService
         }
 
         var scope = doc.DocumentWorkflowStatuses?.FirstOrDefault(w => w.DocumentId == doc.DocumentId).Workflow.Scope;
-        if (scope != Scope.OutGoing)
-        {
-            return ResponseUtil.Error(ResponseMessages.CanNotSendEmail, ResponseMessages.OperationFailed,
-                HttpStatusCode.BadRequest);
-        }
+
         string token = ExchangeCodeForAccessToken(emailRequest.AccessToken).Result;
         if (token.Equals("string"))
         {
@@ -123,6 +119,15 @@ public class EmailService : IEmailService
         {
             return ResponseUtil.GetObject(ResponseMessages.EmailNotMatch, ResponseMessages.OperationFailed, HttpStatusCode.BadRequest, 1);
         }*/
+        
+        var user = await _unitOfWork.UserUOW.FindUserByEmailAsync(email);
+        var userRole = await _unitOfWork.UserRoleUOW.FindRolesByUserIdAsync(user.UserId);
+        var roleName = userRole.Where(r => r.IsPrimary == true).FirstOrDefault().Role.RoleName;
+        if (scope != Scope.OutGoing && !roleName.ToLower().Equals("chief"))
+        {
+            return ResponseUtil.Error(ResponseMessages.CanNotSendEmail, ResponseMessages.OperationFailed,
+                HttpStatusCode.BadRequest);
+        }
         var message = new MimeMessage();
         message.From.Add(new MailboxAddress(email, email));
         // message.To.Add(new MailboxAddress(emailRequest.ReceiverEmail, emailRequest.ReceiverEmail));

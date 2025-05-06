@@ -153,5 +153,5 @@ public static class ResponseMessages
     //Signature
     public const string SignatureSuccessfully = "";
     
-    public const string CanNotSendEmail = "Can not send email because the document is not OutGoing";
+    public const string CanNotSendEmail = "Can not send email because the document is not OutGoing or Role is not Chief";
 }

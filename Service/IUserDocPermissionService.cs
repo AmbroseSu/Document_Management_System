@@ -5,5 +5,5 @@ namespace Service;
 
 public interface IUserDocPermissionService
 {
-    Task<ResponseDto> GrantPermissionForDocument(GrantDocumentRequest grantDocumentRequest);
+    Task<ResponseDto> GrantPermissionForDocument(Guid userGrantId, GrantDocumentRequest grantDocumentRequest);
 }

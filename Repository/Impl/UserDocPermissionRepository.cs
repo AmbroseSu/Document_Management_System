@@ -46,4 +46,15 @@ public class UserDocPermissionRepository : IUserDocPermissionRepository
     {
         return await _userDocumentPermission.FindAsync(udp => udp.ArchivedDocumentId == archivedDocumentId);
     }
+    
+    public async Task<UserDocumentPermission?> FindByUserIdAndArchiveDocAsync(Guid? userId, Guid? archivedDocumentId)
+    {
+        if (userId == null) throw new ArgumentNullException(nameof(userId));
+        if (archivedDocumentId == null) throw new ArgumentNullException(nameof(archivedDocumentId));
+
+        return await _userDocumentPermission.FindByAsync(x =>
+            x.UserId == userId &&
+            x.ArchivedDocumentId == archivedDocumentId &&
+            !x.IsDeleted);
+    }
 }

@@ -9,4 +9,5 @@ public interface IUserDocPermissionRepository
     Task<bool> ExistsAsync(Guid userId, Guid archivedDocumentId);
     Task UpdateRangeAsync(List<UserDocumentPermission> userDocumentPermissions);
     Task<IEnumerable<UserDocumentPermission>> GetPermissionsByDocumentIdAsync(Guid archivedDocumentId);
+    Task<UserDocumentPermission?> FindByUserIdAndArchiveDocAsync(Guid? userId, Guid? archivedDocumentId);
 }
