@@ -1877,6 +1877,7 @@ public partial class TaskService : ITaskService
                     {
                         UserId = x.UserId,
                         CreatedDate = DateTime.Now,
+                        GrantPermission = GrantPermission.Grant,
                         IsDeleted = false,
                         ArchivedDocumentId = archivedDocId,
                     };
@@ -2176,6 +2177,7 @@ public partial class TaskService : ITaskService
                         {
                             UserId = userId,
                             ArchivedDocumentId = docArchiveId.Value,
+                            GrantPermission = GrantPermission.Grant,
                             CreatedDate = DateTime.UtcNow,
                             IsDeleted = false
                         });
@@ -2287,6 +2289,7 @@ public partial class TaskService : ITaskService
                             {
                                 UserId = userId,
                                 ArchivedDocumentId = docArchiveId.Value,
+                                GrantPermission = GrantPermission.Grant,
                                 CreatedDate = DateTime.UtcNow,
                                 IsDeleted = false
                             });
