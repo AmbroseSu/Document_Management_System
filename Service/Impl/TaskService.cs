@@ -2027,6 +2027,7 @@ public partial class TaskService : ITaskService
                     $"{_host}/api/Document/view-file/{archivedDoc.ArchivedDocumentId}?version=1&isArchive=true";
                 archivedDoc.CreatedBy = doc.User.UserName;
                 archivedDoc.ArchivedDocumentStatus = ArchivedDocumentStatus.Archived;
+                archivedDoc.Scope = (await _unitOfWork.WorkflowUOW.FindWorkflowByIdAsync(workflowId)).Scope;
                 archivedDoc.DateIssued = DateTime.Now;
                 archivedDoc.DocumentType = doc.DocumentType;
                 archivedDoc.FinalDocumentId = doc.DocumentId;
