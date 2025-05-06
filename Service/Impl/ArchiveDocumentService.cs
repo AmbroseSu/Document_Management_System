@@ -34,12 +34,14 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
     private readonly IUnitOfWork _unitOfWork;
     private readonly string _host;
     private readonly IFileService _fileService;
+    private readonly IDocumentService _documentService;
 
-    public ArchiveDocumentService(IMapper mapper, IUnitOfWork unitOfWork,IOptions<AppsetingOptions> options, IFileService fileService)
+    public ArchiveDocumentService(IMapper mapper, IUnitOfWork unitOfWork,IOptions<AppsetingOptions> options, IFileService fileService, IDocumentService documentService)
     {
         _mapper = mapper;
         _unitOfWork = unitOfWork;
         _fileService = fileService;
+        _documentService = documentService;
         _host = options.Value.Host;
 
     }
@@ -323,6 +325,39 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
         if (isPdf.HasValue && isPdf.Value)
             return _fileService.ConvertDocToPdf(filePath);
         return _fileService.GetPdfFile(filePath);
+    }
+
+    public async Task<ResponseDto> WithdrawArchiveDocument(Guid archiveDocumentId,DocumentPreInfo documentPreInfo, Guid userId)
+    {
+        var user = await _unitOfWork.UserUOW.FindUserByIdAsync(userId);
+        var archiveDoc = await _unitOfWork.ArchivedDocumentUOW.FindArchivedDocumentByIdAsync(archiveDocumentId);
+        if (archiveDoc == null)
+        {
+            return ResponseUtil.Error("Archive document not found",ResponseMessages.FailedToSaveData,HttpStatusCode.NotFound);
+        }
+        var newArchiveDocId = Guid.NewGuid();
+        var newDocId =(Guid) (await  _documentService.CreateDocumentByTemplate(documentPreInfo, userId)).Content;
+        var newArchiveDoc = new ArchivedDocument()
+        {
+            ArchivedDocumentId = newArchiveDocId,
+            CreatedDate = DateTime.Now,
+            ArchivedDocumentStatus = ArchivedDocumentStatus.Archived,
+            IsTemplate = false,
+            DocumentTypeId = documentPreInfo.DocumentTypeId,
+            DocumentRevokeId = archiveDoc.ArchivedDocumentId,
+            Scope = archiveDoc.Scope,
+            FinalDocumentId = newDocId
+        };
+        var newDoc = await _unitOfWork.DocumentUOW.FindDocumentByIdAsync(newDocId);
+        if (newDoc == null)
+        {
+            return ResponseUtil.Error("Create new document false",ResponseMessages.FailedToSaveData,HttpStatusCode.NotFound);
+        }
+        newDoc.FinalArchiveDocumentId = newArchiveDocId;
+        await _unitOfWork.DocumentUOW.UpdateAsync(newDoc);
+        await _unitOfWork.ArchivedDocumentUOW.AddAsync(newArchiveDoc);
+        await _unitOfWork.SaveChangesAsync();
+        return ResponseUtil.GetObject(newDocId, ResponseMessages.CreatedSuccessfully, HttpStatusCode.OK, 1);
     }
 
     private static string ExtractSigners(string? signature)

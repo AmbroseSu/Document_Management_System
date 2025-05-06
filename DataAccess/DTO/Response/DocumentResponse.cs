@@ -16,6 +16,7 @@ public class DocumentResponse
     public DateTime? Deadline { get; set; }
     public string? Status { get; set; }
     public string? CreatedBy { get; set; }
+    public DateTime CreateDate { get; set; }
     public DateTime? DateIssued { get; set; }
     public DateTime? DateExpires { get; set; }
     public string? Scope { get; set; }

@@ -115,5 +115,13 @@ namespace DocumentManagementSystemApplication.Controllers
             await _notificationService.SendPushNotificationMobileAsync(deviceToken, noti);
             await _hubContext.Clients.All.SendAsync("ReceiveMessage", noti);
         }
+        
+        [HttpPost("create-withdraw-document")]
+        public async Task<ResponseDto> WithdrawDocument([FromQuery]Guid archiveDocumentId,[FromBody]DocumentPreInfo documentPreInfo)
+        {
+            var userId = User.FindFirst("userid")?.Value;
+            var result = await _archiveDocumentService.WithdrawArchiveDocument(archiveDocumentId,documentPreInfo, Guid.Parse(userId));
+            return result;
+        }
     }
 }

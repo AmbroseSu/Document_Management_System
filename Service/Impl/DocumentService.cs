@@ -479,6 +479,7 @@ public partial class DocumentService : IDocumentService
             DocumentContent = document.DocumentContent,
             NumberOfDocument = document.NumberOfDocument,
             Sender = document.Sender,
+            CreateDate = document.CreatedDate,
             CreatedBy = document.User.FullName,
             DateReceived = document.DateReceived,
             WorkflowName = document.DocumentWorkflowStatuses.FirstOrDefault().Workflow.WorkflowName,
