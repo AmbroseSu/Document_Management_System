@@ -1497,6 +1497,8 @@ public partial class DocumentService : IDocumentService
                             {
                                 if (metaData != null)
                                 {
+                                    Console.WriteLine("Cer == null");
+
                                     var signDocId = Guid.NewGuid();
                                     var signDoc = new DocumentSignature()
                                     {
@@ -1552,6 +1554,7 @@ public partial class DocumentService : IDocumentService
                                 File.Replace(pathTmp,
                                     Path.Combine(_storagePath, "document", documentId.ToString(),
                                         version.DocumentVersionId.ToString(), document.DocumentName + ".pdf"), null);
+                                Console.WriteLine("Cer != null");
                                 return ResponseUtil.GetObject("Sign success",
                                     ResponseMessages.GetSuccessfully, HttpStatusCode.OK, 1);
                             }
