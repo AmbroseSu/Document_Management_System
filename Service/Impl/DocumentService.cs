@@ -823,6 +823,7 @@ public partial class DocumentService : IDocumentService
 
     public async Task<ResponseDto> CreateIncomingDoc(DocumentUploadDto documentUploadDto, Guid userId)
     {
+        
         var name = GetString(documentUploadDto.CanChange.GetValueOrDefault("Name"));
         var sender = GetString(documentUploadDto.CanChange.GetValueOrDefault("Sender"));
         var numberOfDocument = GetString(documentUploadDto.CanChange.GetValueOrDefault("NumberOfDocument"));
@@ -834,11 +835,18 @@ public partial class DocumentService : IDocumentService
         var validFrom = GetDateTime(documentUploadDto.CanChange.GetValueOrDefault("ValidFrom")) ?? DateTime.Now;
         var workflowO = await _unitOfWork.WorkflowUOW.FindWorkflowByIdAsync(workflowId);
         var workflowFlow = workflowO.WorkflowFlows.Select(x => x).FirstOrDefault(x => x.FlowNumber == 1);
-
+        var filter = Builders<Count>.Filter.Eq(x => x.Id, "base");
+        var count = _mongoDbService.Counts.Find(filter).FirstOrDefault();
+        var documentType = await _unitOfWork.DocumentTypeUOW.FindDocumentTypeByIdAsync(documentTypeId);
+        count.Value += 1;
+        var update = Builders<Count>.Update.Set(x => x.Value, count.Value);
+        await _mongoDbService.Counts.UpdateOneAsync(filter, update);
         var document = new Document
         {
             DocumentName = name,
             DocumentContent = documentContent,
+            SystemNumberOfDoc = (count.Value < 10 ? "0" + count.Value : count.Value) + "/" + count.UpdateTime.Year +
+                                "/" + documentType.Acronym + "-TNABC",
             NumberOfDocument = numberOfDocument,
             CreatedDate = DateTime.Now,
             DocumentTypeId = documentTypeId,
@@ -931,12 +939,7 @@ public partial class DocumentService : IDocumentService
                 var archiveId = Guid.NewGuid();
                 var taskList = document.Tasks;
                 var li = new List<UserDocumentPermission>();
-                var filter = Builders<Count>.Filter.Eq(x => x.Id, "base");
-                var count = _mongoDbService.Counts.Find(filter).FirstOrDefault();
-                var documentType = await _unitOfWork.DocumentTypeUOW.FindDocumentTypeByIdAsync(document.DocumentTypeId);
-                count.Value += 1;
-                var update = Builders<Count>.Update.Set(x => x.Value, count.Value);
-                await _mongoDbService.Counts.UpdateOneAsync(filter, update);
+                
                 foreach (var task in taskList)
                 {
                     var permision = new UserDocumentPermission()
@@ -959,8 +962,7 @@ public partial class DocumentService : IDocumentService
                 var archiveDocument = new ArchivedDocument
                 {
                     UserDocumentPermissions = li,
-                    SystemNumberOfDoc = (count.Value < 10 ? "0" + count.Value : count.Value) + "/" + count.UpdateTime.Year +
-                                        "/" + documentType.Acronym + "-TNABC",
+                    SystemNumberOfDoc = document.SystemNumberOfDoc,
                     ArchivedDocumentId = archiveId,
                     ArchivedDocumentName = document.DocumentName,
                     ArchivedDocumentContent = document.DocumentContent,

@@ -222,13 +222,40 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
     public async Task<ResponseDto> GetArchiveDocumentDetail(Guid documentId, Guid userId)
     {
         var docA = await _unitOfWork.ArchivedDocumentUOW.FindArchivedDocumentByIdAsync(documentId);
-        var result = new DocumentResponse()
+        if (docA == null)
+        {
+            return ResponseUtil.Error("Document not found", ResponseMessages.FailedToSaveData, HttpStatusCode.NotFound);
+        }
+
+        var permissions = docA.UserDocumentPermissions;
+        var userPermissions = permissions.Select(x => x.User).ToList();
+        var ViewerList = new List<Viewer>();
+
+        ViewerList.AddRange(userPermissions.Select(x =>
+            {
+                var viewer = new Viewer()
+                {
+                    FullName = x.FullName,
+                    UserName = x.UserName,
+                    Avatar = x.Avatar,
+                    UserId = x.UserId,
+                };
+                return viewer;
+            }
+        ).ToList());
+        var canGrant = permissions.Any(x => x.UserId == userId && x.GrantPermission == GrantPermission.Grant);
+        var canDownLoad = permissions.Any(x => x.UserId == userId && x.GrantPermission == GrantPermission.Download);
+        var result = new ArchiveDocumentResponse()
         {
             DocumentId = docA.ArchivedDocumentId,
             DocumentName = docA.ArchivedDocumentName,
             DocumentContent = docA.ArchivedDocumentContent,
             NumberOfDocument = docA.NumberOfDocument,
             Sender = docA.Sender,
+            CanGrant = canGrant,
+            CanDownLoad = canDownLoad,
+            Viewers = ViewerList,
+            DateExpires = docA.ExpirationDate,
             DateReceived = docA.DateReceived,
             CreateDate = docA.CreatedDate,
             Scope = docA.Scope.ToString(),
@@ -238,7 +265,6 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
             Status = docA.ArchivedDocumentStatus.ToString(),
             CreatedBy = docA.CreatedBy,
             DateIssued = docA.DateIssued,
-            DateExpires = DateTime.MaxValue,
             DigitalSignatures = docA.ArchiveDocumentSignatures?.Where(x => x.DigitalCertificate!=null).Where(x =>x.DigitalCertificate.IsUsb!=null).Select(x => new SignatureResponse()
             {
                 SignerName = ExtractSigners(x.DigitalCertificate.Subject),
