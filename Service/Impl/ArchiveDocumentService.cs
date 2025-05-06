@@ -281,6 +281,8 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
                 SignerName = x.DigitalCertificate.User.FullName,
                 SignedDate = x.SignedAt,
                 IsDigital = false,
+                ImgUrl = x.DigitalCertificate.SignatureImageUrl,
+                
             }).ToList()
             ,
             Versions = [
