@@ -7,6 +7,7 @@ using AutoMapper;
 using BusinessObject;
 using BusinessObject.Enums;
 using BusinessObject.Option;
+using DataAccess;
 using DataAccess.DTO;
 using DataAccess.DTO.Request;
 using DataAccess.DTO.Response;
@@ -19,6 +20,7 @@ using iText.Signatures;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
+using MongoDB.Driver;
 using Repository;
 using Service.Response;
 using Service.Utilities;
@@ -35,13 +37,16 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
     private readonly string _host;
     private readonly IFileService _fileService;
     private readonly IDocumentService _documentService;
+    private readonly MongoDbService _mongoDbService;
 
-    public ArchiveDocumentService(IMapper mapper, IUnitOfWork unitOfWork,IOptions<AppsetingOptions> options, IFileService fileService, IDocumentService documentService)
+
+    public ArchiveDocumentService(IMapper mapper, IUnitOfWork unitOfWork,IOptions<AppsetingOptions> options, IFileService fileService, IDocumentService documentService, MongoDbService mongoDbService)
     {
         _mapper = mapper;
         _unitOfWork = unitOfWork;
         _fileService = fileService;
         _documentService = documentService;
+        _mongoDbService = mongoDbService;
         _host = options.Value.Host;
 
     }
@@ -295,9 +300,18 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
     public async Task<ResponseDto> CreateArchiveTemplate(ArchiveDocumentRequest archiveDocumentRequest, Guid userId)
     {
         var user = await _unitOfWork.UserUOW.FindUserByIdAsync(userId);
+        var filter = Builders<Count>.Filter.Eq(x => x.Id, "base");
+        var count = _mongoDbService.Counts.Find(filter).FirstOrDefault();
+        var documentType = await _unitOfWork.DocumentTypeUOW.FindDocumentTypeByIdAsync(archiveDocumentRequest.DocumentTypeId);
+        count.Value += 1;
+        var update = Builders<Count>.Update.Set(x => x.Value, count.Value);
+        await _mongoDbService.Counts.UpdateOneAsync(filter, update);
         var template = new ArchivedDocument()
         {
+            
             // ArchivedDocumentId = templateId,
+            SystemNumberOfDoc = (count.Value < 10 ? "0" + count.Value : count.Value) + "/" + count.UpdateTime.Year +
+                                "/" + documentType.Acronym + "-TNABC",
             ArchivedDocumentName = archiveDocumentRequest.TemplateName,
             CreatedBy = user.UserName,
             CreatedDate = DateTime.Now,
