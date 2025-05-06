@@ -300,6 +300,8 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
     public async Task<ResponseDto> CreateArchiveTemplate(ArchiveDocumentRequest archiveDocumentRequest, Guid userId)
     {
         var user = await _unitOfWork.UserUOW.FindUserByIdAsync(userId);
+        var templateId = Guid.NewGuid();
+
         var filter = Builders<Count>.Filter.Eq(x => x.Id, "base");
         var count = _mongoDbService.Counts.Find(filter).FirstOrDefault();
         var documentType = await _unitOfWork.DocumentTypeUOW.FindDocumentTypeByIdAsync(archiveDocumentRequest.DocumentTypeId);
@@ -309,7 +311,7 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
         var template = new ArchivedDocument()
         {
             
-            // ArchivedDocumentId = templateId,
+            ArchivedDocumentId = templateId,
             SystemNumberOfDoc = (count.Value < 10 ? "0" + count.Value : count.Value) + "/" + count.UpdateTime.Year +
                                 "/" + documentType.Acronym + "-TNABC",
             ArchivedDocumentName = archiveDocumentRequest.TemplateName,
@@ -326,7 +328,6 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
         };
         await _unitOfWork.ArchivedDocumentUOW.AddAsync(template);
         await _unitOfWork.SaveChangesAsync();
-        var templateId = template.ArchivedDocumentId;
 
         // Save the file to a specified path
         var originalPath = Path.Combine(Directory.GetCurrentDirectory(), "data", "storage","template");
