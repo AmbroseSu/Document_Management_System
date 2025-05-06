@@ -86,7 +86,7 @@ namespace DocumentManagementSystemApplication.Controllers
         }
         
         [HttpGet("view-download-template")]
-        public async Task<IActionResult> DownloadTemplate([FromQuery] string templateId,[FromQuery]bool? isPdf = false)
+        public async Task<IActionResult> DownloadTemplate([FromQuery] Guid templateId,[FromQuery]bool? isPdf = false)
         {
             var userId = User.FindFirst("userid")?.Value;
             var result = await _archiveDocumentService.DownloadTemplate(templateId, Guid.Parse(userId),isPdf);

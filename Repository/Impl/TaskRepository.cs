@@ -32,7 +32,7 @@ public class TaskRepository : ITaskRepository
     {
         if (stepId == null) throw new ArgumentNullException(nameof(stepId));
         if (documentId == null) throw new ArgumentNullException(nameof(documentId));
-        return await _taskDao.FindAsync(u => u.StepId == stepId && u.DocumentId == documentId && u.IsDeleted == false,
+        return await _taskDao.FindAsync(u => u.StepId == stepId && u.DocumentId.Equals(documentId) && u.IsDeleted == false,
             u => u.Include(s => s.Step).Include(d => d.Document));
     }
     
@@ -48,7 +48,7 @@ public class TaskRepository : ITaskRepository
         if (stepIds == null || stepIds.Count == 0) throw new ArgumentNullException(nameof(stepIds));
         if (documentId == null) throw new ArgumentNullException(nameof(documentId));
         
-        return await _taskDao.FindAsync(s => stepIds.Contains(s.StepId) && s.DocumentId == documentId && s.IsDeleted == false, 
+        return await _taskDao.FindAsync(s => stepIds.Contains(s.StepId) && s.DocumentId.Equals( documentId) && s.IsDeleted == false, 
             st => st.Include(u => u.User).Include(st => st.Document));
     }
 
@@ -77,7 +77,7 @@ public class TaskRepository : ITaskRepository
         if (documentId == Guid.Empty) throw new ArgumentNullException(nameof(documentId));
         
         return await _taskDao.FindAsync(
-            t => t.DocumentId == documentId && t.TaskStatus == TasksStatus.InProgress,
+            t => t.DocumentId.Equals(documentId) && t.TaskStatus == TasksStatus.InProgress,
             q => q.Include(t => t.Step)
                 .ThenInclude(s => s.Flow)
                 .ThenInclude(f => f.WorkflowFlows)
@@ -91,7 +91,7 @@ public class TaskRepository : ITaskRepository
         if (stepId == Guid.Empty) throw new ArgumentNullException(nameof(stepId));
 
         return await _taskDao.FindAsync(
-            t => t.DocumentId == documentId && t.StepId == stepId,
+            t => t.DocumentId.Equals( documentId) && t.StepId == stepId,
             q => q.Include(t => t.Step)
                 .ThenInclude(s => s.Flow)
                 .ThenInclude(f => f.WorkflowFlows)
