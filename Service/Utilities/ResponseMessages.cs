@@ -88,6 +88,7 @@ public static class ResponseMessages
     public const string DocumentCompleted = "Document has been completed";
     public const string DocumentHasNotArchiveDoc = "Document has not archive document";
     public const string GrantDocumentSuccess = "Grant document archive document successfully";
+    public const string DocumentHadWithdrawnCanNotSend = "Document has been withdrawn, cannot send";
     
     //DocumentType
     public const string DocumentTypeNameNotNull = "Document Type name cannot be null or empty";

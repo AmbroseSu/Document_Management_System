@@ -30,7 +30,7 @@ public class DocumentRepository : IDocumentRepository
     public async Task<Document?> FindDocumentByIdAsync(Guid? id)
     {
         if (id == null) throw new ArgumentNullException(nameof(id));
-        return await _documentDao.FindByAsync(u => u.DocumentId  == id,
+        return await _documentDao.FindByAsync(u => u.DocumentId == id,
             q => q
                 .Include(d => d.DocumentVersions).ThenInclude(v => v.DocumentSignatures).ThenInclude(s => s.DigitalCertificate).ThenInclude(s => s.User).ThenInclude(u => u.Division)
                 .Include(d => d.Tasks).ThenInclude(t => t.User).ThenInclude(u => u.Division)

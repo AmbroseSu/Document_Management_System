@@ -10,6 +10,7 @@ public class ArchivedDocument
     private DateTime? _dateIssued;
     private DateTime? _dateReceived;
     private DateTime? _dateSented;
+    private DateTime _expirationDate;
 
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     [Key]
@@ -17,8 +18,14 @@ public class ArchivedDocument
 
     public string? ArchivedDocumentName { get; set; }
     public string? ArchivedDocumentContent { get; set; }
+    public string SystemNumberOfDoc { get; set; }
     public string? NumberOfDocument { get; set; }
     public string? SignedBy { get; set; }
+    public DateTime ExpirationDate     
+    {
+        get => DateTime.SpecifyKind(_expirationDate, DateTimeKind.Utc).ToLocalTime();
+        set => _expirationDate = value.ToUniversalTime();
+    }
     public string? ArchivedDocumentUrl { get; set; }
 
     public DateTime CreatedDate

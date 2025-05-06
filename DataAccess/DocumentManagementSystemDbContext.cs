@@ -84,9 +84,11 @@ public class DocumentManagementSystemDbContext : DbContext
             entity.Property(e => e.ArchivedDocumentContent);
             entity.Property(e => e.NumberOfDocument);
             entity.Property(e => e.SignedBy);
+            entity.Property(e => e.ExpirationDate);
             entity.Property(e => e.ArchivedDocumentUrl);
             entity.Property(e => e.CreatedDate);
             entity.Property(e => e.Sender);
+            entity.Property(e => e.SystemNumberOfDoc);
             entity.Property(e => e.CreatedBy);
             entity.Property(e => e.ExternalPartner);
             entity.Property(e => e.ArchivedDocumentStatus);
@@ -219,8 +221,10 @@ public class DocumentManagementSystemDbContext : DbContext
             entity.Property(e => e.DocumentName);
             entity.Property(e => e.DocumentContent);
             entity.Property(e => e.NumberOfDocument);
+            entity.Property(e => e.SystemNumberOfDoc);
             entity.Property(e => e.SignedBy);
             entity.Property(e => e.CreatedDate);
+            entity.Property(e => e.ExpirationDate);
             entity.Property(e => e.UpdatedDate);
             entity.Property(e => e.Deadline);
             entity.Property(e => e.ProcessingStatus);
@@ -500,6 +504,7 @@ public class DocumentManagementSystemDbContext : DbContext
                 .HasColumnType("uuid")
                 .HasDefaultValueSql("gen_random_uuid()");
             entity.Property(e => e.CreatedDate);
+            entity.Property(e => e.GrantPermission);
             entity.Property(e => e.IsDeleted);
         });
 

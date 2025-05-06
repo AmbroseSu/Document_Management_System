@@ -8,7 +8,7 @@ namespace BusinessObject;
 public class Document
 {
     private DateTime _createdDate;
-
+    private DateTime _expirationDate;
     protected bool Equals(Document other)
     {
         return DocumentId.Equals(other.DocumentId);
@@ -39,6 +39,7 @@ public class Document
     public string? DocumentName { get; set; }
     public string? DocumentContent { get; set; }
     public string? NumberOfDocument { get; set; }
+    public string SystemNumberOfDoc { get; set; }
     public string? SignedBy { get; set; }
 
     public DateTime CreatedDate
@@ -71,6 +72,12 @@ public class Document
     {
         get => _dateIssued.HasValue ? DateTime.SpecifyKind(_dateIssued.Value, DateTimeKind.Utc).ToLocalTime() : (DateTime?)null;
         set => _dateIssued = value.HasValue ? value.Value.ToUniversalTime() : default;
+    }
+    
+    public DateTime ExpirationDate     
+    {
+        get => DateTime.SpecifyKind(_expirationDate, DateTimeKind.Utc).ToLocalTime();
+        set => _expirationDate = value.ToUniversalTime();
     }
     public bool IsDeleted { get; set; }
 
