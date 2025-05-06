@@ -312,7 +312,7 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
         return ResponseUtil.GetObject("hehe", ResponseMessages.CreatedSuccessfully, HttpStatusCode.OK, 1);
     }
 
-    public Task<IActionResult> DownloadTemplate(Guid templateId, Guid userId,bool? isPdf)
+    public Task<IActionResult> DownloadTemplate(string templateId, Guid userId,bool? isPdf)
     {
 
         var filePath = Path.Combine(Directory.GetCurrentDirectory(), "data", "storage","template", $"{templateId}");
