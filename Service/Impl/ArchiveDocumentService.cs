@@ -326,8 +326,7 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
             Ury = archiveDocumentRequest.Ury,
             Page = archiveDocumentRequest.Page,
         };
-        await _unitOfWork.ArchivedDocumentUOW.AddAsync(template);
-        await _unitOfWork.SaveChangesAsync();
+
 
         // Save the file to a specified path
         var originalPath = Path.Combine(Directory.GetCurrentDirectory(), "data", "storage","template");
