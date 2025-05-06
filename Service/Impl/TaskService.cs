@@ -1404,48 +1404,48 @@ public partial class TaskService : ITaskService
                     HttpStatusCode.NotFound);
             var orderedTasks = await GetOrderedTasks(document.Tasks,
                 document.DocumentWorkflowStatuses.FirstOrDefault()?.WorkflowId ?? Guid.Empty);
-            var user = await _unitOfWork.UserUOW.FindUserByIdAsync(orderedTasks.First().UserId);
-
+            //var user = await _unitOfWork.UserUOW.FindUserByIdAsync(orderedTasks.First().UserId);
+            var userTask = await _unitOfWork.UserUOW.FindUserByIdAsync(userId);
 
             switch (action)
             {
-                case TaskAction.AcceptTask:
-                {
-                    task.TaskStatus = TasksStatus.Waiting;
-                    task.UpdatedDate = DateTime.UtcNow;
-                    await _unitOfWork.SaveChangesAsync();
-
-                    var notification = _notificationService.CreateTaskAcceptedNotification(task, user.UserId);
-                    await _notificationCollection.CreateNotificationAsync(notification);
-                    await _notificationService.SendPushNotificationMobileAsync(user.FcmToken, notification);
-                    await _hubContext.Clients.User(notification.UserId.ToString())
-                        .SendAsync("ReceiveMessage", notification);
-
-                    await transaction.CommitAsync();
-                    // Gửi thông báo cho người tạo: "Người A đã nhận xử lý"
-                    return ResponseUtil.GetObject(ResponseMessages.TaskHadAccepted,
-                        ResponseMessages.CreatedSuccessfully,
-                        HttpStatusCode.OK, 1);
-                }
-
-                case TaskAction.RejectTask:
-                {
-                    task.TaskStatus = TasksStatus.Revised;
-                    task.UpdatedDate = DateTime.UtcNow;
-                    await _unitOfWork.SaveChangesAsync();
-
-                    var notification = _notificationService.CreateTaskRejectedNotification(task, user.UserId);
-                    await _notificationCollection.CreateNotificationAsync(notification);
-                    await _notificationService.SendPushNotificationMobileAsync(user.FcmToken, notification);
-                    await _hubContext.Clients.User(notification.UserId.ToString())
-                        .SendAsync("ReceiveMessage", notification);
-
-                    await transaction.CommitAsync();
-                    // Gửi thông báo cho người tạo: "Người A từ chối xử lý"
-                    return ResponseUtil.GetObject(ResponseMessages.TaskHadRejected,
-                        ResponseMessages.CreatedSuccessfully,
-                        HttpStatusCode.OK, 1);
-                }
+                // case TaskAction.AcceptTask:
+                // {
+                //     task.TaskStatus = TasksStatus.Waiting;
+                //     task.UpdatedDate = DateTime.UtcNow;
+                //     await _unitOfWork.SaveChangesAsync();
+                //
+                //     var notification = _notificationService.CreateTaskAcceptedNotification(task, user.UserId);
+                //     await _notificationCollection.CreateNotificationAsync(notification);
+                //     await _notificationService.SendPushNotificationMobileAsync(user.FcmToken, notification);
+                //     await _hubContext.Clients.User(notification.UserId.ToString())
+                //         .SendAsync("ReceiveMessage", notification);
+                //
+                //     await transaction.CommitAsync();
+                //     // Gửi thông báo cho người tạo: "Người A đã nhận xử lý"
+                //     return ResponseUtil.GetObject(ResponseMessages.TaskHadAccepted,
+                //         ResponseMessages.CreatedSuccessfully,
+                //         HttpStatusCode.OK, 1);
+                // }
+                //
+                // case TaskAction.RejectTask:
+                // {
+                //     task.TaskStatus = TasksStatus.Revised;
+                //     task.UpdatedDate = DateTime.UtcNow;
+                //     await _unitOfWork.SaveChangesAsync();
+                //
+                //     var notification = _notificationService.CreateTaskRejectedNotification(task, user.UserId);
+                //     await _notificationCollection.CreateNotificationAsync(notification);
+                //     await _notificationService.SendPushNotificationMobileAsync(user.FcmToken, notification);
+                //     await _hubContext.Clients.User(notification.UserId.ToString())
+                //         .SendAsync("ReceiveMessage", notification);
+                //
+                //     await transaction.CommitAsync();
+                //     // Gửi thông báo cho người tạo: "Người A từ chối xử lý"
+                //     return ResponseUtil.GetObject(ResponseMessages.TaskHadRejected,
+                //         ResponseMessages.CreatedSuccessfully,
+                //         HttpStatusCode.OK, 1);
+                // }
 
                 case TaskAction.ApproveDocument:
                 {
@@ -1468,18 +1468,18 @@ public partial class TaskService : ITaskService
                     task.UpdatedDate = DateTime.UtcNow;
                     
                     //TODO: Ky Nhay 
-                    if (user == null)
+                    if (userTask == null)
                     {
                         return ResponseUtil.Error("User not found", ResponseMessages.OperationFailed,
                             HttpStatusCode.NotFound);
                     }
 
-                    if (user.DigitalCertificates == null)
+                    if (userTask.DigitalCertificates == null)
                     {
                         return ResponseUtil.Error("User's digital certificates not found", ResponseMessages.OperationFailed,
                             HttpStatusCode.NotFound);
                     }
-                    var cer = user.DigitalCertificates.FirstOrDefault(x => x.IsUsb == null);
+                    var cer = userTask.DigitalCertificates.FirstOrDefault(x => x.IsUsb == null);
                     var documentSignId = Guid.NewGuid();
                     if (document.DocumentVersions == null)
                     {
@@ -1533,7 +1533,13 @@ public partial class TaskService : ITaskService
                     //return ResponseUtil.GetObject(ResponseMessages.TaskApproved, ResponseMessages.CreatedSuccessfully,
                     //HttpStatusCode.OK, 1);
                     var result = await ActivateNextTask(task);
-                    await transaction.CommitAsync();
+                    if (result.StatusCode != 200)
+                    {
+                        await transaction.RollbackAsync();
+                    }else
+                    {
+                        await transaction.CommitAsync();
+                    }
                     return result;
                 }
 
@@ -1670,7 +1676,14 @@ public partial class TaskService : ITaskService
                     await _unitOfWork.SaveChangesAsync();
 
                     var result = await ActivateNextTaskSubmit(task);
-                    await transaction.CommitAsync();
+                    if (result.StatusCode != 200)
+                    {
+                        await transaction.RollbackAsync();
+                    }else
+                    {
+                        await transaction.CommitAsync();
+                    }
+                    
                     return result;
                 }
             }
@@ -2014,6 +2027,7 @@ public partial class TaskService : ITaskService
                     $"{_host}/api/Document/view-file/{archivedDoc.ArchivedDocumentId}?version=1&isArchive=true";
                 archivedDoc.CreatedBy = doc.User.UserName;
                 archivedDoc.ArchivedDocumentStatus = ArchivedDocumentStatus.Archived;
+                archivedDoc.Scope = (await _unitOfWork.WorkflowUOW.FindWorkflowByIdAsync(workflowId)).Scope;
                 archivedDoc.DateIssued = DateTime.Now;
                 archivedDoc.DocumentType = doc.DocumentType;
                 archivedDoc.FinalDocumentId = doc.DocumentId;
@@ -2381,6 +2395,7 @@ public partial class TaskService : ITaskService
                             $"{_host}/api/Document/view-file/{archiveId}?version=1&isArchive=true";
                         archiveDoc.CreatedBy = doc.User.UserName;
                         archiveDoc.ArchivedDocumentStatus = ArchivedDocumentStatus.Archived;
+                        archiveDoc.Scope = (await _unitOfWork.WorkflowUOW.FindWorkflowByIdAsync(workflowId)).Scope;
                         archiveDoc.DateIssued = DateTime.Now;
                         archiveDoc.DocumentType = doc.DocumentType;
                         archiveDoc.FinalDocumentId = doc.DocumentId;

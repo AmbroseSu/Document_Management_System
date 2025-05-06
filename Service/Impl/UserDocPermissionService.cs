@@ -1,5 +1,6 @@
 using System.Net;
 using BusinessObject;
+using BusinessObject.Enums;
 using DataAccess;
 using DataAccess.DTO;
 using DataAccess.DTO.Request;
@@ -27,15 +28,28 @@ public class UserDocPermissionService : IUserDocPermissionService
         _hubContext = hubContext;
     }
 
-    public async Task<ResponseDto> GrantPermissionForDocument(GrantDocumentRequest grantDocumentRequest)
+    public async Task<ResponseDto> GrantPermissionForDocument(Guid userGrantId, GrantDocumentRequest grantDocumentRequest)
     {
         try
     {
-        if (grantDocumentRequest == null || grantDocumentRequest.UserIds == null || !grantDocumentRequest.UserIds.Any())
+        if (grantDocumentRequest == null || grantDocumentRequest.UserGrantDocuments == null || !grantDocumentRequest.UserGrantDocuments.Any())
         {
             return ResponseUtil.Error("Danh sách người dùng không được để trống.", ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
         }
+        
+        var userGrand = await _unitOfWork.UserDocPermissionUOW.FindByUserIdAndArchiveDocAsync(userGrantId, grantDocumentRequest.DocumentId);
+        
+        if (userGrand == null)
+        {
+            return ResponseUtil.Error("Người dùng không có quyền truy cập văn bản này.", ResponseMessages.OperationFailed, HttpStatusCode.Forbidden);
+        }
 
+        if (userGrand.GrantPermission != GrantPermission.Grant)
+        {
+            return ResponseUtil.Error("Người dùng không có quyền cấp quyền văn bản này cho người khác.", ResponseMessages.OperationFailed, HttpStatusCode.Forbidden);
+        }
+        
+        
         var archivedDocument = await _unitOfWork.ArchivedDocumentUOW.FindArchivedDocumentByIdAsync(grantDocumentRequest.DocumentId);
         if (archivedDocument == null)
         {
@@ -50,14 +64,21 @@ public class UserDocPermissionService : IUserDocPermissionService
         var newPermissions = new List<UserDocumentPermission>();
         var affectedUserIds = new List<Guid>();
 
-        foreach (var userId in grantDocumentRequest.UserIds)
+        foreach (var userGrant in grantDocumentRequest.UserGrantDocuments)
         {
+            if (userGrant.GrantPermission == GrantPermission.Grant)
+            {
+                return ResponseUtil.Error("Người dùng không được cấp quyền tổng cho người khác.", ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
+            }
+            var userId = userGrant.UserId;
+            var grantPermission = userGrant.GrantPermission;
             var existing = existingPermissions.FirstOrDefault(p => p.UserId == userId);
             if (existing != null)
             {
                 if (existing.IsDeleted)
                 {
                     existing.IsDeleted = false;
+                    existing.GrantPermission = grantPermission;
                     existing.CreatedDate = DateTime.UtcNow;
                     reactivatedPermissions.Add(existing);
                     affectedUserIds.Add(userId);
@@ -71,6 +92,7 @@ public class UserDocPermissionService : IUserDocPermissionService
                     UserDocumentPermissionId = Guid.NewGuid(),
                     ArchivedDocumentId = grantDocumentRequest.DocumentId,
                     UserId = userId,
+                    GrantPermission = grantPermission,
                     CreatedDate = DateTime.UtcNow,
                     IsDeleted = false
                 });
