@@ -27,6 +27,22 @@ public class DocumentResponse
     public List<TasksResponse>? Tasks { get; set; } = [];
 }
 
+public class ArchiveDocumentResponse : DocumentResponse
+{
+    public bool CanGrant { get; set; }
+    public bool CanDownLoad { get; set; }
+    public List<Viewer> Viewers { get; set; } = [];
+    public List<Viewer> Granters { get; set; } = [];
+}
+
+public class Viewer
+{
+    public string FullName { get; set; }
+    public string UserName { get; set; }
+    public string Avatar { get; set; }
+    public Guid UserId { get; set; }
+}
+
 public class SignatureResponse
 {
     public string? SignerName { get; set; }

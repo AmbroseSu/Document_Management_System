@@ -823,10 +823,64 @@ public partial class DocumentService : IDocumentService
 
     public async Task<ResponseDto> CreateIncomingDoc(DocumentUploadDto documentUploadDto, Guid userId)
     {
+        
         var name = GetString(documentUploadDto.CanChange.GetValueOrDefault("Name"));
         var sender = GetString(documentUploadDto.CanChange.GetValueOrDefault("Sender"));
         var numberOfDocument = GetString(documentUploadDto.CanChange.GetValueOrDefault("NumberOfDocument"));
         var documentContent = GetString(documentUploadDto.CanChange.GetValueOrDefault("DocumentContent"));
+        
+        var signatureNames = documentUploadDto.CannotChange.TryGetValue("SignatureName", out var value) && value is List<string?> list
+            ? list.Where(x => x != null).Cast<string>().ToList()
+            : new List<string>();
+
+        var issuers = documentUploadDto.CannotChange.TryGetValue("Issuer", out value) && value is List<string?> list2
+            ? list2.Where(x => x != null).Cast<string>().ToList()
+            : new List<string>();
+
+        var signerNames = documentUploadDto.CannotChange.TryGetValue("SignerName", out value) && value is List<string?> list3
+            ? list3.Where(x => x != null).Cast<string>().ToList()
+            : new List<string>();
+
+        var singingDates = documentUploadDto.CannotChange.TryGetValue("SingingDate", out value) && value is List<DateTime?> list4
+            ? list4.Where(x => x.HasValue).Select(x => x.Value).ToList()
+            : new List<DateTime>();
+
+        var reasons = documentUploadDto.CannotChange.TryGetValue("Reason", out value) && value is List<string?> list5
+            ? list5.Where(x => x != null).Cast<string>().ToList()
+            : new List<string>();
+
+        var locations = documentUploadDto.CannotChange.TryGetValue("Location", out value) && value is List<string?> list6
+            ? list6.Where(x => x != null).Cast<string>().ToList()
+            : new List<string>();
+
+        var isValids = documentUploadDto.CannotChange.TryGetValue("IsValid", out value) && value is List<bool?> list7
+            ? list7.Where(x => x.HasValue).Select(x => x.Value).ToList()
+            : new List<bool>();
+
+        var serialNumbers = documentUploadDto.CannotChange.TryGetValue("SerialNumber", out value) && value is List<string?> list8
+            ? list8.Where(x => x != null).Cast<string>().ToList()
+            : new List<string>();
+
+        var validFroms = documentUploadDto.CannotChange.TryGetValue("ValidFrom", out value) && value is List<DateTime?> list9
+            ? list9.Where(x => x.HasValue).Select(x => x.Value).ToList()
+            : new List<DateTime>();
+
+        var expirationDates = documentUploadDto.CannotChange.TryGetValue("ExpirationDate", out value) && value is List<DateTime?> list10
+            ? list10.Where(x => x.HasValue).Select(x => x.Value).ToList()
+            : new List<DateTime>();
+
+        var algorithms = documentUploadDto.CannotChange.TryGetValue("Algorithm", out value) && value is List<string?> list11
+            ? list11.Where(x => x != null).Cast<string>().ToList()
+            : new List<string>();
+
+        var valids = documentUploadDto.CannotChange.TryGetValue("Valid", out value) && value is List<DateTime?> list12
+            ? list12.Where(x => x.HasValue).Select(x => x.Value).ToList()
+            : new List<DateTime>();
+
+        var fileNameResult = documentUploadDto.CannotChange.TryGetValue("fileName", out value) && value is string str
+            ? str
+            : string.Empty;
+        
         var dateReceived = GetDateTime(documentUploadDto.CanChange.GetValueOrDefault("DateReceived"));
         var documentTypeId = GetGuid(documentUploadDto.CanChange.GetValueOrDefault("DocumentTypeId"));
         var workflowId = GetGuid(documentUploadDto.CanChange.GetValueOrDefault("WorkflowId"));
@@ -834,11 +888,20 @@ public partial class DocumentService : IDocumentService
         var validFrom = GetDateTime(documentUploadDto.CanChange.GetValueOrDefault("ValidFrom")) ?? DateTime.Now;
         var workflowO = await _unitOfWork.WorkflowUOW.FindWorkflowByIdAsync(workflowId);
         var workflowFlow = workflowO.WorkflowFlows.Select(x => x).FirstOrDefault(x => x.FlowNumber == 1);
-
+        var filter = Builders<Count>.Filter.Eq(x => x.Id, "base");
+        var count = _mongoDbService.Counts.Find(filter).FirstOrDefault();
+        var documentType = await _unitOfWork.DocumentTypeUOW.FindDocumentTypeByIdAsync(documentTypeId);
+        count.Value += 1;
+        var verId = Guid.NewGuid();
+        var update = Builders<Count>.Update.Set(x => x.Value, count.Value);
+        await _mongoDbService.Counts.UpdateOneAsync(filter, update);
+        
         var document = new Document
         {
             DocumentName = name,
             DocumentContent = documentContent,
+            SystemNumberOfDoc = (count.Value < 10 ? "0" + count.Value : count.Value) + "/" + count.UpdateTime.Year +
+                                "/" + documentType.Acronym + "-TNABC",
             NumberOfDocument = numberOfDocument,
             CreatedDate = DateTime.Now,
             DocumentTypeId = documentTypeId,
@@ -864,7 +927,8 @@ public partial class DocumentService : IDocumentService
         };
 
         var version = new DocumentVersion
-        {
+        {   
+            DocumentVersionId = verId,
             VersionNumber = "0",
             CreateDate = DateTime.Now,
             IsFinalVersion = true
@@ -872,7 +936,32 @@ public partial class DocumentService : IDocumentService
         document.DocumentVersions.Add(version);
         await _unitOfWork.DocumentUOW.AddAsync(document);
         await _unitOfWork.SaveChangesAsync();
+        
+        for(int i = 0 ; i< signatureNames.Count; i++)
+        {
+            var cerId = Guid.NewGuid();
+            var tmp = new DigitalCertificate
+            {
+                DigitalCertificateId = cerId,
+                ValidTo = expirationDates[i],
+                Subject = signerNames[i], 
+                Issuer = issuers[i], 
+                SerialNumber = serialNumbers[i], 
+                ValidFrom = validFroms[i],
+            };
+            var signature = new DocumentSignature
+            {
+                DocumentSignatureId = Guid.NewGuid(),
+                DigitalCertificateId = cerId,
+                SignedAt = singingDates[i],
+                OrderIndex = i +1,
+                DocumentVersionId = verId
+            };
+            await _unitOfWork.DigitalCertificateUOW.AddAsync(tmp);
+            await _unitOfWork.DocumentSignatureUOW.AddAsync(signature);
 
+        }
+        
         var url = _fileService.CreateAVersionFromUpload(documentUploadDto.CannotChange["fileName"]?.ToString(),
             version.DocumentVersionId, document.DocumentId, name);
         version.DocumentVersionUrl = url;
@@ -931,12 +1020,7 @@ public partial class DocumentService : IDocumentService
                 var archiveId = Guid.NewGuid();
                 var taskList = document.Tasks;
                 var li = new List<UserDocumentPermission>();
-                var filter = Builders<Count>.Filter.Eq(x => x.Id, "base");
-                var count = _mongoDbService.Counts.Find(filter).FirstOrDefault();
-                var documentType = await _unitOfWork.DocumentTypeUOW.FindDocumentTypeByIdAsync(document.DocumentTypeId);
-                count.Value += 1;
-                var update = Builders<Count>.Update.Set(x => x.Value, count.Value);
-                await _mongoDbService.Counts.UpdateOneAsync(filter, update);
+                
                 foreach (var task in taskList)
                 {
                     var permision = new UserDocumentPermission()
@@ -959,8 +1043,7 @@ public partial class DocumentService : IDocumentService
                 var archiveDocument = new ArchivedDocument
                 {
                     UserDocumentPermissions = li,
-                    SystemNumberOfDoc = (count.Value < 10 ? "0" + count.Value : count.Value) + "/" + count.UpdateTime.Year +
-                                        "/" + documentType.Acronym + "-TNABC",
+                    SystemNumberOfDoc = document.SystemNumberOfDoc,
                     ArchivedDocumentId = archiveId,
                     ArchivedDocumentName = document.DocumentName,
                     ArchivedDocumentContent = document.DocumentContent,
@@ -1410,10 +1493,12 @@ public partial class DocumentService : IDocumentService
                         if (user.DigitalCertificates != null)
                         {
                             var cer = user.DigitalCertificates.FirstOrDefault(x => x.IsUsb == true);
-                            if (cer is { SerialNumber: null })
+                            if (cer.SerialNumber == null)
                             {
                                 if (metaData != null)
                                 {
+                                    Console.WriteLine("Cer == null");
+
                                     var signDocId = Guid.NewGuid();
                                     var signDoc = new DocumentSignature()
                                     {
@@ -1440,6 +1525,7 @@ public partial class DocumentService : IDocumentService
                                 }
                                 else
                                 {
+                                    
                                     // return ResponseUtil.Error("Sign not success", ResponseMessages.OperationFailed,
                                     //     HttpStatusCode.NotFound);
                                     throw new Exception("Sign not success");
@@ -1453,10 +1539,22 @@ public partial class DocumentService : IDocumentService
                                     //     HttpStatusCode.NotFound);
                                     throw new Exception("Wrong certificate");
                                 }
+                                var signDocId = Guid.NewGuid();
+                                var signDoc = new DocumentSignature()
+                                {
+                                    DocumentSignatureId = signDocId,
+                                    SignedAt = DateTime.Now,
+                                    OrderIndex = version.DocumentSignatures.Count +1,
+                                    DigitalCertificateId = cer.DigitalCertificateId,
+                                    DocumentVersionId = version.DocumentVersionId,
+                                };
+                                await _unitOfWork.DocumentSignatureUOW.AddAsync(signDoc);
+                                await _unitOfWork.SaveChangesAsync();
 
                                 File.Replace(pathTmp,
                                     Path.Combine(_storagePath, "document", documentId.ToString(),
                                         version.DocumentVersionId.ToString(), document.DocumentName + ".pdf"), null);
+                                Console.WriteLine("Cer != null");
                                 return ResponseUtil.GetObject("Sign success",
                                     ResponseMessages.GetSuccessfully, HttpStatusCode.OK, 1);
                             }

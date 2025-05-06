@@ -7,6 +7,7 @@ using AutoMapper;
 using BusinessObject;
 using BusinessObject.Enums;
 using BusinessObject.Option;
+using DataAccess;
 using DataAccess.DTO;
 using DataAccess.DTO.Request;
 using DataAccess.DTO.Response;
@@ -19,6 +20,7 @@ using iText.Signatures;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
+using MongoDB.Driver;
 using Repository;
 using Service.Response;
 using Service.Utilities;
@@ -35,13 +37,16 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
     private readonly string _host;
     private readonly IFileService _fileService;
     private readonly IDocumentService _documentService;
+    private readonly MongoDbService _mongoDbService;
 
-    public ArchiveDocumentService(IMapper mapper, IUnitOfWork unitOfWork,IOptions<AppsetingOptions> options, IFileService fileService, IDocumentService documentService)
+
+    public ArchiveDocumentService(IMapper mapper, IUnitOfWork unitOfWork,IOptions<AppsetingOptions> options, IFileService fileService, IDocumentService documentService, MongoDbService mongoDbService)
     {
         _mapper = mapper;
         _unitOfWork = unitOfWork;
         _fileService = fileService;
         _documentService = documentService;
+        _mongoDbService = mongoDbService;
         _host = options.Value.Host;
 
     }
@@ -222,13 +227,53 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
     public async Task<ResponseDto> GetArchiveDocumentDetail(Guid documentId, Guid userId)
     {
         var docA = await _unitOfWork.ArchivedDocumentUOW.FindArchivedDocumentByIdAsync(documentId);
-        var result = new DocumentResponse()
+        if (docA == null)
         {
+            return ResponseUtil.Error("Document not found", ResponseMessages.FailedToSaveData, HttpStatusCode.NotFound);
+        }
+
+        var permissions = docA.UserDocumentPermissions;
+        var userPermissions = permissions.Select(x => x.User).ToList();
+        var ViewerList = new List<Viewer>();
+        var GranterList = new List<Viewer>();
+        ViewerList.AddRange(permissions.Where(x => x.GrantPermission == GrantPermission.Grant).Select(x => x.User).Select(x =>
+            {
+                var viewer = new Viewer()
+                {
+                    FullName = x.FullName,
+                    UserName = x.UserName,
+                    Avatar = x.Avatar,
+                    UserId = x.UserId,
+                };
+                return viewer;
+            }
+        ).ToList());
+        GranterList.AddRange(userPermissions.Select(x =>
+            {
+                var viewer = new Viewer()
+                {
+                    FullName = x.FullName,
+                    UserName = x.UserName,
+                    Avatar = x.Avatar,
+                    UserId = x.UserId,
+                };
+                return viewer;
+            }
+        ).ToList());
+        var canGrant = permissions.Any(x => x.UserId == userId && x.GrantPermission == GrantPermission.Grant);
+        var canDownLoad = permissions.Any(x => x.UserId == userId && x.GrantPermission == GrantPermission.Download);
+        var result = new ArchiveDocumentResponse()
+        {
+            Granters = GranterList,
             DocumentId = docA.ArchivedDocumentId,
             DocumentName = docA.ArchivedDocumentName,
             DocumentContent = docA.ArchivedDocumentContent,
             NumberOfDocument = docA.NumberOfDocument,
             Sender = docA.Sender,
+            CanGrant = canGrant,
+            CanDownLoad = canDownLoad,
+            Viewers = ViewerList,
+            DateExpires = docA.ExpirationDate,
             DateReceived = docA.DateReceived,
             CreateDate = docA.CreatedDate,
             Scope = docA.Scope.ToString(),
@@ -238,7 +283,6 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
             Status = docA.ArchivedDocumentStatus.ToString(),
             CreatedBy = docA.CreatedBy,
             DateIssued = docA.DateIssued,
-            DateExpires = DateTime.MaxValue,
             DigitalSignatures = docA.ArchiveDocumentSignatures?.Where(x => x.DigitalCertificate!=null).Where(x =>x.DigitalCertificate.IsUsb!=null).Select(x => new SignatureResponse()
             {
                 SignerName = ExtractSigners(x.DigitalCertificate.Subject),
@@ -250,6 +294,8 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
                 SignerName = x.DigitalCertificate.User.FullName,
                 SignedDate = x.SignedAt,
                 IsDigital = false,
+                ImgUrl = x.DigitalCertificate.SignatureImageUrl,
+                
             }).ToList()
             ,
             Versions = [
@@ -269,9 +315,20 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
     public async Task<ResponseDto> CreateArchiveTemplate(ArchiveDocumentRequest archiveDocumentRequest, Guid userId)
     {
         var user = await _unitOfWork.UserUOW.FindUserByIdAsync(userId);
+        var templateId = Guid.NewGuid();
+
+        var filter = Builders<Count>.Filter.Eq(x => x.Id, "base");
+        var count = _mongoDbService.Counts.Find(filter).FirstOrDefault();
+        var documentType = await _unitOfWork.DocumentTypeUOW.FindDocumentTypeByIdAsync(archiveDocumentRequest.DocumentTypeId);
+        count.Value += 1;
+        var update = Builders<Count>.Update.Set(x => x.Value, count.Value);
+        await _mongoDbService.Counts.UpdateOneAsync(filter, update);
         var template = new ArchivedDocument()
         {
-            // ArchivedDocumentId = templateId,
+            
+            ArchivedDocumentId = templateId,
+            SystemNumberOfDoc = (count.Value < 10 ? "0" + count.Value : count.Value) + "/" + count.UpdateTime.Year +
+                                "/" + documentType.Acronym + "-TNABC",
             ArchivedDocumentName = archiveDocumentRequest.TemplateName,
             CreatedBy = user.UserName,
             CreatedDate = DateTime.Now,
@@ -284,9 +341,7 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
             Ury = archiveDocumentRequest.Ury,
             Page = archiveDocumentRequest.Page,
         };
-        await _unitOfWork.ArchivedDocumentUOW.AddAsync(template);
-        await _unitOfWork.SaveChangesAsync();
-        var templateId = template.ArchivedDocumentId;
+
 
         // Save the file to a specified path
         var originalPath = Path.Combine(Directory.GetCurrentDirectory(), "data", "storage","template");
