@@ -1523,6 +1523,7 @@ public partial class DocumentService : IDocumentService
                                 }
                                 else
                                 {
+                                    
                                     // return ResponseUtil.Error("Sign not success", ResponseMessages.OperationFailed,
                                     //     HttpStatusCode.NotFound);
                                     throw new Exception("Sign not success");
@@ -1536,6 +1537,17 @@ public partial class DocumentService : IDocumentService
                                     //     HttpStatusCode.NotFound);
                                     throw new Exception("Wrong certificate");
                                 }
+                                var signDocId = Guid.NewGuid();
+                                var signDoc = new DocumentSignature()
+                                {
+                                    DocumentSignatureId = signDocId,
+                                    SignedAt = DateTime.Now,
+                                    OrderIndex = version.DocumentSignatures.Count +1,
+                                    DigitalCertificateId = cer.DigitalCertificateId,
+                                    DocumentVersionId = version.DocumentVersionId,
+                                };
+                                await _unitOfWork.DocumentSignatureUOW.AddAsync(signDoc);
+                                await _unitOfWork.SaveChangesAsync();
 
                                 File.Replace(pathTmp,
                                     Path.Combine(_storagePath, "document", documentId.ToString(),

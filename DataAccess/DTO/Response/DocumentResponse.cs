@@ -32,6 +32,7 @@ public class ArchiveDocumentResponse : DocumentResponse
     public bool CanGrant { get; set; }
     public bool CanDownLoad { get; set; }
     public List<Viewer> Viewers { get; set; } = [];
+    public List<Viewer> Granters { get; set; } = [];
 }
 
 public class Viewer

@@ -235,8 +235,20 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
         var permissions = docA.UserDocumentPermissions;
         var userPermissions = permissions.Select(x => x.User).ToList();
         var ViewerList = new List<Viewer>();
-
-        ViewerList.AddRange(userPermissions.Select(x =>
+        var GranterList = new List<Viewer>();
+        ViewerList.AddRange(permissions.Where(x => x.GrantPermission == GrantPermission.Grant).Select(x => x.User).Select(x =>
+            {
+                var viewer = new Viewer()
+                {
+                    FullName = x.FullName,
+                    UserName = x.UserName,
+                    Avatar = x.Avatar,
+                    UserId = x.UserId,
+                };
+                return viewer;
+            }
+        ).ToList());
+        GranterList.AddRange(userPermissions.Select(x =>
             {
                 var viewer = new Viewer()
                 {
@@ -252,6 +264,7 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
         var canDownLoad = permissions.Any(x => x.UserId == userId && x.GrantPermission == GrantPermission.Download);
         var result = new ArchiveDocumentResponse()
         {
+            Granters = GranterList,
             DocumentId = docA.ArchivedDocumentId,
             DocumentName = docA.ArchivedDocumentName,
             DocumentContent = docA.ArchivedDocumentContent,
