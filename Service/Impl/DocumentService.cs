@@ -1493,7 +1493,7 @@ public partial class DocumentService : IDocumentService
                         if (user.DigitalCertificates != null)
                         {
                             var cer = user.DigitalCertificates.FirstOrDefault(x => x.IsUsb == true);
-                            if (cer is { SerialNumber: null })
+                            if (cer.SerialNumber == null)
                             {
                                 if (metaData != null)
                                 {
