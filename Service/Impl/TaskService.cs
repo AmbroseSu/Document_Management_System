@@ -1468,6 +1468,56 @@ public partial class TaskService : ITaskService
                     task.UpdatedDate = DateTime.UtcNow;
                     
                     //TODO: Ky Nhay 
+                    if (user == null)
+                    {
+                        return ResponseUtil.Error("User not found", ResponseMessages.OperationFailed,
+                            HttpStatusCode.NotFound);
+                    }
+
+                    if (user.DigitalCertificates == null)
+                    {
+                        return ResponseUtil.Error("User's digital certificates not found", ResponseMessages.OperationFailed,
+                            HttpStatusCode.NotFound);
+                    }
+                    var cer = user.DigitalCertificates.FirstOrDefault(x => x.IsUsb == null);
+                    var documentSignId = Guid.NewGuid();
+                    if (document.DocumentVersions == null)
+                    {
+                        return ResponseUtil.Error("Document versions not found", ResponseMessages.OperationFailed,
+                            HttpStatusCode.NotFound);
+                    }
+                    
+
+                    var latestVer = document.DocumentVersions.FirstOrDefault(x => x.IsFinalVersion);
+
+
+                    if (latestVer == null)
+                    {
+                        return ResponseUtil.Error("Latest version not found", ResponseMessages.OperationFailed,
+                            HttpStatusCode.NotFound);
+                    }
+
+                    if (latestVer.DocumentSignatures == null)
+                    {
+                        return ResponseUtil.Error("Document signatures not found", ResponseMessages.OperationFailed,
+                            HttpStatusCode.NotFound);
+                    }
+
+                    if (cer == null)
+                    {
+                        return ResponseUtil.Error("Digital certificate not found", ResponseMessages.OperationFailed,
+                            HttpStatusCode.NotFound);
+                    }
+                    var documentSign = new DocumentSignature()
+                    {
+                        DocumentSignatureId = documentSignId,
+                        SignedAt = DateTime.Now,
+                        OrderIndex = latestVer.DocumentSignatures.Count + 1,
+                        DigitalCertificateId = cer.DigitalCertificateId,
+                        DocumentVersionId = latestVer.DocumentVersionId,
+                    };
+                    
+                    await _unitOfWork.DocumentSignatureUOW.AddAsync(documentSign); 
                     await _unitOfWork.TaskUOW.UpdateAsync(task);
                     await _unitOfWork.SaveChangesAsync();
 
@@ -1842,7 +1892,6 @@ public partial class TaskService : ITaskService
             //TODO: Minh archive
 
             
-            var archivedDocId = Guid.NewGuid();
             var latestVer = doc.DocumentVersions?.FirstOrDefault(x => x.IsFinalVersion);
             if (latestVer is not { DocumentSignatures: not null })
             {
@@ -1871,34 +1920,10 @@ public partial class TaskService : ITaskService
                 
             var userList = new List<User> { doc.User };
             if (doc.Tasks != null) userList.AddRange(doc.Tasks.Select(x => x.User)!);
-            var userPermission = userList.Select(x =>
-                {
-                    var userPermission = new UserDocumentPermission()
-                    {
-                        UserId = x.UserId,
-                        CreatedDate = DateTime.Now,
-                        GrantPermission = GrantPermission.Grant,
-                        IsDeleted = false,
-                        ArchivedDocumentId = archivedDocId,
-                    };
-                    return userPermission;
-                }
-            ).ToList();
+            
 
             var scopeDoc = doc.DocumentWorkflowStatuses.Select(x => x.Workflow).FirstOrDefault()!.Scope;
-            var listSignature = latestVer.DocumentSignatures;
-            var listSignArchive = listSignature.Select(x =>
-                {
-                    var signArchive = new ArchiveDocumentSignature()
-                    {
-                        DigitalCertificateId = x.DigitalCertificateId,
-                        SignedAt = x.SignedAt,
-                        OrderIndex = x.OrderIndex,
-                        ArchivedDocumentId = archivedDocId
-                    };
-                    return signArchive;
-                }
-            ).ToList();
+            
             if (doc.DocumentName == null)
             {
                 return ResponseUtil.Error("DocumentName not found",
@@ -1906,41 +1931,104 @@ public partial class TaskService : ITaskService
                     HttpStatusCode.BadRequest);
             }
        
-            var url = _fileService.ArchiveDocument(doc.DocumentName, doc.DocumentId,
-                latestVer.DocumentVersionId,
-                archivedDocId);
-                
-
-            var archivedDoc = new ArchivedDocument()
+            
+            var archivedDoc = new ArchivedDocument();
+            if(doc.FinalArchiveDocumentId!=null)
             {
-                ArchivedDocumentId = archivedDocId,
-                ArchivedDocumentName = doc.DocumentName,
-                ArchivedDocumentContent = doc.DocumentContent,
-                NumberOfDocument = doc.NumberOfDocument,
-                SignedBy = signBy,
-                ArchivedDocumentUrl = url,
-                CreatedDate = DateTime.Now,
-                Sender = null,
-                CreatedBy = doc.User.FullName,
-                ExternalPartner = null,
-                ArchivedDocumentStatus = ArchivedDocumentStatus.Archived,
-                DateIssued = DateTime.Now,
-                DateReceived = null,
-                DateSented = null,
-                DocumentRevokes = null,
-                DocumentReplaces = null,
-                Scope = scopeDoc,
-                IsTemplate = false,
-                DocumentTypeId = doc.DocumentTypeId ?? Guid.NewGuid(),
-                FinalDocumentId = doc.DocumentId,
-                UserDocumentPermissions = userPermission,
-                ArchiveDocumentSignatures = listSignArchive
-            };
+                var archivedDocId = Guid.NewGuid();
+                var url = _fileService.ArchiveDocument(doc.DocumentName, doc.DocumentId,
+                    latestVer.DocumentVersionId,
+                    archivedDocId);
+                var userPermission = userList.Select(x =>
+                    {
+                        var userPermission = new UserDocumentPermission()
+                        {
+                            UserId = x.UserId,
+                            CreatedDate = DateTime.Now,
+                            IsDeleted = false,
+                            ArchivedDocumentId = archivedDocId,
+                            GrantPermission = GrantPermission.Grant
+                        };
+                        return userPermission;
+                    }
+                ).ToList();
+                var listSignature = latestVer.DocumentSignatures;
+                foreach (var userDocumentPermission in userPermission)
+                {
+                    await _unitOfWork.UserDocPermissionUOW.AddAsync(userDocumentPermission);
+                }
+                var listSignArchive = listSignature.Select(x =>
+                    {
+                        var signArchive = new ArchiveDocumentSignature()
+                        {
+                            DigitalCertificateId = x.DigitalCertificateId,
+                            SignedAt = x.SignedAt,
+                            OrderIndex = x.OrderIndex,
+                            ArchivedDocumentId = archivedDocId
+                        };
+                        return signArchive;
+                    }
+                ).ToList();
+                foreach (var archiveDocumentSignature in listSignArchive)
+                {
+                    await _unitOfWork.ArchiveDocumentSignatureUOW.AddAsync(archiveDocumentSignature);
+                }
+                archivedDoc = new ArchivedDocument()
+                {
+                    ArchivedDocumentId = archivedDocId,
+                    ArchivedDocumentName = doc.DocumentName,
+                    ArchivedDocumentContent = doc.DocumentContent,
+                    NumberOfDocument = doc.NumberOfDocument,
+                    SignedBy = signBy,
+                    ArchivedDocumentUrl = url,
+                    CreatedDate = DateTime.Now,
+                    Sender = null,
+                    CreatedBy = doc.User.FullName,
+                    ExternalPartner = null,
+                    ArchivedDocumentStatus = ArchivedDocumentStatus.Archived,
+                    DateIssued = DateTime.Now,
+                    DateReceived = null,
+                    DateSented = null,
+                    DocumentRevokes = null,
+                    DocumentReplaces = null,
+                    Scope = scopeDoc,
+                    IsTemplate = false,
+                    DocumentTypeId = doc.DocumentTypeId ?? Guid.NewGuid(),
+                    FinalDocumentId = doc.DocumentId
+                };
+                await _unitOfWork.ArchivedDocumentUOW.AddAsync(archivedDoc);
+            }
+            else
+            {
+                archivedDoc = doc.FinalArchiveDocument;
+                if (archivedDoc == null)
+                    return ResponseUtil.Error("Final archive not found", ResponseMessages.OperationFailed,
+                        HttpStatusCode.NotFound);
+                archivedDoc.ArchivedDocumentName = doc.DocumentName;
+                archivedDoc.ArchivedDocumentContent = doc.DocumentContent;
+                archivedDoc.NumberOfDocument = doc.NumberOfDocument;
+                archivedDoc.SignedBy = signBy;
+                archivedDoc.ArchivedDocumentUrl =
+                    $"{_host}/api/Document/view-file/{archivedDoc.ArchivedDocumentId}?version=1&isArchive=true";
+                archivedDoc.CreatedBy = doc.User.UserName;
+                archivedDoc.ArchivedDocumentStatus = ArchivedDocumentStatus.Archived;
+                archivedDoc.DateIssued = DateTime.Now;
+                archivedDoc.DocumentType = doc.DocumentType;
+                archivedDoc.FinalDocumentId = doc.DocumentId;
+                        
+                // doc.FinalArchiveDocumentId = archiveId;
+                doc.IsDeleted = true;
+                doc.ProcessingStatus = ProcessingStatus.Archived;
+                await _unitOfWork.ArchivedDocumentUOW.UpdateAsync(archivedDoc);
+            }
+
+            var docSign = latestVer.DocumentSignatures;
+           
             doc.ProcessingStatus = ProcessingStatus.Archived;
-            doc.FinalArchiveDocumentId = archivedDocId;
+            doc.FinalArchiveDocumentId = archivedDoc.ArchivedDocumentId;
             doc.IsDeleted = true;
             await _unitOfWork.DocumentUOW.UpdateAsync(doc);
-            await _unitOfWork.ArchivedDocumentUOW.AddAsync(archivedDoc);
+            // await _unitOfWork.ArchivedDocumentUOW.AddAsync(archivedDoc);
             // await _unitOfWork.SaveChangesAsync();
             
             
@@ -2213,7 +2301,7 @@ public partial class TaskService : ITaskService
                         ResponseMessages.FailedToSaveData,
                         HttpStatusCode.BadRequest);
                 }
-
+                
                 if (workflow.Scope != Scope.InComing)
                 {
                     var pathDoc = Path.Combine(Directory.GetCurrentDirectory(), "data","storage", "document",
@@ -2228,70 +2316,110 @@ public partial class TaskService : ITaskService
 
                     var metadata = (_documentService.CheckMetaDataFile(pathDoc) ?? []).FindAll(x => x.IsValid).ToList();
                     var taskSign = doc.Tasks.FindAll(x => x.TaskType == TaskType.Sign);
+                    
+                    
                     // if (taskSign.Count != metadata.Count)
                     // {
                     //     return ResponseUtil.Error("Không đủ chữ ký, không thể lưu", ResponseMessages.FailedToSaveData,
                     //         HttpStatusCode.BadRequest);
                     // }
 
-                    
-                    
                     var archiveId = Guid.NewGuid();
-                    var pathArchive = Path.Combine(Directory.GetCurrentDirectory(),"data","storage" ,"archive_document",archiveId.ToString());
-                    Directory.CreateDirectory(pathArchive);
-                    await File.WriteAllBytesAsync(Path.Combine(pathArchive,doc.DocumentName + ".pdf"), docFile);
-                    var signBys = taskSign.Select(x => x.User.UserName).ToList();
-                    var signByString = $"[{string.Join(", ", signBys)}]";
-                    var archiveDoc = new ArchivedDocument()
+                    if(doc.FinalArchiveDocumentId ==null)
                     {
-                        ArchivedDocumentId = archiveId,
-                        ArchivedDocumentName = doc.DocumentName,
-                        ArchivedDocumentContent = doc.DocumentContent,
-                        NumberOfDocument = doc.NumberOfDocument,
-                        SignedBy = signByString,
-                        CreatedDate = DateTime.Now,
-                        CreatedBy = currentTask.User.UserName,
-                        ArchivedDocumentStatus = ArchivedDocumentStatus.Archived,
-                        DateIssued = DateTime.Now,
-                        Scope = (await _unitOfWork.WorkflowUOW.FindWorkflowByIdAsync(workflowId)).Scope,
-                        IsTemplate = false,
-                        DocumentType = doc.DocumentType,
-                        FinalDocumentId = doc.DocumentId,
-                        ArchivedDocumentUrl = $"{_host}/api/Document/view-file/{archiveId}?version=1&isArchive=true"
-                    };
-                    doc.FinalArchiveDocumentId = archiveId;
-                    doc.IsDeleted = true;
-                    doc.ProcessingStatus = ProcessingStatus.Archived;
-                    await _unitOfWork.ArchivedDocumentUOW.AddAsync(archiveDoc);
+                        archiveId = Guid.NewGuid();
+                        var pathArchive = Path.Combine(Directory.GetCurrentDirectory(), "data", "storage",
+                            "archive_document", archiveId.ToString());
+                        Directory.CreateDirectory(pathArchive);
+                        await File.WriteAllBytesAsync(Path.Combine(pathArchive, doc.DocumentName + ".pdf"), docFile);
+                        var signBys = taskSign.Select(x => x.User.UserName).ToList();
+                        var signByString = $"[{string.Join(", ", signBys)}]";
+                        var archiveDoc = new ArchivedDocument()
+                        {
+                            ArchivedDocumentId = archiveId,
+                            ArchivedDocumentName = doc.DocumentName,
+                            ArchivedDocumentContent = doc.DocumentContent,
+                            NumberOfDocument = doc.NumberOfDocument,
+                            SignedBy = signByString,
+                            CreatedDate = DateTime.Now,
+                            CreatedBy = currentTask.User.UserName,
+                            ArchivedDocumentStatus = ArchivedDocumentStatus.Archived,
+                            DateIssued = DateTime.Now,
+                            Scope = (await _unitOfWork.WorkflowUOW.FindWorkflowByIdAsync(workflowId)).Scope,
+                            IsTemplate = false,
+                            DocumentType = doc.DocumentType,
+                            FinalDocumentId = doc.DocumentId,
+                            ArchivedDocumentUrl = $"{_host}/api/Document/view-file/{archiveId}?version=1&isArchive=true"
+                        };
+                        doc.FinalArchiveDocumentId = archiveId;
+                        doc.IsDeleted = true;
+                        doc.ProcessingStatus = ProcessingStatus.Archived;
+                        await _unitOfWork.ArchivedDocumentUOW.AddAsync(archiveDoc);
+                    }
+                    else
+                    {
+                        archiveId = doc.FinalArchiveDocumentId??Guid.NewGuid();
+                        var pathArchive = Path.Combine(Directory.GetCurrentDirectory(), "data", "storage",
+                            "archive_document", archiveId.ToString()!);
+                        Directory.CreateDirectory(pathArchive);
+                        await File.WriteAllBytesAsync(Path.Combine(pathArchive, doc.DocumentName + ".pdf"), docFile);
+                        var signBys = taskSign.Where(x => x.User!=null).Select(x => x.User.UserName).ToList();
+                        var signByString = $"[{string.Join(", ", signBys)}]";
+                        var archiveDoc = await _unitOfWork.ArchivedDocumentUOW.FindArchivedDocumentByIdAsync(archiveId);
+                        if (archiveDoc == null)
+                            return ResponseUtil.Error("Archive doc withdraw not found",
+                                ResponseMessages.FailedToSaveData, HttpStatusCode.BadRequest);
+                        archiveDoc.ArchivedDocumentName = doc.DocumentName;
+                        archiveDoc.ArchivedDocumentContent = doc.DocumentContent;
+                        archiveDoc.NumberOfDocument = doc.NumberOfDocument;
+                        archiveDoc.SignedBy = signByString;
+                        archiveDoc.ArchivedDocumentUrl =
+                            $"{_host}/api/Document/view-file/{archiveId}?version=1&isArchive=true";
+                        archiveDoc.CreatedBy = doc.User.UserName;
+                        archiveDoc.ArchivedDocumentStatus = ArchivedDocumentStatus.Archived;
+                        archiveDoc.DateIssued = DateTime.Now;
+                        archiveDoc.DocumentType = doc.DocumentType;
+                        archiveDoc.FinalDocumentId = doc.DocumentId;
+                        
+                        // doc.FinalArchiveDocumentId = archiveId;
+                        doc.IsDeleted = true;
+                        doc.ProcessingStatus = ProcessingStatus.Archived;
+                        await _unitOfWork.ArchivedDocumentUOW.UpdateAsync(archiveDoc);
+                    }
+                    
                     await _unitOfWork.DocumentUOW.UpdateAsync(doc);
-                    
-                    
+                    var docSignList = latestVersion.DocumentSignatures;
+                    foreach (var documentSignature in docSignList)
+                    {
+                        var tmp = new ArchiveDocumentSignature()
+                        {
+                            SignedAt = documentSignature.SignedAt,
+                            OrderIndex = documentSignature.OrderIndex,
+                            DigitalCertificateId = documentSignature.DigitalCertificateId,
+                            ArchivedDocumentId = archiveId
+                        };
+                        await _unitOfWork.ArchiveDocumentSignatureUOW.AddAsync(tmp);
+                    }
+
                     var distinctUserIds = orderedTasks
                         .Select(t => t.UserId)
                         .Distinct()
                         .ToList();
-                    var docArchiveId = doc.FinalArchiveDocumentId;
-                    if (docArchiveId == null)
-                    {
-                        return ResponseUtil.Error(ResponseMessages.DocumentHasNotArchiveDoc,
-                            ResponseMessages.OperationFailed,
-                            HttpStatusCode.BadRequest);
-                    }
-
+                    
                     var userPermissions = new List<UserDocumentPermission>();
 
                     foreach (var userId in distinctUserIds)
                     {
-                        var exists = await _unitOfWork.UserDocPermissionUOW.ExistsAsync(userId, docArchiveId.Value);
+                        var exists = await _unitOfWork.UserDocPermissionUOW.ExistsAsync(userId, archiveId);
                         if (!exists)
                         {
                             userPermissions.Add(new UserDocumentPermission
                             {
                                 UserId = userId,
-                                ArchivedDocumentId = docArchiveId.Value,
-                                GrantPermission = GrantPermission.Grant,
+                                ArchivedDocumentId = archiveId,
                                 CreatedDate = DateTime.UtcNow,
-                                IsDeleted = false
+                                IsDeleted = false,
+                                GrantPermission = GrantPermission.Grant
                             });
                         }
                     }
@@ -2325,7 +2453,19 @@ public partial class TaskService : ITaskService
                     //     return ResponseUtil.Error("Không đủ chữ ký, không thể lưu", ResponseMessages.FailedToSaveData,
                     //         HttpStatusCode.BadRequest);
                     // }
-
+                    var docSignList = latestVersion.DocumentSignatures;
+                    List<ArchiveDocumentSignature> archiveDocumentSignatures = new List<ArchiveDocumentSignature>();
+                    foreach (var documentSignature in docSignList)
+                    {
+                        var tmp = new ArchiveDocumentSignature()
+                        {
+                            SignedAt = documentSignature.SignedAt,
+                            OrderIndex = documentSignature.OrderIndex,
+                            DigitalCertificateId = documentSignature.DigitalCertificateId,
+                            ArchivedDocumentId = archiveDoc.ArchivedDocumentId
+                        };
+                        await _unitOfWork.ArchiveDocumentSignatureUOW.AddAsync(tmp);
+                    }
                     // var pathArchive = Path.Combine(Directory.GetCurrentDirectory(), "archive_document",
                     //     doc.DocumentName + ".pdf");
                     var signBys = metadata.Select(x => ExtractSigners(x.SignerName)).ToList();

@@ -479,6 +479,7 @@ public partial class DocumentService : IDocumentService
             DocumentContent = document.DocumentContent,
             NumberOfDocument = document.NumberOfDocument,
             Sender = document.Sender,
+            CreateDate = document.CreatedDate,
             CreatedBy = document.User.FullName,
             DateReceived = document.DateReceived,
             WorkflowName = document.DocumentWorkflowStatuses.FirstOrDefault().Workflow.WorkflowName,
@@ -504,13 +505,23 @@ public partial class DocumentService : IDocumentService
                 TaskType = t.TaskType.ToString(),
                 Status = t.TaskStatus.ToString()
             }).ToList(),
-            Signatures = signature.Select(x => new SignatureResponse()
+            DigitalSignatures = signature.Where(x => x.DigitalCertificate!=null).Where(x => x.DigitalCertificate.IsUsb != null).Select(x => new SignatureResponse()
                 {
                     SignerName = ExtractSigners(x.DigitalCertificate.Subject),
+                    ImgUrl = x.DigitalCertificate.SignatureImageUrl,
                     SignedDate = x.SignedAt,
-                    IsDigital = x.DigitalCertificate.SerialNumber != null
+                    IsDigital = true
                 }
-            ).ToList()
+            
+            ).ToList(),
+            ApprovalSignatures = signature.Where(x => x.DigitalCertificate!=null).Where(x => x.DigitalCertificate.IsUsb == null).Select(x => new SignatureResponse()
+            {
+                SignerName = x.DigitalCertificate.User.FullName,
+                ImgUrl = x.DigitalCertificate.SignatureImageUrl,
+                SignedDate = x.SignedAt,
+                IsDigital = false
+            }
+            ).ToList(),
         };
 
         return ResponseUtil.GetObject(result, ResponseMessages.GetSuccessfully, HttpStatusCode.OK, 1);
@@ -920,6 +931,12 @@ public partial class DocumentService : IDocumentService
                 var archiveId = Guid.NewGuid();
                 var taskList = document.Tasks;
                 var li = new List<UserDocumentPermission>();
+                var filter = Builders<Count>.Filter.Eq(x => x.Id, "base");
+                var count = _mongoDbService.Counts.Find(filter).FirstOrDefault();
+                var documentType = await _unitOfWork.DocumentTypeUOW.FindDocumentTypeByIdAsync(document.DocumentTypeId);
+                count.Value += 1;
+                var update = Builders<Count>.Update.Set(x => x.Value, count.Value);
+                await _mongoDbService.Counts.UpdateOneAsync(filter, update);
                 foreach (var task in taskList)
                 {
                     var permision = new UserDocumentPermission()
@@ -927,6 +944,7 @@ public partial class DocumentService : IDocumentService
                         CreatedDate = DateTime.Now,
                         IsDeleted = false,
                         UserId = task.UserId,
+                        GrantPermission = GrantPermission.Grant
                     };
                     li.Add(permision);
                     var user = await _unitOfWork.UserUOW.FindUserByIdAsync(task.UserId);
@@ -941,6 +959,8 @@ public partial class DocumentService : IDocumentService
                 var archiveDocument = new ArchivedDocument
                 {
                     UserDocumentPermissions = li,
+                    SystemNumberOfDoc = (count.Value < 10 ? "0" + count.Value : count.Value) + "/" + count.UpdateTime.Year +
+                                        "/" + documentType.Acronym + "-TNABC",
                     ArchivedDocumentId = archiveId,
                     ArchivedDocumentName = document.DocumentName,
                     ArchivedDocumentContent = document.DocumentContent,
@@ -1137,6 +1157,8 @@ public partial class DocumentService : IDocumentService
         {
             DocumentId = docId,
             DocumentName = documentPreInfo.DocumentName,
+            SystemNumberOfDoc = (count.Value < 10 ? "0" + count.Value : count.Value) + "/" + count.UpdateTime.Year +
+                                "/" + documentType.Acronym + "-TNABC",
             NumberOfDocument = (count.Value < 10 ? "0" + count.Value : count.Value) + "/" + count.UpdateTime.Year +
                                "/" + documentType.Acronym + "-TNABC",
             CreatedDate = DateTime.Now,
@@ -1392,6 +1414,16 @@ public partial class DocumentService : IDocumentService
                             {
                                 if (metaData != null)
                                 {
+                                    var signDocId = Guid.NewGuid();
+                                    var signDoc = new DocumentSignature()
+                                    {
+                                        DocumentSignatureId = signDocId,
+                                        SignedAt = DateTime.Now,
+                                        OrderIndex = version.DocumentSignatures.Count +1,
+                                        DigitalCertificateId = cer.DigitalCertificateId,
+                                        DocumentVersionId = version.DocumentVersionId,
+                                    };
+                                    await _unitOfWork.DocumentSignatureUOW.AddAsync(signDoc);
                                     cer.SerialNumber = metaData[^1].SerialNumber;
                                     cer.Issuer = metaData[^1].Issuer;
                                     cer.Subject = metaData[^1].SignerName;
