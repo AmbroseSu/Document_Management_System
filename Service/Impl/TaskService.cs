@@ -1979,6 +1979,7 @@ public partial class TaskService : ITaskService
                     ArchivedDocumentName = doc.DocumentName,
                     ArchivedDocumentContent = doc.DocumentContent,
                     NumberOfDocument = doc.NumberOfDocument,
+                    SystemNumberOfDoc = doc.SystemNumberOfDoc,
                     SignedBy = signBy,
                     ArchivedDocumentUrl = url,
                     CreatedDate = DateTime.Now,
@@ -2005,6 +2006,7 @@ public partial class TaskService : ITaskService
                     return ResponseUtil.Error("Final archive not found", ResponseMessages.OperationFailed,
                         HttpStatusCode.NotFound);
                 archivedDoc.ArchivedDocumentName = doc.DocumentName;
+                archivedDoc.SystemNumberOfDoc = doc.SystemNumberOfDoc;
                 archivedDoc.ArchivedDocumentContent = doc.DocumentContent;
                 archivedDoc.NumberOfDocument = doc.NumberOfDocument;
                 archivedDoc.SignedBy = signBy;
@@ -2339,6 +2341,7 @@ public partial class TaskService : ITaskService
                             ArchivedDocumentId = archiveId,
                             ArchivedDocumentName = doc.DocumentName,
                             ArchivedDocumentContent = doc.DocumentContent,
+                            SystemNumberOfDoc = doc.SystemNumberOfDoc,
                             NumberOfDocument = doc.NumberOfDocument,
                             SignedBy = signByString,
                             CreatedDate = DateTime.Now,
@@ -2370,6 +2373,7 @@ public partial class TaskService : ITaskService
                             return ResponseUtil.Error("Archive doc withdraw not found",
                                 ResponseMessages.FailedToSaveData, HttpStatusCode.BadRequest);
                         archiveDoc.ArchivedDocumentName = doc.DocumentName;
+                        archiveDoc.SystemNumberOfDoc = doc.SystemNumberOfDoc;
                         archiveDoc.ArchivedDocumentContent = doc.DocumentContent;
                         archiveDoc.NumberOfDocument = doc.NumberOfDocument;
                         archiveDoc.SignedBy = signByString;
