@@ -267,10 +267,9 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
     public async Task<ResponseDto> CreateArchiveTemplate(ArchiveDocumentRequest archiveDocumentRequest, Guid userId)
     {
         var user = await _unitOfWork.UserUOW.FindUserByIdAsync(userId);
-        var templateId = Guid.NewGuid();
         var template = new ArchivedDocument()
         {
-            ArchivedDocumentId = templateId,
+            // ArchivedDocumentId = templateId,
             ArchivedDocumentName = archiveDocumentRequest.TemplateName,
             CreatedBy = user.UserName,
             CreatedDate = DateTime.Now,
@@ -283,6 +282,10 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
             Ury = archiveDocumentRequest.Ury,
             Page = archiveDocumentRequest.Page,
         };
+        await _unitOfWork.ArchivedDocumentUOW.AddAsync(template);
+        await _unitOfWork.SaveChangesAsync();
+        var templateId = template.ArchivedDocumentId;
+
         // Save the file to a specified path
         var originalPath = Path.Combine(Directory.GetCurrentDirectory(), "data", "storage","template");
         if (!Directory.Exists(originalPath))

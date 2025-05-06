@@ -93,6 +93,13 @@ public class EmailService : IEmailService
     public async Task<ResponseDto> SendEmailWithOAuth2(EmailRequest emailRequest)
     {
         var document = await _unitOfWork.ArchivedDocumentUOW.FindArchivedDocumentByIdAsync(emailRequest.DocumentId);
+        
+        if (document.ArchivedDocumentStatus == ArchivedDocumentStatus.Withdrawn )
+        {
+            return ResponseUtil.Error(ResponseMessages.DocumentHadWithdrawnCanNotSend, ResponseMessages.OperationFailed,
+                HttpStatusCode.BadRequest);
+        }
+        
         var doc = await _unitOfWork.DocumentUOW.FindDocumentByIdAsync(document.FinalDocumentId);
         if (doc == null)
         {
@@ -206,10 +213,35 @@ public class EmailService : IEmailService
 
             await client.SendAsync(message);
             await client.DisconnectAsync(true);
-            document.ArchivedDocumentStatus = ArchivedDocumentStatus.Sent;
-            document.DateSented = DateTime.UtcNow;
-            document.Sender = email;
-            await _unitOfWork.ArchivedDocumentUOW.UpdateAsync(document);
+
+
+            if (document.ArchivedDocumentStatus == ArchivedDocumentStatus.Archived && document.DocumentRevokeId == null)
+            {
+                document.ArchivedDocumentStatus = ArchivedDocumentStatus.Sent;
+                document.DateSented = DateTime.UtcNow;
+                document.Sender = email;
+                await _unitOfWork.ArchivedDocumentUOW.UpdateAsync(document);
+            }
+
+            if (document.DocumentRevokeId != null && document.ArchivedDocumentStatus == ArchivedDocumentStatus.Archived)
+            {
+                
+                
+                var documentRevoke = await _unitOfWork.ArchivedDocumentUOW.FindArchivedDocumentByIdAsync(document.DocumentRevokeId);
+                if (documentRevoke != null)
+                {
+                    documentRevoke.ArchivedDocumentStatus = ArchivedDocumentStatus.Withdrawn;
+                    documentRevoke.DateSented = DateTime.UtcNow;
+                    documentRevoke.Sender = email;
+                    await _unitOfWork.ArchivedDocumentUOW.UpdateAsync(documentRevoke);
+                    document.ArchivedDocumentStatus = ArchivedDocumentStatus.Sent;
+                    document.DateSented = DateTime.UtcNow;
+                    document.Sender = email;
+                    await _unitOfWork.ArchivedDocumentUOW.UpdateAsync(document);
+                }
+            }
+            ////
+            
             await _unitOfWork.SaveChangesAsync();
         }
         catch (Exception ex)

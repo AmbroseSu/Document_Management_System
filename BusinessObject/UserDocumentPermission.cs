@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using BusinessObject.Enums;
 
 namespace BusinessObject;
 
@@ -16,6 +17,8 @@ public class UserDocumentPermission
         get => DateTime.SpecifyKind(_createdDate, DateTimeKind.Utc).ToLocalTime();
         set => _createdDate = value.ToUniversalTime();
     }
+    
+    public GrantPermission GrantPermission { get; set; }
 
     public bool IsDeleted { get; set; }
 
