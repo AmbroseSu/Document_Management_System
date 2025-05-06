@@ -2265,6 +2265,7 @@ public partial class TaskService : ITaskService
                         {
                             UserId = userId,
                             ArchivedDocumentId = docArchiveId.Value,
+                            GrantPermission = GrantPermission.Grant,
                             CreatedDate = DateTime.UtcNow,
                             IsDeleted = false
                         });
