@@ -11,6 +11,9 @@ using Repository;
 using Repository.Caching;
 using Repository.Caching.Impl;
 using Repository.Impl;
+using Serilog;
+using Serilog.Events;
+using Serilog.Sinks.MongoDB;
 using Service;
 using Service.Impl;
 using Service.SignalRHub;
@@ -18,7 +21,14 @@ using Syncfusion.Licensing;
 
 
 var builder = WebApplication.CreateBuilder(args);
+// Cấu hình Serilog
+Log.Logger = new LoggerConfiguration()
+    .MinimumLevel.Debug()
+    .WriteTo.Console()
+    .WriteTo.MongoDB(databaseUrl: "mongodb://superadmin:dmsCapstone@103.90.227.64:27017/DMS_MongoDB?authSource=admin", collectionName: "logs", LogEventLevel.Information).CreateLogger();
 
+// Sử dụng Serilog trong ứng dụng
+builder.Host.UseSerilog();
 // Add services to the container.
 DotNetEnv.Env.Load();
 var syncfusionLicenseKey = Environment.GetEnvironmentVariable("SYNCFUSION_LICENSE_KEY");
@@ -174,6 +184,7 @@ builder.Services.AddCors(options =>
 });
 
 /*builder.Services.AddScoped(typeof(IBaseRepository<>), typeof(BaseRepository<>));*/
+builder.Services.AddSingleton<ILoggerFactory, LoggerFactory>(); // Đảm bảo ILogger được inject
 builder.Services.AddSingleton<MongoDbService>();
 builder.Services.AddScoped<IExternalApiService, ExternalApiService>();
 builder.Services.AddScoped<IRedisCacheRepository, RedisCacheRepository>();

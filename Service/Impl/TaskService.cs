@@ -1933,7 +1933,7 @@ public partial class TaskService : ITaskService
        
             
             var archivedDoc = new ArchivedDocument();
-            if(doc.FinalArchiveDocumentId!=null)
+            if(doc.FinalArchiveDocumentId==null)
             {
                 var archivedDocId = Guid.NewGuid();
                 var url = _fileService.ArchiveDocument(doc.DocumentName, doc.DocumentId,
