@@ -892,8 +892,10 @@ public partial class DocumentService : IDocumentService
         var count = _mongoDbService.Counts.Find(filter).FirstOrDefault();
         var documentType = await _unitOfWork.DocumentTypeUOW.FindDocumentTypeByIdAsync(documentTypeId);
         count.Value += 1;
+        var verId = Guid.NewGuid();
         var update = Builders<Count>.Update.Set(x => x.Value, count.Value);
         await _mongoDbService.Counts.UpdateOneAsync(filter, update);
+        
         var document = new Document
         {
             DocumentName = name,
@@ -925,7 +927,8 @@ public partial class DocumentService : IDocumentService
         };
 
         var version = new DocumentVersion
-        {
+        {   
+            DocumentVersionId = verId,
             VersionNumber = "0",
             CreateDate = DateTime.Now,
             IsFinalVersion = true
@@ -933,7 +936,32 @@ public partial class DocumentService : IDocumentService
         document.DocumentVersions.Add(version);
         await _unitOfWork.DocumentUOW.AddAsync(document);
         await _unitOfWork.SaveChangesAsync();
+        
+        for(int i = 0 ; i< signatureNames.Count; i++)
+        {
+            var cerId = Guid.NewGuid();
+            var tmp = new DigitalCertificate
+            {
+                DigitalCertificateId = cerId,
+                ValidTo = expirationDates[i],
+                Subject = signerNames[i], 
+                Issuer = issuers[i], 
+                SerialNumber = serialNumbers[i], 
+                ValidFrom = validFroms[i],
+            };
+            var signature = new DocumentSignature
+            {
+                DocumentSignatureId = Guid.NewGuid(),
+                DigitalCertificateId = cerId,
+                SignedAt = singingDates[i],
+                OrderIndex = i +1,
+                DocumentVersionId = verId
+            };
+            await _unitOfWork.DigitalCertificateUOW.AddAsync(tmp);
+            await _unitOfWork.DocumentSignatureUOW.AddAsync(signature);
 
+        }
+        
         var url = _fileService.CreateAVersionFromUpload(documentUploadDto.CannotChange["fileName"]?.ToString(),
             version.DocumentVersionId, document.DocumentId, name);
         version.DocumentVersionUrl = url;
