@@ -747,17 +747,28 @@ public partial class TaskService : ITaskService
                     HttpStatusCode.BadRequest);
             }
 
+            
             var workflowId = task.Document!.DocumentWorkflowStatuses.FirstOrDefault()?.WorkflowId;
+            var workflow = await _unitOfWork.WorkflowUOW.FindWorkflowByIdAsync(workflowId ?? Guid.Empty);
             var document = await _unitOfWork.DocumentUOW.FindDocumentByIdAsync(task.DocumentId!.Value);
             var orderedTasks = await GetOrderedTasks(document.Tasks, workflowId ?? Guid.Empty);
-            if (orderedTasks[0].TaskStatus == TasksStatus.Completed)
-                return ResponseUtil.Error(ResponseMessages.TaskCanNotDelete, ResponseMessages.OperationFailed,
-                    HttpStatusCode.BadRequest);
-            if (orderedTasks[0].TaskId == id)
+            if (workflow.Scope == Scope.InComing && task.TaskStatus == TasksStatus.Waiting)
             {
-                return ResponseUtil.Error(ResponseMessages.TaskFirstCanNotDelete, ResponseMessages.OperationFailed,
-                    HttpStatusCode.BadRequest);
+                
             }
+            else
+            {
+                if (orderedTasks[0].TaskStatus == TasksStatus.Completed)
+                    return ResponseUtil.Error(ResponseMessages.TaskCanNotDelete, ResponseMessages.OperationFailed,
+                        HttpStatusCode.BadRequest);
+                if (orderedTasks[0].TaskId == id)
+                {
+                    return ResponseUtil.Error(ResponseMessages.TaskFirstCanNotDelete, ResponseMessages.OperationFailed,
+                        HttpStatusCode.BadRequest);
+                }
+            }
+
+            
 
             var stepId = task.StepId;
             var deletedTaskNumber = task.TaskNumber;
@@ -829,14 +840,27 @@ public partial class TaskService : ITaskService
                 }
             }
             
-            var nexTask = orderedTasks[currentIndex + 1];
-            if (nexTask.StartDate < taskRequest.EndDate)
+            // var nexTask = orderedTasks[currentIndex + 1];
+            // if (nexTask.StartDate < taskRequest.EndDate)
+            // {
+            //     return ResponseUtil.Error(
+            //         ResponseMessages.TaskStartdayNextTaskLowerEndDayCurrentTask,
+            //         ResponseMessages.OperationFailed,
+            //         HttpStatusCode.BadRequest
+            //     );
+            // }
+            
+            if (currentIndex < orderedTasks.Count - 1) // Kiểm tra xem có task tiếp theo hay không
             {
-                return ResponseUtil.Error(
-                    ResponseMessages.TaskStartdayNextTaskLowerEndDayCurrentTask,
-                    ResponseMessages.OperationFailed,
-                    HttpStatusCode.BadRequest
-                );
+                var nextTask = orderedTasks[currentIndex + 1];
+                if (nextTask.StartDate < taskRequest.EndDate)
+                {
+                    return ResponseUtil.Error(
+                        ResponseMessages.TaskStartdayNextTaskLowerEndDayCurrentTask,
+                        ResponseMessages.OperationFailed,
+                        HttpStatusCode.BadRequest
+                    );
+                }
             }
 
             if (orderedTasks[0].TaskId == taskRequest.TaskId)
@@ -1678,6 +1702,31 @@ public partial class TaskService : ITaskService
                             await _unitOfWork.DocumentUOW.UpdateAsync(document);
                             await _unitOfWork.SaveChangesAsync();
                         }
+                        
+                        var workflowFlowAll = await _unitOfWork.WorkflowFlowUOW.FindWorkflowFlowByWorkflowIdAsync(workflow.WorkflowId);
+                    
+                        var allStepsWithFlowNumber = workflowFlowAll
+                            .SelectMany(wf => wf.Flow.Steps.Select(s => new
+                            {
+                                Step = s,
+                                FlowNumber = wf.FlowNumber,
+                                StepNumber = s.StepNumber
+                            }))
+                            .ToList();
+
+                        // Kiểm tra tất cả các step trong tất cả các flow
+                        foreach (var stepInfo in allStepsWithFlowNumber)
+                        {
+                            var tasksInStep = await _unitOfWork.TaskUOW.FindTaskByStepIdDocIdAsync(stepInfo.Step.StepId, task.DocumentId);
+                            if (!tasksInStep.Any())
+                            {
+                                return ResponseUtil.Error(
+                                    "There is a step without task",
+                                    ResponseMessages.OperationFailed,
+                                    HttpStatusCode.BadRequest);
+                            }
+                        }
+                        
                     }
 
                     foreach (var orderedTask in orderedTasks)
@@ -1688,6 +1737,9 @@ public partial class TaskService : ITaskService
                                 HttpStatusCode.NotFound);
                         }
                     }
+                    
+                    
+                    
 
 
                     task.TaskStatus = TasksStatus.Completed;
