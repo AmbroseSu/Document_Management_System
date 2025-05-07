@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Text;
 using System.Text.Json.Serialization;
 using BusinessObject.Option;
@@ -7,28 +8,57 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using MongoDB.Driver;
 using Repository;
 using Repository.Caching;
 using Repository.Caching.Impl;
 using Repository.Impl;
 using Serilog;
-using Serilog.Events;
-using Serilog.Sinks.MongoDB;
+using Serilog.Debugging;
 using Service;
+using Serilog.Sinks.MongoDB;
 using Service.Impl;
 using Service.SignalRHub;
 using Syncfusion.Licensing;
+using RollingInterval = Serilog.Sinks.MongoDB.RollingInterval;
 
 
 var builder = WebApplication.CreateBuilder(args);
 // Cấu hình Serilog
-Log.Logger = new LoggerConfiguration()
-    .MinimumLevel.Debug()
-    .WriteTo.Console()
-    .WriteTo.MongoDB(databaseUrl: "mongodb://superadmin:dmsCapstone@103.90.227.64:27017/DMS_MongoDB?authSource=admin", collectionName: "logs", LogEventLevel.Information).CreateLogger();
+// Serilog.Debugging.SelfLog.Enable(msg => Console.WriteLine(msg));
 
-// Sử dụng Serilog trong ứng dụng
-builder.Host.UseSerilog();
+// Log.Logger = new LoggerConfiguration()
+//     .MinimumLevel.Debug()
+//     .WriteTo.Console()
+//     .WriteTo.MongoDB(databaseUrl: "mongodb://superadmin:dmsCapstone@103.90.227.64:27017/DMS_MongoDB?authSource=admin", collectionName: "logs")
+//     .CreateLogger();
+
+// create sink instance with custom mongodb settings.
+// SelfLog.Enable(Console.Error);
+//
+// Log.Logger= new LoggerConfiguration()
+//     .WriteTo.MongoDBBson(cfg =>
+//     {
+//         // Cấu hình MongoDB
+//         var mongoDbSettings = new MongoClientSettings
+//         {
+//             Credential = MongoCredential.CreateCredential("admin", "superadmin", "dmsCapstone"),
+//             Server = new MongoServerAddress("103.90.227.64", 27017),
+//             UseTls = true,
+//             AllowInsecureTls = true// Tắt TLS nếu server không yêu cầu
+//         };
+//
+//         var mongoDbInstance = new MongoClient(mongoDbSettings).GetDatabase("DMS_MongoDB");
+//
+//         // Sử dụng database DMS_MongoDB và collection logs
+//         cfg.SetMongoDatabase(mongoDbInstance);
+//         cfg.SetCollectionName("logs");
+//         // cfg.SetRollingInternal(RollingInterval.Month); // Bỏ comment nếu muốn rolling collection theo tháng
+//     })
+//     .CreateLogger();
+//
+// // Sử dụng Serilog trong ứng dụng
+// builder.Host.UseSerilog();
 // Add services to the container.
 DotNetEnv.Env.Load();
 var syncfusionLicenseKey = Environment.GetEnvironmentVariable("SYNCFUSION_LICENSE_KEY");

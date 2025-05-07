@@ -6,6 +6,7 @@ using DataAccess.DTO.Request;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore.Internal;
 using Service;
 
 namespace DocumentManagementSystemApplication.Controllers
@@ -39,20 +40,8 @@ namespace DocumentManagementSystemApplication.Controllers
                 UserId = Guid.NewGuid(),
                 Action = "Test action"
             };
-            _logger.LogInformation("{@LogEntry}", logEntry);
-              // _fileService.InsertTextToImage("/home/wiramin/Data/project/Capstone_2025/Document_Management_System/DocumentManagementSystemApplication/data/storage/images.png"
-              //     ,"/home/wiramin/Data/project/Capstone_2025/Document_Management_System/DocumentManagementSystemApplication/data/storage/signature/images.png",
-              //     "Tạ Gia Nhật Minh");
-              
-              // return _fileService.InsertTextToImage(file, "Le Phan Hoai Nam");\
-              // var count = new Count()
-              // {
-              //     Id = "base",
-              //     Value = 0,
-              //     UpdateTime = DateTime.Now
-              // };
-              // await _mongoDbService.CreateCountAsync(count);
-              return Ok();
+            _logger.LogInformation("hehe");
+            return Ok();
         }
 
         [AllowAnonymous]
