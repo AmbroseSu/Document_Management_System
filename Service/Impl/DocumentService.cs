@@ -913,7 +913,7 @@ public partial class DocumentService : IDocumentService
             };
             await _unitOfWork.DigitalCertificateUOW.AddAsync(tmp);
             await _unitOfWork.DocumentSignatureUOW.AddAsync(signature);
-
+            await _unitOfWork.SaveChangesAsync();
         }
         
         var url = _fileService.CreateAVersionFromUpload(documentUploadDto.CannotChange["fileName"]?.ToString(),
@@ -933,7 +933,7 @@ public partial class DocumentService : IDocumentService
 
         var result = _mapper.Map<WorkflowDto>(workflow);
         var doc = _mapper.Map<DocumentDto>(document);
-        doc.DocumentVersion = _mapper.Map<DocumentVersionDto>(version);
+        // doc.DocumentVersion = _mapper.Map<DocumentVersionDto>(version);
 
         return ResponseUtil.GetCollection(new List<object> { result, doc }, "Success", HttpStatusCode.OK, 2, 1, 2, 2);
 
