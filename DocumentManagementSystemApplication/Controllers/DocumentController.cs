@@ -20,30 +20,17 @@ namespace DocumentManagementSystemApplication.Controllers
         private readonly IDocumentService _documentService;
         private readonly IFileService _fileService;
         private readonly MongoDbService _mongoDbService;
-        private readonly ILogger<DocumentController> _logger;
+        private readonly ILoggingService _loggingService;
+        
 
-        public DocumentController(IDocumentService documentService, IFileService fileService, MongoDbService mongoDbService, ILogger<DocumentController> logger)
+        public DocumentController(IDocumentService documentService, IFileService fileService, MongoDbService mongoDbService, ILoggingService loggingService)
         {
             _documentService = documentService;
             _fileService = fileService;
             _mongoDbService = mongoDbService;
-            _logger = logger;
+            _loggingService = loggingService;
         }
         
-        [AllowAnonymous]
-        [HttpPost("view-test")]
-        public async Task<IActionResult> GetViewTest()
-        {
-            var logEntry = new LogEntry
-            {
-                Timestamp = DateTime.Now,
-                UserId = Guid.NewGuid(),
-                Action = "Test action"
-            };
-            _logger.LogInformation("hehe");
-            return Ok();
-        }
-
         [AllowAnonymous]
         [HttpPost("create-convert-doc-to-pdf")]
         public async Task<IActionResult> ConvertDocToPdf(IFormFile file)

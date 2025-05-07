@@ -34,31 +34,31 @@ var builder = WebApplication.CreateBuilder(args);
 //     .CreateLogger();
 
 // create sink instance with custom mongodb settings.
-// SelfLog.Enable(Console.Error);
-//
-// Log.Logger= new LoggerConfiguration()
-//     .WriteTo.MongoDBBson(cfg =>
-//     {
-//         // Cấu hình MongoDB
-//         var mongoDbSettings = new MongoClientSettings
-//         {
-//             Credential = MongoCredential.CreateCredential("admin", "superadmin", "dmsCapstone"),
-//             Server = new MongoServerAddress("103.90.227.64", 27017),
-//             UseTls = true,
-//             AllowInsecureTls = true// Tắt TLS nếu server không yêu cầu
-//         };
-//
-//         var mongoDbInstance = new MongoClient(mongoDbSettings).GetDatabase("DMS_MongoDB");
-//
-//         // Sử dụng database DMS_MongoDB và collection logs
-//         cfg.SetMongoDatabase(mongoDbInstance);
-//         cfg.SetCollectionName("logs");
-//         // cfg.SetRollingInternal(RollingInterval.Month); // Bỏ comment nếu muốn rolling collection theo tháng
-//     })
-//     .CreateLogger();
-//
-// // Sử dụng Serilog trong ứng dụng
-// builder.Host.UseSerilog();
+SelfLog.Enable(Console.Error);
+
+Log.Logger= new LoggerConfiguration()
+    .WriteTo.MongoDBBson(cfg =>
+    {
+        // Cấu hình MongoDB
+        var mongoDbSettings = new MongoClientSettings
+        {
+            Credential = MongoCredential.CreateCredential("admin", "superadmin", "dmsCapstone"),
+            Server = new MongoServerAddress("103.90.227.64", 27017),
+            UseTls = true,
+            AllowInsecureTls = true// Tắt TLS nếu server không yêu cầu
+        };
+
+        var mongoDbInstance = new MongoClient(mongoDbSettings).GetDatabase("DMS_MongoDB");
+
+        // Sử dụng database DMS_MongoDB và collection logs
+        cfg.SetMongoDatabase(mongoDbInstance);
+        cfg.SetCollectionName("logs");
+        // cfg.SetRollingInternal(RollingInterval.Month); // Bỏ comment nếu muốn rolling collection theo tháng
+    })
+    .CreateLogger();
+
+// Sử dụng Serilog trong ứng dụng
+builder.Host.UseSerilog();
 // Add services to the container.
 DotNetEnv.Env.Load();
 var syncfusionLicenseKey = Environment.GetEnvironmentVariable("SYNCFUSION_LICENSE_KEY");
@@ -216,6 +216,8 @@ builder.Services.AddCors(options =>
 /*builder.Services.AddScoped(typeof(IBaseRepository<>), typeof(BaseRepository<>));*/
 builder.Services.AddSingleton<ILoggerFactory, LoggerFactory>(); // Đảm bảo ILogger được inject
 builder.Services.AddSingleton<MongoDbService>();
+builder.Services.AddScoped<ILoggingService, LoggingService>();
+
 builder.Services.AddScoped<IExternalApiService, ExternalApiService>();
 builder.Services.AddScoped<IRedisCacheRepository, RedisCacheRepository>();
 builder.Services.AddHostedService<StartupTaskService>();
