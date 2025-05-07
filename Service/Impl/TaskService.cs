@@ -884,7 +884,7 @@ public partial class TaskService : ITaskService
                 return ResponseUtil.Error(ResponseMessages.TaskEndDayFailed, ResponseMessages.OperationFailed,
                     HttpStatusCode.BadRequest);
             var document = await _unitOfWork.DocumentUOW.FindDocumentByIdAsync(task.DocumentId);
-            var orderedTasks = await GetOrderedTasks(document.Tasks,
+            var orderedTasks = await GetOrderedTasks(document.Tasks.Where(t => t.IsDeleted == false).ToList(),
                 document.DocumentWorkflowStatuses.FirstOrDefault()?.WorkflowId ?? Guid.Empty);
             // if(orderedTasks[orderedTasks.Count - 1].EndDate > taskRequest.StartDate)
             //     return ResponseUtil.Error(ResponseMessages.TaskStartdayLowerEndDaypreviousStepFailed, ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
