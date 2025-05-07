@@ -2434,30 +2434,65 @@ if (document.FinalArchiveDocument == null)
        
             
             var archivedDoc = new ArchivedDocument();
+            var orderedTasks = await GetOrderedTasks(doc.Tasks,
+                doc.DocumentWorkflowStatuses.FirstOrDefault()?.WorkflowId ?? Guid.Empty);
             if(doc.FinalArchiveDocumentId==null)
             {
                 var archivedDocId = Guid.NewGuid();
                 var url = _fileService.ArchiveDocument(doc.DocumentName, doc.DocumentId,
                     latestVer.DocumentVersionId,
                     archivedDocId);
-                var userPermission = userList.Select(x =>
-                    {
-                        var userPermission = new UserDocumentPermission()
-                        {
-                            UserId = x.UserId,
-                            CreatedDate = DateTime.Now,
-                            IsDeleted = false,
-                            ArchivedDocumentId = archivedDocId,
-                            GrantPermission = GrantPermission.Grant
-                        };
-                        return userPermission;
-                    }
-                ).ToList();
-                var listSignature = latestVer.DocumentSignatures;
-                foreach (var userDocumentPermission in userPermission)
+                // var userPermission = userList.Select(x =>
+                //     {
+                //         var userPermission = new UserDocumentPermission()
+                //         {
+                //             UserId = x.UserId,
+                //             CreatedDate = DateTime.Now,
+                //             IsDeleted = false,
+                //             ArchivedDocumentId = archivedDocId,
+                //             GrantPermission = GrantPermission.Grant
+                //         };
+                //         return userPermission;
+                //     }
+                // ).ToList();
+                
+                
+                
+                var distinctUserIds = orderedTasks
+                    .Select(t => t.UserId)
+                    .Distinct()
+                    .ToList();
+                
+                var userPermissions = new List<UserDocumentPermission>();
+
+                foreach (var userId in distinctUserIds)
                 {
-                    await _unitOfWork.UserDocPermissionUOW.AddAsync(userDocumentPermission);
+                    var exists = await _unitOfWork.UserDocPermissionUOW.ExistsAsync(userId, archivedDocId);
+                    if (!exists)
+                    {
+                        userPermissions.Add(new UserDocumentPermission
+                        {
+                            UserId = userId,
+                            ArchivedDocumentId = archivedDocId,
+                            GrantPermission = GrantPermission.Grant,
+                            CreatedDate = DateTime.UtcNow,
+                            IsDeleted = false
+                        });
+                    }
                 }
+
+                // Chỉ thêm những cái chưa có
+                if (userPermissions.Any())
+                {
+                    await _unitOfWork.UserDocPermissionUOW.AddRangeAsync(userPermissions);
+                }
+
+                await _unitOfWork.SaveChangesAsync();
+                var listSignature = latestVer.DocumentSignatures;
+                // foreach (var userDocumentPermission in userPermission)
+                // {
+                //     await _unitOfWork.UserDocPermissionUOW.AddAsync(userDocumentPermission);
+                // }
                 var listSignArchive = listSignature.Select(x =>
                     {
                         var signArchive = new ArchiveDocumentSignature()
@@ -2538,8 +2573,7 @@ if (document.FinalArchiveDocument == null)
             
             
             
-            var orderedTasks = await GetOrderedTasks(doc.Tasks,
-                doc.DocumentWorkflowStatuses.FirstOrDefault()?.WorkflowId ?? Guid.Empty);
+            
 
             foreach (var orderedTask in orderedTasks)
             {
