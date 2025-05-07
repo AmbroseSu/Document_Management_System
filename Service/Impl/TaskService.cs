@@ -317,6 +317,8 @@ public partial class TaskService : ITaskService
             
             if (taskDto.EndDate <= taskDto.StartDate)
                 return ResponseUtil.Error(ResponseMessages.TaskEndDayFailed, ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
+            
+            
 
 
             ////////////////////////////////////////////////////////////////////////
@@ -523,6 +525,18 @@ public partial class TaskService : ITaskService
                         ResponseMessages.OperationFailed,
                         HttpStatusCode.BadRequest);
                 }
+                
+                var userTasksInDocument = await _unitOfWork.TaskUOW.FindTaskByDocumentIdAndUserIdAsync(
+                    taskDto.UserId.Value, taskDto.DocumentId.Value);
+                var existingSignTask = userTasksInDocument
+                    .FirstOrDefault(t => t.TaskType == TaskType.Sign && t.IsDeleted == false);
+                if (existingSignTask != null)
+                {
+                    return ResponseUtil.Error(
+                        "Người dùng chỉ được phép có duy nhất một nhiệm vụ ký trong tài liệu.",
+                        ResponseMessages.OperationFailed,
+                        HttpStatusCode.BadRequest);
+                }
             }
 
             
@@ -541,6 +555,49 @@ public partial class TaskService : ITaskService
             //if(orderedTasks[orderedTasks.Count - 1].EndDate > taskDto.StartDate)
             //    return ResponseUtil.Error(ResponseMessages.TaskStartdayLowerEndDaypreviousStepFailed, ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
             
+            
+            //////////////////////////////
+            
+            
+            //var document = await _unitOfWork.DocumentUOW.FindDocumentByIdAsync(taskDto.DocumentId.Value);
+            var scope = document.DocumentWorkflowStatuses.FirstOrDefault()?.Workflow.Scope;
+            if (scope != Scope.InComing)
+            {
+                // Lấy tất cả task trong tài liệu để xác định vị trí task mới
+                
+                var totalTasksInDocument = orderedTasks.Count();
+                var newTaskPosition = totalTasksInDocument + 1;
+
+                // Kiểm tra task thứ 2
+                if (newTaskPosition == 2)
+                {
+                    if (taskDto.TaskType != TaskType.Upload)
+                    {
+                        return ResponseUtil.Error(
+                            "Nhiệm vụ thứ 2 trong luồng phải có loại nhiệm vụ là Tải văn bản lên .",
+                            ResponseMessages.OperationFailed,
+                            HttpStatusCode.BadRequest);
+                    }
+                }
+                // Kiểm tra task không phải thứ 2
+                else if (taskDto.TaskType == TaskType.Create || taskDto.TaskType == TaskType.Upload)
+                {
+                    return ResponseUtil.Error(
+                        "Nhiệm vụ không phải thứ 2 trong luồng không được có loại nhiệm vụ Khởi tạo văn bản hoặc Tải văn bản lên.",
+                        ResponseMessages.OperationFailed,
+                        HttpStatusCode.BadRequest);
+                }
+            }
+            else
+            {
+                if (taskDto.TaskType == TaskType.Upload)
+                {
+                    return ResponseUtil.Error(
+                        "Nhiệm vụ không được có loại nhệm vụ Tải văn bản lên trong luồng đến.",
+                        ResponseMessages.OperationFailed,
+                        HttpStatusCode.BadRequest);
+                }
+            }
             
             
             // Flatten tất cả các Step trong tất cả các Flow, kèm theo FlowNumber để dễ so sánh
@@ -1648,7 +1705,7 @@ public partial class TaskService : ITaskService
             if (document == null)
                 return ResponseUtil.Error(ResponseMessages.DocumentNotFound, ResponseMessages.OperationFailed,
                     HttpStatusCode.NotFound);
-            var orderedTasks = await GetOrderedTasks(document.Tasks,
+            var orderedTasks = await GetOrderedTasks(document.Tasks.Where(t => t.IsDeleted == false).ToList(),
                 document.DocumentWorkflowStatuses.FirstOrDefault()?.WorkflowId ?? Guid.Empty);
             //var user = await _unitOfWork.UserUOW.FindUserByIdAsync(orderedTasks.First().UserId);
             var userTask = await _unitOfWork.UserUOW.FindUserByIdAsync(userId);
@@ -1929,6 +1986,59 @@ public partial class TaskService : ITaskService
                             }
                         }
                         
+                    }
+                    else
+                    {
+                        var workflowFlowAll = await _unitOfWork.WorkflowFlowUOW.FindWorkflowFlowByWorkflowIdAsync(workflow.WorkflowId);
+        var allStepsWithFlowNumber = workflowFlowAll
+            .SelectMany(wf => wf.Flow.Steps.Select(s => new
+            {
+                Step = s,
+                FlowNumber = wf.FlowNumber,
+                StepNumber = s.StepNumber
+            }))
+            .ToList();
+
+        // Kiểm tra step đầu tiên có role chief
+        var firstChiefStep = allStepsWithFlowNumber
+            .Where(s => s.Step.Role.RoleName.Equals("chief", StringComparison.OrdinalIgnoreCase))
+            .OrderBy(s => s.FlowNumber)
+            .ThenBy(s => s.StepNumber)
+            .FirstOrDefault();
+
+        if (firstChiefStep != null)
+        {
+            var tasksInChiefStep = await _unitOfWork.TaskUOW.FindTaskByStepIdDocIdAsync(
+                firstChiefStep.Step.StepId, task.DocumentId);
+            if (!tasksInChiefStep.Any(t => t.TaskType == TaskType.Create && !t.IsDeleted))
+            {
+                return ResponseUtil.Error(
+                    "Bước đầu tiên có role chief trong luồng InComing phải có ít nhất một task Create.",
+                    ResponseMessages.OperationFailed,
+                    HttpStatusCode.BadRequest);
+            }
+        }
+
+        // Kiểm tra user với role chief chỉ có một task Create
+        var tasksInDocument = document.Tasks.Where(t => t.IsDeleted == false).ToList();
+        var userCheckIds = tasksInDocument.Select(t => t.UserId).Distinct().ToList();
+        foreach (var userCheckId in userCheckIds)
+        {
+            var user = await _unitOfWork.UserUOW.FindUserByIdAsync(userCheckId);
+            var hasChiefRole = user.UserRoles.Any(ur => ur.Role.RoleName.Equals("chief", StringComparison.OrdinalIgnoreCase));
+            if (hasChiefRole)
+            {
+                var userTasks = tasksInDocument.Where(t => t.UserId == userCheckId && t.TaskType == TaskType.Create && !t.IsDeleted);
+                var secondCreateTask = userTasks.Skip(1).FirstOrDefault();
+                if (secondCreateTask != null)
+                {
+                    return ResponseUtil.Error(
+                        "Người dùng có role chief chỉ được phép có duy nhất một task Create trong tài liệu.",
+                        ResponseMessages.OperationFailed,
+                        HttpStatusCode.BadRequest);
+                }
+            }
+        }
                     }
 
                     foreach (var orderedTask in orderedTasks)
