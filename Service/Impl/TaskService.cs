@@ -312,20 +312,27 @@ public partial class TaskService : ITaskService
             var tasksInCurrentStep =
                 await _unitOfWork.TaskUOW.FindTaskByStepIdDocIdAsync(taskDto.StepId, taskDto.DocumentId);
             var orderedTasksInCurrentStep = tasksInCurrentStep.OrderBy(t => t.TaskNumber).ToList();
-
-            // Kiểm tra giữa các Step trong Flow
-            var lastTaskInCurrentStep = orderedTasksInCurrentStep.LastOrDefault();
-            if (lastTaskInCurrentStep != null)
-            {
-                // Kiểm tra StartDate của task mới với EndDate của task cuối cùng của Step hiện tại
-                if (taskDto.StartDate <= lastTaskInCurrentStep.EndDate)
+            
+            var currentStepIndex = orderedStepsInFlow.FindIndex(s => s.StepId == taskDto.StepId);
+                
+                if (currentStepIndex > 0) // Đảm bảo có step trước đó
                 {
-                    return ResponseUtil.Error(ResponseMessages.TaskStartDateBeforeLastTaskEndDate,
-                        ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
+                    var previousStepCheckTask = orderedStepsInFlow[currentStepIndex - 1];
+                    var tasksInPreviousStep =
+                        await _unitOfWork.TaskUOW.FindTaskByStepIdDocIdAsync(previousStepCheckTask.StepId, taskDto.DocumentId);
+                    var lastTaskInPreviousStep = tasksInPreviousStep.OrderBy(t => t.TaskNumber).LastOrDefault();
+                    if (lastTaskInPreviousStep != null)
+                    {
+                        if (taskDto.StartDate <= lastTaskInPreviousStep.EndDate)
+                        {
+                            return ResponseUtil.Error(
+                                "StartDate của task mới phải lớn hơn EndDate của task cuối cùng trong step trước đó.",
+                                ResponseMessages.OperationFailed,
+                                HttpStatusCode.BadRequest);
+                        }
+                    }
                 }
-
-                // Kiểm tra EndDate của task mới với StartDate của task đầu tiên của Step tiếp theo
-                var currentStepIndex = orderedStepsInFlow.FindIndex(s => s.StepId == taskDto.StepId);
+                
                 if (currentStepIndex >= 0 && currentStepIndex < orderedStepsInFlow.Count - 1)
                 {
                     var nextStep = orderedStepsInFlow[currentStepIndex + 1];
@@ -341,6 +348,20 @@ public partial class TaskService : ITaskService
                         }
                     }
                 }
+
+            // Kiểm tra giữa các Step trong Flow
+            var lastTaskInCurrentStep = orderedTasksInCurrentStep.LastOrDefault();
+            if (lastTaskInCurrentStep != null)
+            {
+                // Kiểm tra StartDate của task mới với EndDate của task cuối cùng của Step hiện tại
+                if (taskDto.StartDate <= lastTaskInCurrentStep.EndDate)
+                {
+                    return ResponseUtil.Error(ResponseMessages.TaskStartDateBeforeLastTaskEndDate,
+                        ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
+                }
+
+                // Kiểm tra EndDate của task mới với StartDate của task đầu tiên của Step tiếp theo
+                
             }
 
 
@@ -412,7 +433,6 @@ public partial class TaskService : ITaskService
                         var parts = name.Split('_');
                         return parts[^1].Trim().ToLower(); // phần cuối cùng
                     }
-
                     return name.Trim().ToLower();
                 })
                 .Distinct(StringComparer.OrdinalIgnoreCase)
