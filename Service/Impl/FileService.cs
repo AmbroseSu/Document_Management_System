@@ -123,10 +123,16 @@ public class FileService : IFileService
 
     public string? GetFileSize(Guid documentId, Guid versionId, string fileName)
     {
-        fileName += ".pdf";
-        var path = Path.Combine(_storagePath, "document", documentId.ToString(), versionId.ToString(), fileName);
+        var tmp = fileName + ".pdf";
+        var path = Path.Combine(_storagePath, "document", documentId.ToString(), versionId.ToString(), tmp);
         var info = new FileInfo(path);
-        if (!info.Exists) return null;
+        if (!info.Exists)
+        {
+            tmp = fileName + ".docx";
+            path = Path.Combine(_storagePath, "document", documentId.ToString(), versionId.ToString(), tmp);
+            info = new FileInfo(path);
+            if (!info.Exists) return null;
+        }
         var size = info.Length;
         var sizeInKB = Math.Round(size / 1024.0, 2); // Chuyển đổi sang KB
         var sizeInMB = Math.Round(sizeInKB / 1024.0, 2); // Chuyển đổi sang MB

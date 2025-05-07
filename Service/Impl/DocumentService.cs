@@ -310,7 +310,7 @@ public partial class DocumentService : IDocumentService
                 DocumentTypeId = g.Key,
                 DocumentTypeName = g.FirstOrDefault()?.DocumentTypeName,
                 Percent = g.Sum(x => x.Percent ?? 0),
-                DocumentResponseMobiles = null // Bỏ luôn danh sách documents
+                DocumentResponseMobiles = [] // Bỏ luôn danh sách documents
             })
             .ToList();
         return ResponseUtil.GetObject(result, ResponseMessages.GetSuccessfully, HttpStatusCode.OK, 1);
@@ -332,7 +332,7 @@ public partial class DocumentService : IDocumentService
 
         var result = cache.Where(w => w.DocumentTypes != null)
             .SelectMany(w => w.DocumentTypes)
-            .Where(dt => dt.DocumentResponseMobiles != null)
+            .Where(dt => dt.DocumentResponseMobiles != null && dt.DocumentTypeId == documentTypeId)
             .SelectMany(dt => dt.DocumentResponseMobiles!,
                 (dt, doc) => new { dt.DocumentTypeId, dt.DocumentTypeName, Document = doc })
             .GroupBy(x => x.DocumentTypeId)
@@ -475,18 +475,18 @@ public partial class DocumentService : IDocumentService
         var result = new DocumentResponse()
         {
             DocumentId = document.DocumentId,
-            DocumentName = document.DocumentName,
-            DocumentContent = document.DocumentContent,
-            NumberOfDocument = document.NumberOfDocument,
-            Sender = document.Sender,
-            CreateDate = document.CreatedDate,
-            CreatedBy = document.User.FullName,
+            DocumentName = document.DocumentName ?? String.Empty,
+            DocumentContent = document.DocumentContent ?? String.Empty,
+            NumberOfDocument = document.NumberOfDocument ?? String.Empty,
+            Sender = document.Sender ?? String.Empty,
+            CreateDate = document.CreatedDate ,
+            CreatedBy = document.User.FullName ?? String.Empty,
             DateReceived = document.DateReceived,
-            WorkflowName = document.DocumentWorkflowStatuses.FirstOrDefault().Workflow.WorkflowName,
-            Scope = document.DocumentWorkflowStatuses.FirstOrDefault().Workflow.Scope.ToString(),
-            Deadline = document.Deadline,
-            Status = document.ProcessingStatus.ToString(),
-            DocumentTypeName = document.DocumentType.DocumentTypeName,
+            WorkflowName = document.DocumentWorkflowStatuses.FirstOrDefault().Workflow.WorkflowName ?? String.Empty,
+            Scope = document.DocumentWorkflowStatuses.FirstOrDefault().Workflow.Scope.ToString() ?? String.Empty,
+            Deadline = document.Deadline ,
+            Status = document.ProcessingStatus.ToString() ,
+            DocumentTypeName = document.DocumentType.DocumentTypeName ?? String.Empty,
             DateIssued = document.DateIssued,
             DateExpires = dateExpires,
             Versions = versions.Select(v => new VersionDetailRespone()
@@ -779,8 +779,8 @@ public partial class DocumentService : IDocumentService
                 Sizes = sizes,
                 DateExpired = document.ExpirationDate,
                 Deadline = document.Deadline,
-                Receiver = document.User.FullName,
-                Sender = document.Sender,
+                Receiver = document.User.FullName?? string.Empty,
+                Sender = document.Sender ?? string.Empty,
                 WorkFlowName = document.DocumentWorkflowStatuses.FirstOrDefault().Workflow.WorkflowName,
                 Scope = document.DocumentWorkflowStatuses.FirstOrDefault().Workflow.Scope.ToString(),
                 SystemNumberDocument = document.SystemNumberOfDoc,
@@ -789,7 +789,7 @@ public partial class DocumentService : IDocumentService
                 DocumentContent = document.DocumentContent,
                 NumberOfDocument = document.NumberOfDocument,
                 ProcessingStatus = document.ProcessingStatus,
-                DateIssued = document.DateIssued,
+                DateIssued = document.DateIssued ?? DateTime.MinValue,
                 DocumentTypeName = document.DocumentType.DocumentTypeName,
                 CreatedDate = document.CreatedDate,
                 CreatedBy = document.User.UserName,
