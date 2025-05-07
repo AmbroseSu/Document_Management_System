@@ -256,6 +256,20 @@ public partial class TaskService : ITaskService
                 return ResponseUtil.Error("TaskNumber đã tồn tại trong Step này. Vui lòng chọn TaskNumber khác.",
                     ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
             }
+            
+            /////////////////////////////////
+            if (existingTasks.Any())
+            {
+                var existingUserIds = existingTasks.Select(t => t.UserId).Distinct().ToList();
+                if (existingUserIds.Any() && !existingUserIds.Contains(taskDto.UserId.Value))
+                {
+                    return ResponseUtil.Error(
+                        "Step này đã có task của người dùng khác. Chỉ một người dùng được phép có task trong cùng step.",
+                        ResponseMessages.OperationFailed,
+                        HttpStatusCode.BadRequest);
+                }
+            }
+            
 
 
             var currentStep = await _unitOfWork.StepUOW.FindStepByIdAsync(taskDto.StepId);
@@ -314,6 +328,57 @@ public partial class TaskService : ITaskService
             var orderedTasksInCurrentStep = tasksInCurrentStep.OrderBy(t => t.TaskNumber).ToList();
             
             var currentStepIndex = orderedStepsInFlow.FindIndex(s => s.StepId == taskDto.StepId);
+            
+            
+            var currentFlowNumber = workflowFlowAll
+                .FirstOrDefault(wf => wf.FlowId == currentFlow)?.FlowNumber ?? 0;
+            
+                    // Kiểm tra nếu task mới là task đầu tiên của step đầu tiên trong flow và có flow trước đó
+        if (!tasksInCurrentStep.Any() && currentStepIndex == 0) // Task đầu tiên của step đầu tiên
+        {
+            // var currentFlowNumber = workflowFlowAll
+            //     .FirstOrDefault(wf => wf.FlowId == currentFlow)?.FlowNumber ?? 0;
+
+            if (currentFlowNumber > 1) // Có flow trước đó
+            {
+                var previousFlow = workflowFlowAll
+                    .Where(wf => wf.FlowNumber == currentFlowNumber - 1)
+                    .FirstOrDefault();
+
+                if (previousFlow != null)
+                {
+                    var stepsInPreviousFlow = await _unitOfWork.StepUOW.FindStepByFlowIdAsync(previousFlow.FlowId);
+                    var lastStepInPreviousFlow = stepsInPreviousFlow.OrderBy(s => s.StepNumber).LastOrDefault();
+
+                    if (lastStepInPreviousFlow != null)
+                    {
+                        var tasksInLastStep = await _unitOfWork.TaskUOW.FindTaskByStepIdDocIdAsync(lastStepInPreviousFlow.StepId, taskDto.DocumentId);
+                        var lastTaskInPreviousFlow = tasksInLastStep.OrderBy(t => t.TaskNumber).LastOrDefault();
+
+                        if (lastTaskInPreviousFlow != null)
+                        {
+                            // Kiểm tra nếu task cuối của flow trước đó là Submit
+                            if (lastTaskInPreviousFlow.TaskType == TaskType.Submit)
+                            {
+                                return ResponseUtil.Error(
+                                    "Không thể tạo task mới vì task cuối cùng của flow trước đó là Submit.",
+                                    ResponseMessages.OperationFailed,
+                                    HttpStatusCode.BadRequest);
+                            }
+
+                            // Kiểm tra UserId nếu không phải Submit
+                            if (lastTaskInPreviousFlow.UserId != taskDto.UserId.Value)
+                            {
+                                return ResponseUtil.Error(
+                                    "UserId của task mới phải khớp với UserId của task cuối cùng trong step cuối cùng của flow trước đó.",
+                                    ResponseMessages.OperationFailed,
+                                    HttpStatusCode.BadRequest);
+                            }
+                        }
+                    }
+                }
+            }
+        }
                 
                 if (currentStepIndex > 0) // Đảm bảo có step trước đó
                 {
@@ -485,8 +550,7 @@ public partial class TaskService : ITaskService
                 }))
                 .ToList();
             
-            var currentFlowNumber = workflowFlowAll
-                .FirstOrDefault(wf => wf.FlowId == currentFlow)?.FlowNumber ?? 0;
+            
 
              // Lọc ra các Step nằm "trước" currentStep theo thứ tự FlowNumber và StepNumber
             var previousSteps = allStepsWithFlowNumber
