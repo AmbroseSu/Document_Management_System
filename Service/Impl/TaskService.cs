@@ -1377,7 +1377,7 @@ public partial class TaskService : ITaskService
                     foreach (var doc in allDocuments)
                     {
                         var orderedTasks = await GetOrderedTasks(
-                            doc.Tasks,
+                            doc.Tasks.Where(t => t.IsDeleted == false).ToList(),
                             doc.DocumentWorkflowStatuses.FirstOrDefault()?.WorkflowId ?? Guid.Empty
                         );
 
@@ -1455,7 +1455,7 @@ public partial class TaskService : ITaskService
                     foreach (var doc in allDocuments)
                     {
                         var orderedTasks = await GetOrderedTasks(
-                            doc.Tasks,
+                            doc.Tasks.Where(t => t.IsDeleted == false).ToList(),
                             doc.DocumentWorkflowStatuses.FirstOrDefault()?.WorkflowId ?? Guid.Empty
                         );
 
@@ -1489,7 +1489,7 @@ public partial class TaskService : ITaskService
 
                     foreach (var doc in allDocuments)
                     {
-                        var orderedTasks = await GetOrderedTasks(doc.Tasks,
+                        var orderedTasks = await GetOrderedTasks(doc.Tasks.Where(t => t.IsDeleted == false).ToList(),
                             doc.DocumentWorkflowStatuses.FirstOrDefault()?.WorkflowId ?? Guid.Empty);
 
                         // for (int i = 0; i < orderedTasks.Count - 1; i++)
