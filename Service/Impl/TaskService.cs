@@ -1989,54 +1989,100 @@ public partial class TaskService : ITaskService
                     }
                     else
                     {
-                        var workflowFlowAll =
-                            await _unitOfWork.WorkflowFlowUOW.FindWorkflowFlowByWorkflowIdAsync(workflow.WorkflowId);
-                        var allStepsWithFlowNumber = workflowFlowAll
-                            .SelectMany(wf => wf.Flow.Steps.Select(s => new
-                            {
-                                Step = s,
-                                FlowNumber = wf.FlowNumber,
-                                StepNumber = s.StepNumber
-                            }))
-                            .ToList();
-
-                        // Kiểm tra step đầu tiên có role chief
-                        var firstChiefStep = allStepsWithFlowNumber
-                            .Where(s => s.Step.Role.RoleName.Equals("chief", StringComparison.OrdinalIgnoreCase))
-                            .OrderBy(s => s.FlowNumber)
-                            .ThenBy(s => s.StepNumber)
-                            .FirstOrDefault();
-
-                        if (firstChiefStep != null)
-                        {
-                            var tasksInChiefStep = await _unitOfWork.TaskUOW.FindTaskByStepIdDocIdAsync(
-                                firstChiefStep.Step.StepId, task.DocumentId);
-                            if (!tasksInChiefStep.Any(t => t.TaskType == TaskType.Create && !t.IsDeleted))
-                            {
-                                return ResponseUtil.Error(
-                                    "Bước đầu tiên có role chief trong luồng InComing phải có ít nhất một task Create.",
-                                    ResponseMessages.OperationFailed,
-                                    HttpStatusCode.BadRequest);
-                            }
-                        }
+                        // var workflowFlowAll = (await _unitOfWork.WorkflowFlowUOW.FindWorkflowFlowByWorkflowIdAsync(workflow.WorkflowId)).OrderBy(w => w.FlowNumber);
+                        //
+                        // // Tạo danh sách allStepsWithFlowNumber bằng foreach
+                        // var allStepsWithFlowNumber = new List<object>();
+                        // foreach (var wf in workflowFlowAll)
+                        // {
+                        //     if (wf.Flow != null && wf.Flow.Steps != null)
+                        //     {
+                        //         foreach (var step in wf.Flow.Steps)
+                        //         {
+                        //             allStepsWithFlowNumber.Add(new
+                        //             {
+                        //                 Step = step,
+                        //                 FlowNumber = wf.FlowNumber,
+                        //                 StepNumber = step.StepNumber
+                        //             });
+                        //         }
+                        //     }
+                        // }
+                        //
+                        // // Kiểm tra step đầu tiên có role chief
+                        // object firstChiefStep = null;
+                        // foreach (var s in allStepsWithFlowNumber)
+                        // {
+                        //     var step = await _unitOfWork.StepUOW.FindStepByIdAsync(((dynamic)s).Step.StepId);
+                        //     if (step.Role != null && step.Role.RoleName.Equals("chief", StringComparison.OrdinalIgnoreCase))
+                        //     {
+                        //         if (firstChiefStep == null ||
+                        //             ((dynamic)s).FlowNumber < ((dynamic)firstChiefStep).FlowNumber ||
+                        //             (((dynamic)s).FlowNumber == ((dynamic)firstChiefStep).FlowNumber && ((dynamic)s).StepNumber < ((dynamic)firstChiefStep).StepNumber))
+                        //         {
+                        //             firstChiefStep = s;
+                        //         }
+                        //     }
+                        // }
+                        //
+                        // if (firstChiefStep != null)
+                        // {
+                        //     var step = ((dynamic)firstChiefStep).Step;
+                        //     var tasksInChiefStep = await _unitOfWork.TaskUOW.FindTaskByStepIdDocIdAsync(step.StepId, task.DocumentId);
+                        //     bool hasInvalidTask = false;
+                        //     foreach (var t in tasksInChiefStep)
+                        //     {
+                        //         if (t.UserId != task.UserId && t.TaskStatus == TasksStatus.InProgress)
+                        //         {
+                        //             hasInvalidTask = true;
+                        //             break;
+                        //         }
+                        //     }
+                        //     if (hasInvalidTask)
+                        //     {
+                        //         return ResponseUtil.Error(
+                        //             "Người dùng có role chief chỉ được phép có duy nhất một task Create trong tài liệu.",
+                        //             ResponseMessages.OperationFailed,
+                        //             HttpStatusCode.BadRequest);
+                        //     }
+                        // }
 
                         // Kiểm tra user với role chief chỉ có một task Create
                         var tasksInDocument = document.Tasks.Where(t => t.IsDeleted == false).ToList();
-                        var userCheckIds = tasksInDocument.Select(t => t.UserId).Distinct().ToList();
+                        var userCheckIds = new List<Guid>();
+                        foreach (var t in tasksInDocument)
+                        {
+                            if (!t.IsDeleted && !userCheckIds.Contains(t.UserId))
+                            {
+                                userCheckIds.Add(t.UserId);
+                            }
+                        }
                         foreach (var userCheckId in userCheckIds)
                         {
                             var user = await _unitOfWork.UserUOW.FindUserByIdAsync(userCheckId);
-                            var hasChiefRole = user.UserRoles.Any(ur =>
-                                ur.Role.RoleName.Equals("chief", StringComparison.OrdinalIgnoreCase));
+                            bool hasChiefRole = false;
+                            foreach (var ur in user.UserRoles)
+                            {
+                                if (ur.Role.RoleName.Equals("chief", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    hasChiefRole = true;
+                                    break;
+                                }
+                            }
                             if (hasChiefRole)
                             {
-                                var userTasks = tasksInDocument.Where(t =>
-                                    t.UserId == userCheckId && t.TaskType == TaskType.Create && !t.IsDeleted);
-                                var secondCreateTask = userTasks.Skip(1).FirstOrDefault();
-                                if (secondCreateTask != null)
+                                int createTaskCount = 0;
+                                foreach (var t in tasksInDocument)
+                                {
+                                    if (t.UserId == userCheckId && t.TaskType == TaskType.Create && !t.IsDeleted)
+                                    {
+                                        createTaskCount++;
+                                    }
+                                }
+                                if (createTaskCount != 1)
                                 {
                                     return ResponseUtil.Error(
-                                        "Người dùng có role chief chỉ được phép có duy nhất một task Create trong tài liệu.",
+                                        "Người dùng có role chief phải có đúng một task Create trong tài liệu.",
                                         ResponseMessages.OperationFailed,
                                         HttpStatusCode.BadRequest);
                                 }
