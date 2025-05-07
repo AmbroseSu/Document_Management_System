@@ -1691,6 +1691,31 @@ public partial class TaskService : ITaskService
                             await _unitOfWork.DocumentUOW.UpdateAsync(document);
                             await _unitOfWork.SaveChangesAsync();
                         }
+                        
+                        var workflowFlowAll = await _unitOfWork.WorkflowFlowUOW.FindWorkflowFlowByWorkflowIdAsync(workflow.WorkflowId);
+                    
+                        var allStepsWithFlowNumber = workflowFlowAll
+                            .SelectMany(wf => wf.Flow.Steps.Select(s => new
+                            {
+                                Step = s,
+                                FlowNumber = wf.FlowNumber,
+                                StepNumber = s.StepNumber
+                            }))
+                            .ToList();
+
+                        // Kiểm tra tất cả các step trong tất cả các flow
+                        foreach (var stepInfo in allStepsWithFlowNumber)
+                        {
+                            var tasksInStep = await _unitOfWork.TaskUOW.FindTaskByStepIdDocIdAsync(stepInfo.Step.StepId, task.DocumentId);
+                            if (!tasksInStep.Any())
+                            {
+                                return ResponseUtil.Error(
+                                    "There is a step without task",
+                                    ResponseMessages.OperationFailed,
+                                    HttpStatusCode.BadRequest);
+                            }
+                        }
+                        
                     }
 
                     foreach (var orderedTask in orderedTasks)
@@ -1701,29 +1726,9 @@ public partial class TaskService : ITaskService
                                 HttpStatusCode.NotFound);
                         }
                     }
-                    var workflowFlowAll = await _unitOfWork.WorkflowFlowUOW.FindWorkflowFlowByWorkflowIdAsync(workflow.WorkflowId);
                     
-                    var allStepsWithFlowNumber = workflowFlowAll
-                        .SelectMany(wf => wf.Flow.Steps.Select(s => new
-                        {
-                            Step = s,
-                            FlowNumber = wf.FlowNumber,
-                            StepNumber = s.StepNumber
-                        }))
-                        .ToList();
-
-                    // Kiểm tra tất cả các step trong tất cả các flow
-                    foreach (var stepInfo in allStepsWithFlowNumber)
-                    {
-                        var tasksInStep = await _unitOfWork.TaskUOW.FindTaskByStepIdDocIdAsync(stepInfo.Step.StepId, task.DocumentId);
-                        if (!tasksInStep.Any())
-                        {
-                            return ResponseUtil.Error(
-                                $"Step {stepInfo.StepNumber} trong Flow {stepInfo.FlowNumber} không có task nào.",
-                                ResponseMessages.OperationFailed,
-                                HttpStatusCode.BadRequest);
-                        }
-                    }
+                    
+                    
 
 
                     task.TaskStatus = TasksStatus.Completed;

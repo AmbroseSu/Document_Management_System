@@ -44,7 +44,7 @@ public class UserDocPermissionRepository : IUserDocPermissionRepository
 
     public async Task<IEnumerable<UserDocumentPermission>> GetPermissionsByDocumentIdAsync(Guid archivedDocumentId)
     {
-        return await _userDocumentPermission.FindAsync(udp => udp.ArchivedDocumentId == archivedDocumentId);
+        return await _userDocumentPermission.FindAsync(udp => udp.ArchivedDocumentId == archivedDocumentId && !udp.IsDeleted);
     }
     
     public async Task<UserDocumentPermission?> FindByUserIdAndArchiveDocAsync(Guid? userId, Guid? archivedDocumentId)
