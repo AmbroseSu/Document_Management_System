@@ -236,7 +236,7 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
         var userPermissions = permissions.Select(x => x.User).ToList();
         var ViewerList = new List<Viewer>();
         var GranterList = new List<Viewer>();
-        ViewerList.AddRange(permissions.Where(x => x.GrantPermission == GrantPermission.Grant).Select(x => x.User).Select(x =>
+        ViewerList.AddRange(permissions.Select(x => x.User).Select(x =>
             {
                 var viewer = new Viewer()
                 {
@@ -248,7 +248,7 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
                 return viewer;
             }
         ).ToList());
-        GranterList.AddRange(userPermissions.Select(x =>
+        GranterList.AddRange(permissions.Where(x => x.GrantPermission == GrantPermission.Grant).Select(x => x.User).Select(x =>
             {
                 var viewer = new Viewer()
                 {

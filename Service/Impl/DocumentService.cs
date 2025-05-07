@@ -514,13 +514,26 @@ public partial class DocumentService : IDocumentService
                 }
             
             ).ToList(),
-            ApprovalSignatures = signature.Where(x => x.DigitalCertificate!=null).Where(x => x.DigitalCertificate.IsUsb == null).Select(x => new SignatureResponse()
-            {
-                SignerName = x.DigitalCertificate.User.FullName,
-                ImgUrl = x.DigitalCertificate.SignatureImageUrl,
-                SignedDate = x.SignedAt,
-                IsDigital = false
-            }
+            ApprovalSignatures = signature.Where(x => x.DigitalCertificate!=null).Where(x => x.DigitalCertificate.IsUsb == null).Select(
+                x =>
+                {
+                    if (x.DigitalCertificate.User == null)
+                        return
+                            new SignatureResponse()
+                            {
+                                SignerName = ExtractSigners(x.DigitalCertificate.Subject),
+                                ImgUrl = x.DigitalCertificate.SignatureImageUrl,
+                                SignedDate = x.SignedAt,
+                                IsDigital = false
+                            };
+                    return new SignatureResponse()
+                    {
+                        SignerName = x.DigitalCertificate.User.FullName,
+                        ImgUrl = x.DigitalCertificate.SignatureImageUrl,
+                        SignedDate = x.SignedAt,
+                        IsDigital = false
+                    };
+                }
             ).ToList(),
         };
 
@@ -828,59 +841,13 @@ public partial class DocumentService : IDocumentService
         var sender = GetString(documentUploadDto.CanChange.GetValueOrDefault("Sender"));
         var numberOfDocument = GetString(documentUploadDto.CanChange.GetValueOrDefault("NumberOfDocument"));
         var documentContent = GetString(documentUploadDto.CanChange.GetValueOrDefault("DocumentContent"));
-        
-        var signatureNames = documentUploadDto.CannotChange.TryGetValue("SignatureName", out var value) && value is List<string?> list
-            ? list.Where(x => x != null).Cast<string>().ToList()
-            : new List<string>();
-
-        var issuers = documentUploadDto.CannotChange.TryGetValue("Issuer", out value) && value is List<string?> list2
-            ? list2.Where(x => x != null).Cast<string>().ToList()
-            : new List<string>();
-
-        var signerNames = documentUploadDto.CannotChange.TryGetValue("SignerName", out value) && value is List<string?> list3
-            ? list3.Where(x => x != null).Cast<string>().ToList()
-            : new List<string>();
-
-        var singingDates = documentUploadDto.CannotChange.TryGetValue("SingingDate", out value) && value is List<DateTime?> list4
-            ? list4.Where(x => x.HasValue).Select(x => x.Value).ToList()
-            : new List<DateTime>();
-
-        var reasons = documentUploadDto.CannotChange.TryGetValue("Reason", out value) && value is List<string?> list5
-            ? list5.Where(x => x != null).Cast<string>().ToList()
-            : new List<string>();
-
-        var locations = documentUploadDto.CannotChange.TryGetValue("Location", out value) && value is List<string?> list6
-            ? list6.Where(x => x != null).Cast<string>().ToList()
-            : new List<string>();
-
-        var isValids = documentUploadDto.CannotChange.TryGetValue("IsValid", out value) && value is List<bool?> list7
-            ? list7.Where(x => x.HasValue).Select(x => x.Value).ToList()
-            : new List<bool>();
-
-        var serialNumbers = documentUploadDto.CannotChange.TryGetValue("SerialNumber", out value) && value is List<string?> list8
-            ? list8.Where(x => x != null).Cast<string>().ToList()
-            : new List<string>();
-
-        var validFroms = documentUploadDto.CannotChange.TryGetValue("ValidFrom", out value) && value is List<DateTime?> list9
-            ? list9.Where(x => x.HasValue).Select(x => x.Value).ToList()
-            : new List<DateTime>();
-
-        var expirationDates = documentUploadDto.CannotChange.TryGetValue("ExpirationDate", out value) && value is List<DateTime?> list10
-            ? list10.Where(x => x.HasValue).Select(x => x.Value).ToList()
-            : new List<DateTime>();
-
-        var algorithms = documentUploadDto.CannotChange.TryGetValue("Algorithm", out value) && value is List<string?> list11
-            ? list11.Where(x => x != null).Cast<string>().ToList()
-            : new List<string>();
-
-        var valids = documentUploadDto.CannotChange.TryGetValue("Valid", out value) && value is List<DateTime?> list12
-            ? list12.Where(x => x.HasValue).Select(x => x.Value).ToList()
-            : new List<DateTime>();
-
-        var fileNameResult = documentUploadDto.CannotChange.TryGetValue("fileName", out value) && value is string str
-            ? str
-            : string.Empty;
-        
+        var signatureNames = GetList<string>(documentUploadDto.CannotChange.GetValueOrDefault("SignatureName"));
+        var issuers = GetList<string>(documentUploadDto.CannotChange.GetValueOrDefault("Issuer"));
+        var signerNames = GetList<string>(documentUploadDto.CannotChange.GetValueOrDefault("SignerName"));
+        var singingDates = GetList<DateTime>(documentUploadDto.CannotChange.GetValueOrDefault("SingingDate"));
+        var serialNumbers = GetList<string>(documentUploadDto.CannotChange.GetValueOrDefault("SerialNumber"));
+        var validFroms = GetList<DateTime>(documentUploadDto.CannotChange.GetValueOrDefault("ValidFrom"));
+        var expirationDates = GetList<DateTime>(documentUploadDto.CannotChange.GetValueOrDefault("ExpirationDate"));
         var dateReceived = GetDateTime(documentUploadDto.CanChange.GetValueOrDefault("DateReceived"));
         var documentTypeId = GetGuid(documentUploadDto.CanChange.GetValueOrDefault("DocumentTypeId"));
         var workflowId = GetGuid(documentUploadDto.CanChange.GetValueOrDefault("WorkflowId"));
@@ -948,6 +915,7 @@ public partial class DocumentService : IDocumentService
                 Issuer = issuers[i], 
                 SerialNumber = serialNumbers[i], 
                 ValidFrom = validFroms[i],
+                IsUsb = false
             };
             var signature = new DocumentSignature
             {
@@ -959,7 +927,7 @@ public partial class DocumentService : IDocumentService
             };
             await _unitOfWork.DigitalCertificateUOW.AddAsync(tmp);
             await _unitOfWork.DocumentSignatureUOW.AddAsync(signature);
-
+            await _unitOfWork.SaveChangesAsync();
         }
         
         var url = _fileService.CreateAVersionFromUpload(documentUploadDto.CannotChange["fileName"]?.ToString(),
@@ -979,7 +947,7 @@ public partial class DocumentService : IDocumentService
 
         var result = _mapper.Map<WorkflowDto>(workflow);
         var doc = _mapper.Map<DocumentDto>(document);
-        doc.DocumentVersion = _mapper.Map<DocumentVersionDto>(version);
+        // doc.DocumentVersion = _mapper.Map<DocumentVersionDto>(version);
 
         return ResponseUtil.GetCollection(new List<object> { result, doc }, "Success", HttpStatusCode.OK, 2, 1, 2, 2);
 
@@ -996,6 +964,12 @@ public partial class DocumentService : IDocumentService
         string? GetString(object? obj)
         {
             return obj is JsonElement e ? e.GetString() : obj as string;
+        }
+        List<T> GetList<T>(object? obj)
+        {
+            return obj is JsonElement e && e.ValueKind == JsonValueKind.Array
+                ? JsonSerializer.Deserialize<List<T>>(e.GetRawText())
+                : new List<T>();
         }
     }
 

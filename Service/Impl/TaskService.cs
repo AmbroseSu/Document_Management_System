@@ -2505,9 +2505,11 @@ public partial class TaskService : ITaskService
                     //         HttpStatusCode.BadRequest);
                     // }
                     var docSignList = latestVersion.DocumentSignatures;
-                    List<ArchiveDocumentSignature> archiveDocumentSignatures = new List<ArchiveDocumentSignature>();
+                    var exitArchiveDocSign = archiveDoc.ArchiveDocumentSignatures;
+                    // List<ArchiveDocumentSignature> archiveDocumentSignatures = new List<ArchiveDocumentSignature>();
                     foreach (var documentSignature in docSignList)
                     {
+                        if(exitArchiveDocSign.Any(x => x.OrderIndex == documentSignature.OrderIndex)) continue;
                         var tmp = new ArchiveDocumentSignature()
                         {
                             SignedAt = documentSignature.SignedAt,

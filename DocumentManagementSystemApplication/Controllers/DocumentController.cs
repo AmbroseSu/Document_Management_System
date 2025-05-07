@@ -6,6 +6,7 @@ using DataAccess.DTO.Request;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore.Internal;
 using Service;
 
 namespace DocumentManagementSystemApplication.Controllers
@@ -19,42 +20,17 @@ namespace DocumentManagementSystemApplication.Controllers
         private readonly IDocumentService _documentService;
         private readonly IFileService _fileService;
         private readonly MongoDbService _mongoDbService;
-        private readonly ILogger<DocumentController> _logger;
+        private readonly ILoggingService _loggingService;
+        
 
-        public DocumentController(IDocumentService documentService, IFileService fileService, MongoDbService mongoDbService, ILogger<DocumentController> logger)
+        public DocumentController(IDocumentService documentService, IFileService fileService, MongoDbService mongoDbService, ILoggingService loggingService)
         {
             _documentService = documentService;
             _fileService = fileService;
             _mongoDbService = mongoDbService;
-            _logger = logger;
+            _loggingService = loggingService;
         }
         
-        [AllowAnonymous]
-        [HttpPost("view-test")]
-        public async Task<IActionResult> GetViewTest()
-        {
-            var logEntry = new LogEntry
-            {
-                Timestamp = DateTime.Now,
-                UserId = Guid.NewGuid(),
-                Action = "Test action"
-            };
-            _logger.LogInformation("{@LogEntry}", logEntry);
-              // _fileService.InsertTextToImage("/home/wiramin/Data/project/Capstone_2025/Document_Management_System/DocumentManagementSystemApplication/data/storage/images.png"
-              //     ,"/home/wiramin/Data/project/Capstone_2025/Document_Management_System/DocumentManagementSystemApplication/data/storage/signature/images.png",
-              //     "Tạ Gia Nhật Minh");
-              
-              // return _fileService.InsertTextToImage(file, "Le Phan Hoai Nam");\
-              // var count = new Count()
-              // {
-              //     Id = "base",
-              //     Value = 0,
-              //     UpdateTime = DateTime.Now
-              // };
-              // await _mongoDbService.CreateCountAsync(count);
-              return Ok();
-        }
-
         [AllowAnonymous]
         [HttpPost("create-convert-doc-to-pdf")]
         public async Task<IActionResult> ConvertDocToPdf(IFormFile file)
