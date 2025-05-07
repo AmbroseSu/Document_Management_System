@@ -30,10 +30,12 @@ public partial class TaskService : ITaskService
     private readonly IFileService _fileService;
     private readonly IDocumentService _documentService;
     private readonly string _host;
+    private readonly ILoggingService _loggingService;
+    
 
     public TaskService(IMapper mapper, IUnitOfWork unitOfWork, INotificationService notificationService,
         MongoDbService notificationCollection, IHubContext<NotificationHub> hubContext, IFileService fileService,
-        IDocumentService documentService,IOptions<AppsetingOptions> options)
+        IDocumentService documentService,IOptions<AppsetingOptions> options, ILoggingService loggingService)
     {
         _mapper = mapper;
         _unitOfWork = unitOfWork;
@@ -42,6 +44,7 @@ public partial class TaskService : ITaskService
         _hubContext = hubContext;
         _fileService = fileService;
         _documentService = documentService;
+        _loggingService = loggingService;
         _host = options.Value.Host;
 
     }
@@ -1297,7 +1300,7 @@ public partial class TaskService : ITaskService
                                 .DocumentId);
 
                         var rejectedVersions = documentVersions
-                            .Where(v => v.IsFinalVersion == false)
+                            .Where(v => v.IsFinalVersion == false && !v.VersionNumber.Equals("0"))
                             .ToList();
 
                         if (!rejectedVersions.Any())
@@ -1374,10 +1377,47 @@ public partial class TaskService : ITaskService
                     foreach (var doc in allDocuments)
                     {
                         var orderedTasks = await GetOrderedTasks(
-                            doc.Tasks,
+                            doc.Tasks.Where(t => t.IsDeleted == false).ToList(),
                             doc.DocumentWorkflowStatuses.FirstOrDefault()?.WorkflowId ?? Guid.Empty
                         );
 
+                        // for (int i = 0; i < orderedTasks.Count - 1; i++)
+                        // {
+                        //     var currentTask = orderedTasks[i];
+                        //     var nextTask = orderedTasks[i + 1];
+                        //
+                        //     if (currentTask.UserId == userId && currentTask.TaskStatus == TasksStatus.Completed)
+                        //     {
+                        //         if (nextTask.TaskStatus == TasksStatus.Completed && nextTask.UserId != userId)
+                        //         {
+                        //             acceptedDocuments.Add(doc);
+                        //             break;
+                        //         }
+                        //     }
+                        // }
+                        
+                        // *** THÊM: Ưu tiên Waiting - Bỏ qua tài liệu nếu thỏa mãn điều kiện Waiting ***
+                        bool isWaiting = false;
+                        for (int j = 0; j < orderedTasks.Count - 1; j++)
+                        {
+                            var currentTask = orderedTasks[j];
+                            var nextTask = orderedTasks[j + 1];
+                            if (currentTask.UserId == userId && currentTask.TaskStatus == TasksStatus.Completed)
+                            {
+                                if (nextTask.TaskStatus == TasksStatus.InProgress && nextTask.UserId != userId)
+                                {
+                                    isWaiting = true;
+                                    break;
+                                }
+                            }
+                        }
+                        if (isWaiting)
+                        {
+                            continue; // Bỏ qua tài liệu vì nó thuộc Waiting
+                        }
+                        // *** KẾT THÚC: Kiểm tra ưu tiên Waiting ***
+
+                        // Logic gốc: Kiểm tra task cho Accepted
                         for (int i = 0; i < orderedTasks.Count - 1; i++)
                         {
                             var currentTask = orderedTasks[i];
@@ -1415,7 +1455,7 @@ public partial class TaskService : ITaskService
                     foreach (var doc in allDocuments)
                     {
                         var orderedTasks = await GetOrderedTasks(
-                            doc.Tasks,
+                            doc.Tasks.Where(t => t.IsDeleted == false).ToList(),
                             doc.DocumentWorkflowStatuses.FirstOrDefault()?.WorkflowId ?? Guid.Empty
                         );
 
@@ -1423,8 +1463,8 @@ public partial class TaskService : ITaskService
                         {
                             var currentTask = orderedTasks[i];
 
-                            if (currentTask.UserId == userId && currentTask.TaskStatus == TasksStatus.InProgress &&
-                                (currentTask.TaskType == TaskType.Browse || currentTask.TaskType == TaskType.View))
+                            if (currentTask.UserId == userId && currentTask.TaskStatus == TasksStatus.InProgress /*&&
+                                (currentTask.TaskType == TaskType.Browse || currentTask.TaskType == TaskType.View || currentTask.TaskType == TaskType.Upload)*/)
                             {
                                 bool previousTasksCompleted = orderedTasks
                                     .Take(i)
@@ -1449,9 +1489,29 @@ public partial class TaskService : ITaskService
 
                     foreach (var doc in allDocuments)
                     {
-                        var orderedTasks = await GetOrderedTasks(doc.Tasks,
+                        var orderedTasks = await GetOrderedTasks(doc.Tasks.Where(t => t.IsDeleted == false).ToList(),
                             doc.DocumentWorkflowStatuses.FirstOrDefault()?.WorkflowId ?? Guid.Empty);
 
+                        // for (int i = 0; i < orderedTasks.Count - 1; i++)
+                        // {
+                        //     var currentTask = orderedTasks[i];
+                        //     var nextTask = orderedTasks[i + 1];
+                        //
+                        //     if (currentTask.UserId == userId && currentTask.TaskStatus == TasksStatus.Completed)
+                        //     {
+                        //         if (nextTask.TaskStatus == TasksStatus.InProgress && nextTask.UserId != userId)
+                        //         {
+                        //             waitingDocuments.Add(doc);
+                        //             break; // Thỏa điều kiện => thêm document và thoát vòng lặp
+                        //         }
+                        //
+                        //         if (nextTask.UserId != userId && currentTask.TaskType != TaskType.Browse)
+                        //         {
+                        //             waitingDocuments.Add(doc);
+                        //             break;
+                        //         }
+                        //     }
+                        // }
                         for (int i = 0; i < orderedTasks.Count - 1; i++)
                         {
                             var currentTask = orderedTasks[i];
@@ -1460,12 +1520,6 @@ public partial class TaskService : ITaskService
                             if (currentTask.UserId == userId && currentTask.TaskStatus == TasksStatus.Completed)
                             {
                                 if (nextTask.TaskStatus == TasksStatus.InProgress && nextTask.UserId != userId)
-                                {
-                                    waitingDocuments.Add(doc);
-                                    break; // Thỏa điều kiện => thêm document và thoát vòng lặp
-                                }
-
-                                if (nextTask.UserId != userId && currentTask.TaskType != TaskType.Browse)
                                 {
                                     waitingDocuments.Add(doc);
                                     break;
