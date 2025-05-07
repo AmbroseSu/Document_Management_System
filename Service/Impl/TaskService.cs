@@ -747,17 +747,28 @@ public partial class TaskService : ITaskService
                     HttpStatusCode.BadRequest);
             }
 
+            
             var workflowId = task.Document!.DocumentWorkflowStatuses.FirstOrDefault()?.WorkflowId;
+            var workflow = await _unitOfWork.WorkflowUOW.FindWorkflowByIdAsync(workflowId ?? Guid.Empty);
             var document = await _unitOfWork.DocumentUOW.FindDocumentByIdAsync(task.DocumentId!.Value);
             var orderedTasks = await GetOrderedTasks(document.Tasks, workflowId ?? Guid.Empty);
-            if (orderedTasks[0].TaskStatus == TasksStatus.Completed)
-                return ResponseUtil.Error(ResponseMessages.TaskCanNotDelete, ResponseMessages.OperationFailed,
-                    HttpStatusCode.BadRequest);
-            if (orderedTasks[0].TaskId == id)
+            if (workflow.Scope == Scope.InComing && task.TaskStatus == TasksStatus.Waiting)
             {
-                return ResponseUtil.Error(ResponseMessages.TaskFirstCanNotDelete, ResponseMessages.OperationFailed,
-                    HttpStatusCode.BadRequest);
+                
             }
+            else
+            {
+                if (orderedTasks[0].TaskStatus == TasksStatus.Completed)
+                    return ResponseUtil.Error(ResponseMessages.TaskCanNotDelete, ResponseMessages.OperationFailed,
+                        HttpStatusCode.BadRequest);
+                if (orderedTasks[0].TaskId == id)
+                {
+                    return ResponseUtil.Error(ResponseMessages.TaskFirstCanNotDelete, ResponseMessages.OperationFailed,
+                        HttpStatusCode.BadRequest);
+                }
+            }
+
+            
 
             var stepId = task.StepId;
             var deletedTaskNumber = task.TaskNumber;
