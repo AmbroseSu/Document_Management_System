@@ -829,14 +829,27 @@ public partial class TaskService : ITaskService
                 }
             }
             
-            var nexTask = orderedTasks[currentIndex + 1];
-            if (nexTask.StartDate < taskRequest.EndDate)
+            // var nexTask = orderedTasks[currentIndex + 1];
+            // if (nexTask.StartDate < taskRequest.EndDate)
+            // {
+            //     return ResponseUtil.Error(
+            //         ResponseMessages.TaskStartdayNextTaskLowerEndDayCurrentTask,
+            //         ResponseMessages.OperationFailed,
+            //         HttpStatusCode.BadRequest
+            //     );
+            // }
+            
+            if (currentIndex < orderedTasks.Count - 1) // Kiểm tra xem có task tiếp theo hay không
             {
-                return ResponseUtil.Error(
-                    ResponseMessages.TaskStartdayNextTaskLowerEndDayCurrentTask,
-                    ResponseMessages.OperationFailed,
-                    HttpStatusCode.BadRequest
-                );
+                var nextTask = orderedTasks[currentIndex + 1];
+                if (nextTask.StartDate < taskRequest.EndDate)
+                {
+                    return ResponseUtil.Error(
+                        ResponseMessages.TaskStartdayNextTaskLowerEndDayCurrentTask,
+                        ResponseMessages.OperationFailed,
+                        HttpStatusCode.BadRequest
+                    );
+                }
             }
 
             if (orderedTasks[0].TaskId == taskRequest.TaskId)
