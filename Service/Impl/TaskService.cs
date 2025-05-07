@@ -2487,7 +2487,7 @@ if (document.FinalArchiveDocument == null)
                     await _unitOfWork.UserDocPermissionUOW.AddRangeAsync(userPermissions);
                 }
 
-                await _unitOfWork.SaveChangesAsync();
+                //await _unitOfWork.SaveChangesAsync();
                 var listSignature = latestVer.DocumentSignatures;
                 // foreach (var userDocumentPermission in userPermission)
                 // {
