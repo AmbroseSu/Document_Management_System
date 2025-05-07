@@ -758,11 +758,13 @@ public partial class DocumentService : IDocumentService
             users = users.Distinct().ToList();
             users = users.Where(u => u != null).ToList();
             var divisions = users.Select(u => u?.Division?.DivisionName).Distinct().ToList();
-            var userList = users.Select(u => new UserResponseMobile()
+            var userList = users.Select(u => new Viewer()
             {
                 UserId = u.UserId,
                 FullName = u.UserName,
-                DivisionName = u.Division.DivisionName
+                DivisionName = u.Division.DivisionName,
+                Avatar = u.Avatar,
+                UserName = u.UserName
             }).ToList();
             var version = "0";
             var user = await _unitOfWork.UserUOW.FindUserByIdAsync(userId);
@@ -779,8 +781,8 @@ public partial class DocumentService : IDocumentService
                 Sizes = sizes,
                 DateExpired = document.ExpirationDate,
                 Deadline = document.Deadline,
-                Receiver = document.User.FullName?? string.Empty,
-                Sender = document.Sender ?? string.Empty,
+                Receiver = document.User.FullName,
+                Sender = document.Sender,
                 WorkFlowName = document.DocumentWorkflowStatuses.FirstOrDefault().Workflow.WorkflowName,
                 Scope = document.DocumentWorkflowStatuses.FirstOrDefault().Workflow.Scope.ToString(),
                 SystemNumberDocument = document.SystemNumberOfDoc,
@@ -832,8 +834,8 @@ public partial class DocumentService : IDocumentService
             CreatedDate = documentA.CreatedDate,
             SystemNumberDocument = documentA.SystemNumberOfDoc,
             DateExpired = documentA.ExpirationDate,
-            Sender = documentA.Sender?? string.Empty,
-            Scope = documentA.Scope.ToString()?? string.Empty,
+            Sender = documentA.Sender,
+            Scope = documentA.Scope.ToString(),
             GranterList = granter.Select(x => new Viewer()
             {
                 UserId = x.UserId,

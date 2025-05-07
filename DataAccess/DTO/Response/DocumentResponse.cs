@@ -41,6 +41,7 @@ public class Viewer
     public string UserName { get; set; }
     public string Avatar { get; set; }
     public Guid UserId { get; set; }
+    public string? DivisionName { get; set; }
 }
 
 public class SignatureResponse
