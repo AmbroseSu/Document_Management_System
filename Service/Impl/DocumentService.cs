@@ -777,8 +777,8 @@ public partial class DocumentService : IDocumentService
             var result = new DocumentDetailResponse()
             {
                 Sizes = sizes,
-                DateExpired = document.ExpirationDate,
-                Deadline = document.Deadline,
+                DateExpired = document.ExpirationDate==null? DateTime.MinValue : document.Deadline,
+                Deadline = document.Deadline==null? DateTime.MinValue : document.Deadline,
                 Receiver = document.User.FullName?? string.Empty,
                 Sender = document.Sender ?? string.Empty,
                 WorkFlowName = document.DocumentWorkflowStatuses.FirstOrDefault().Workflow.WorkflowName,
