@@ -526,8 +526,8 @@ public partial class TaskService : ITaskService
                         HttpStatusCode.BadRequest);
                 }
                 
-                var userTasksInDocument = await _unitOfWork.TaskUOW.FindTaskByDocumentIdAndUserIdAsync(
-                    taskDto.UserId.Value, taskDto.DocumentId.Value);
+                var userTasksInDocument = await _unitOfWork.TaskUOW.FindTaskByDocumentIdAndUserIdAsync(taskDto.DocumentId.Value,
+                    taskDto.UserId.Value);
                 var existingSignTask = userTasksInDocument
                     .FirstOrDefault(t => t.TaskType == TaskType.Sign && t.IsDeleted == false);
                 if (existingSignTask != null)
@@ -583,7 +583,7 @@ public partial class TaskService : ITaskService
                 else if (taskDto.TaskType == TaskType.Create || taskDto.TaskType == TaskType.Upload)
                 {
                     return ResponseUtil.Error(
-                        "Nhiệm vụ không phải thứ 2 trong luồng không được có loại nhiệm vụ Khởi tạo văn bản hoặc Tải văn bản lên.",
+                        "Không thể tạo thêm nhiệm vụ với nhiệm vụ chính là Tạo văn bản hoặc Tải văn bản lên trong luồng.",
                         ResponseMessages.OperationFailed,
                         HttpStatusCode.BadRequest);
                 }
