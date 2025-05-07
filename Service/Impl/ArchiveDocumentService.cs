@@ -397,10 +397,13 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
         }
         var newArchiveDocId = Guid.NewGuid();
         var newDocId =(Guid) (await  _documentService.CreateDocumentByTemplate(documentPreInfo, userId)).Content;
+        var newDoc = await _unitOfWork.DocumentUOW.FindDocumentByIdAsync(newDocId);
+        
         var newArchiveDoc = new ArchivedDocument()
         {
             ArchivedDocumentId = newArchiveDocId,
             CreatedDate = DateTime.Now,
+            SystemNumberOfDoc = newDoc.SystemNumberOfDoc,
             ArchivedDocumentStatus = ArchivedDocumentStatus.Archived,
             IsTemplate = false,
             DocumentTypeId = documentPreInfo.DocumentTypeId,
@@ -408,7 +411,6 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
             Scope = archiveDoc.Scope,
             FinalDocumentId = newDocId
         };
-        var newDoc = await _unitOfWork.DocumentUOW.FindDocumentByIdAsync(newDocId);
         if (newDoc == null)
         {
             return ResponseUtil.Error("Create new document false",ResponseMessages.FailedToSaveData,HttpStatusCode.NotFound);

@@ -1,4 +1,5 @@
 using BusinessObject;
+using BusinessObject.Option;
 using DataAccess;
 using DataAccess.DTO;
 using DataAccess.DTO.Request;
@@ -18,30 +19,39 @@ namespace DocumentManagementSystemApplication.Controllers
         private readonly IDocumentService _documentService;
         private readonly IFileService _fileService;
         private readonly MongoDbService _mongoDbService;
+        private readonly ILogger<DocumentController> _logger;
 
-        public DocumentController(IDocumentService documentService, IFileService fileService, MongoDbService mongoDbService)
+        public DocumentController(IDocumentService documentService, IFileService fileService, MongoDbService mongoDbService, ILogger<DocumentController> logger)
         {
             _documentService = documentService;
             _fileService = fileService;
             _mongoDbService = mongoDbService;
+            _logger = logger;
         }
         
         [AllowAnonymous]
         [HttpPost("view-test")]
         public async Task<IActionResult> GetViewTest()
         {
+            var logEntry = new LogEntry
+            {
+                Timestamp = DateTime.Now,
+                UserId = Guid.NewGuid(),
+                Action = "Test action"
+            };
+            _logger.LogInformation("{@LogEntry}", logEntry);
               // _fileService.InsertTextToImage("/home/wiramin/Data/project/Capstone_2025/Document_Management_System/DocumentManagementSystemApplication/data/storage/images.png"
               //     ,"/home/wiramin/Data/project/Capstone_2025/Document_Management_System/DocumentManagementSystemApplication/data/storage/signature/images.png",
               //     "Tạ Gia Nhật Minh");
               
               // return _fileService.InsertTextToImage(file, "Le Phan Hoai Nam");\
-              var count = new Count()
-              {
-                  Id = "base",
-                  Value = 0,
-                  UpdateTime = DateTime.Now
-              };
-              await _mongoDbService.CreateCountAsync(count);
+              // var count = new Count()
+              // {
+              //     Id = "base",
+              //     Value = 0,
+              //     UpdateTime = DateTime.Now
+              // };
+              // await _mongoDbService.CreateCountAsync(count);
               return Ok();
         }
 
