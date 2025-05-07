@@ -807,12 +807,15 @@ public partial class DocumentService : IDocumentService
         var usersA = documentA.UserDocumentPermissions.Select(x => x.User).Distinct().ToList();
 
         var divisionsA = usersA.Select(u => u?.Division?.DivisionName).Distinct().ToList();
-        var userListA = usersA.Select(u => new UserResponseMobile()
-        {
-            UserId = u.UserId,
-            FullName = u.UserName,
-            DivisionName = u.Division.DivisionName
-        }).ToList();
+        var granter = documentA.UserDocumentPermissions.Where(x => x is { IsDeleted: false, GrantPermission: GrantPermission.Grant })
+            .Select(x => x.User).Distinct().ToList();
+        var viewer = documentA.UserDocumentPermissions.Where(x => x is { IsDeleted: false }).Select(x => x.User);
+        // var userListA = usersA.Select(u => new UserResponseMobile()
+        // {
+        //     UserId = u.UserId,
+        //     FullName = u.UserName,
+        //     DivisionName = u.Division.DivisionName
+        // }).ToList();
         var resultA = new DocumentDetailResponse()
         {
             Sizes = await GetDocumentSize(Path.Combine(Directory.GetCurrentDirectory(), "data", "storage",
@@ -826,9 +829,27 @@ public partial class DocumentService : IDocumentService
             DateIssued = documentA.DateIssued,
             DocumentTypeName = documentA.DocumentType.DocumentTypeName,
             CreatedDate = documentA.CreatedDate,
+            SystemNumberDocument = documentA.SystemNumberOfDoc,
+            DateExpired = documentA.ExpirationDate==null? DateTime.MinValue : documentA.ExpirationDate,
+            Sender = documentA.Sender?? string.Empty,
+            Scope = documentA.Scope.ToString()?? string.Empty,
+            GranterList = granter.Select(x => new Viewer()
+            {
+                UserId = x.UserId,
+                Avatar = x.Avatar,
+                FullName = x.FullName,
+                UserName = x.UserName
+            }).ToList(),
+            ViewerList = viewer.Select(x => new Viewer()
+            {
+                UserId = x.UserId,
+                Avatar = x.Avatar,
+                FullName = x.FullName,
+                UserName = x.UserName
+            }).ToList(),
             CreatedBy = documentA.CreatedBy,
             DivisionList = divisionsA,
-            UserList = userListA,
+            UserList = [],
             SignBys = ExtractSigners(documentA.ArchiveDocumentSignatures),
             DocumentUrl = documentA.ArchivedDocumentUrl
         };
