@@ -915,6 +915,7 @@ public partial class DocumentService : IDocumentService
                 Issuer = issuers[i], 
                 SerialNumber = serialNumbers[i], 
                 ValidFrom = validFroms[i],
+                IsUsb = false
             };
             var signature = new DocumentSignature
             {
