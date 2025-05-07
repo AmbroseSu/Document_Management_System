@@ -312,20 +312,8 @@ public partial class TaskService : ITaskService
             var tasksInCurrentStep =
                 await _unitOfWork.TaskUOW.FindTaskByStepIdDocIdAsync(taskDto.StepId, taskDto.DocumentId);
             var orderedTasksInCurrentStep = tasksInCurrentStep.OrderBy(t => t.TaskNumber).ToList();
-
-            // Kiểm tra giữa các Step trong Flow
-            var lastTaskInCurrentStep = orderedTasksInCurrentStep.LastOrDefault();
-            if (lastTaskInCurrentStep != null)
-            {
-                // Kiểm tra StartDate của task mới với EndDate của task cuối cùng của Step hiện tại
-                if (taskDto.StartDate <= lastTaskInCurrentStep.EndDate)
-                {
-                    return ResponseUtil.Error(ResponseMessages.TaskStartDateBeforeLastTaskEndDate,
-                        ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
-                }
-
-                // Kiểm tra EndDate của task mới với StartDate của task đầu tiên của Step tiếp theo
-                var currentStepIndex = orderedStepsInFlow.FindIndex(s => s.StepId == taskDto.StepId);
+            
+            var currentStepIndex = orderedStepsInFlow.FindIndex(s => s.StepId == taskDto.StepId);
                 
                 if (currentStepIndex > 0) // Đảm bảo có step trước đó
                 {
@@ -360,6 +348,20 @@ public partial class TaskService : ITaskService
                         }
                     }
                 }
+
+            // Kiểm tra giữa các Step trong Flow
+            var lastTaskInCurrentStep = orderedTasksInCurrentStep.LastOrDefault();
+            if (lastTaskInCurrentStep != null)
+            {
+                // Kiểm tra StartDate của task mới với EndDate của task cuối cùng của Step hiện tại
+                if (taskDto.StartDate <= lastTaskInCurrentStep.EndDate)
+                {
+                    return ResponseUtil.Error(ResponseMessages.TaskStartDateBeforeLastTaskEndDate,
+                        ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
+                }
+
+                // Kiểm tra EndDate của task mới với StartDate của task đầu tiên của Step tiếp theo
+                
             }
 
 
