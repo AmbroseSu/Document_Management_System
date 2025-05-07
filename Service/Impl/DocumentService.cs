@@ -997,6 +997,8 @@ public partial class DocumentService : IDocumentService
                 
                 foreach (var task in taskList)
                 {
+                    if(li.Any(x => x.UserId == task.UserId))
+                        continue;
                     var permision = new UserDocumentPermission()
                     {
                         CreatedDate = DateTime.Now,
