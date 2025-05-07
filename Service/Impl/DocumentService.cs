@@ -789,7 +789,7 @@ public partial class DocumentService : IDocumentService
                 DocumentContent = document.DocumentContent,
                 NumberOfDocument = document.NumberOfDocument,
                 ProcessingStatus = document.ProcessingStatus,
-                DateIssued = document.DateIssued ?? DateTime.MinValue,
+                DateIssued = document.DateIssued,
                 DocumentTypeName = document.DocumentType.DocumentTypeName,
                 CreatedDate = document.CreatedDate,
                 CreatedBy = document.User.UserName,
