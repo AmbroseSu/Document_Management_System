@@ -1791,14 +1791,20 @@ public partial class TaskService : ITaskService
             }
         }
 
-        var workflowFlow = await _unitOfWork.WorkflowFlowUOW
-            .FindWorkflowFlowByFlowIdAsync(currentFlow.FlowId); // Hoặc FlowId thôi nếu đủ
-
-        if (workflowFlow == null)
-            return ResponseUtil.Error("Không tìm thấy WorkflowFlow", ResponseMessages.OperationFailed,
-                HttpStatusCode.BadRequest);
-
-        var workflowId = workflowFlow.WorkflowId;
+        var docWorkStatusId = currentTask.Document?.DocumentWorkflowStatuses?.FirstOrDefault().DocumentWorkflowStatusId;
+        var docWorkStatus = await _unitOfWork.DocumentWorkflowStatusUOW
+            .FindDocumentWorkflowStatusByIdAsync(docWorkStatusId);
+        
+        // var workflowFlow = await _unitOfWork.WorkflowFlowUOW
+        //     .FindWorkflowFlowByFlowIdAsync(currentFlow.FlowId); // Hoặc FlowId thôi nếu đủ
+        //
+        // if (workflowFlow == null)
+        //     return ResponseUtil.Error("Không tìm thấy WorkflowFlow", ResponseMessages.OperationFailed,
+        //         HttpStatusCode.BadRequest);
+        //
+        // var workflowId = workflowFlow.WorkflowId;
+        
+        var workflowId = docWorkStatus.WorkflowId;
 
         // Step hiện tại là cuối cùng của Flow — kiểm tra Flow kế tiếp
         return await ActivateFirstTaskOfNextFlow(workflowId, currentFlow, documentId.Value);
@@ -2005,7 +2011,8 @@ public partial class TaskService : ITaskService
                     DateSented = null,
                     DocumentRevokes = null,
                     DocumentReplaces = null,
-                    Scope = scopeDoc,
+                    //Scope = scopeDoc,
+                    Scope = (await _unitOfWork.WorkflowUOW.FindWorkflowByIdAsync(workflowId)).Scope,
                     IsTemplate = false,
                     DocumentTypeId = doc.DocumentTypeId ?? Guid.NewGuid(),
                     FinalDocumentId = doc.DocumentId
@@ -2167,14 +2174,19 @@ public partial class TaskService : ITaskService
             }
         }
 
-        var workflowFlow = await _unitOfWork.WorkflowFlowUOW
-            .FindWorkflowFlowByFlowIdAsync(currentFlow.FlowId); // Hoặc FlowId thôi nếu đủ
-
-        if (workflowFlow == null)
-            return ResponseUtil.Error("Không tìm thấy WorkflowFlow", ResponseMessages.OperationFailed,
-                HttpStatusCode.BadRequest);
-
-        var workflowId = workflowFlow.WorkflowId;
+        // var workflowFlow = await _unitOfWork.WorkflowFlowUOW
+        //     .FindWorkflowFlowByFlowIdAsync(currentFlow.FlowId); // Hoặc FlowId thôi nếu đủ
+        //
+        // if (workflowFlow == null)
+        //     return ResponseUtil.Error("Không tìm thấy WorkflowFlow", ResponseMessages.OperationFailed,
+        //         HttpStatusCode.BadRequest);
+        //
+        // var workflowId = workflowFlow.WorkflowId;
+        
+        var docWorkStatusId = currentTask.Document?.DocumentWorkflowStatuses?.FirstOrDefault().DocumentWorkflowStatusId;
+        var docWorkStatus = await _unitOfWork.DocumentWorkflowStatusUOW
+            .FindDocumentWorkflowStatusByIdAsync(docWorkStatusId);
+        var workflowId = docWorkStatus.WorkflowId;
 
         // Step hiện tại là cuối cùng của Flow — kiểm tra Flow kế tiếp
         return await ActivateFirstTaskOfNextFlowSubmit(workflowId, currentFlow, documentId.Value, currentTask);
