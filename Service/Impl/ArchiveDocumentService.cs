@@ -260,8 +260,8 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
                 return viewer;
             }
         ).ToList());
-        var canGrant = permissions.Any(x => x.UserId == userId && x.GrantPermission == GrantPermission.Grant);
-        var canDownLoad = permissions.Any(x => x.UserId == userId && x.GrantPermission == GrantPermission.Download);
+        var canGrant = permissions.Any(x => x.UserId == userId && x is { GrantPermission: GrantPermission.Grant, IsDeleted: false });
+        var canDownLoad = permissions.Any(x => x.UserId == userId && x is { GrantPermission: GrantPermission.Download, IsDeleted: false });
         var result = new ArchiveDocumentResponse()
         {
             Granters = GranterList,

@@ -1728,14 +1728,67 @@ public partial class TaskService : ITaskService
                         }
                         
                     }
-
-                    foreach (var orderedTask in orderedTasks)
+                    else
                     {
-                        if (orderedTask.StartDate == DateTime.MinValue)
+                        if (document.FinalArchiveDocument == null)
                         {
-                            return ResponseUtil.Error($"Please update start date and end date of task: {orderedTask.Title}", ResponseMessages.OperationFailed,
+                            return ResponseUtil.Error("Final archive document not found", ResponseMessages.OperationFailed,
                                 HttpStatusCode.NotFound);
                         }
+                       
+                        var permissions = document.FinalArchiveDocument.UserDocumentPermissions;
+                        if (permissions == null)
+                        {
+                            return ResponseUtil.Error("User document permissions not found", ResponseMessages.OperationFailed,
+                                HttpStatusCode.NotFound);
+                        }
+
+                        foreach (var taskE in orderedTasks)
+                        {
+                            var isInPermission = false;
+                            foreach (var userDocumentPermission in permissions)
+                            {
+                                if (userDocumentPermission.UserId == taskE.UserId)
+                                {
+                                    isInPermission = true;
+                                    break;
+                                }
+                                if (orderedTasks.Any(x => x.UserId == userDocumentPermission.UserId)) continue;
+                                userDocumentPermission.IsDeleted = true;
+                                await _unitOfWork.UserDocPermissionUOW.UpdateAsync(userDocumentPermission);
+                            }
+
+                            var archiveId = document.FinalArchiveDocumentId;
+                            if (archiveId == null)
+                            {
+                                return ResponseUtil.Error("ArchiveId not found", ResponseMessages.OperationFailed,
+                                    HttpStatusCode.NotFound);
+                            }
+
+                            if (isInPermission) continue;
+                            var per = new UserDocumentPermission()
+                            {
+                                CreatedDate = DateTime.Now,
+                                GrantPermission = GrantPermission.Grant,
+                                IsDeleted = false,
+                                UserId = taskE.UserId,
+                                ArchivedDocumentId = (Guid)archiveId,
+                            };
+                            if(per.ArchivedDocumentId == Guid.Empty) 
+                            {
+                                return ResponseUtil.Error("ArchiveId not found", ResponseMessages.OperationFailed,
+                                    HttpStatusCode.NotFound);
+                            }
+                            await _unitOfWork.UserDocPermissionUOW.AddAsync(per);
+                        }
+                        
+                        
+                    }
+
+                    foreach (var orderedTask in orderedTasks.Where(orderedTask => orderedTask.StartDate == DateTime.MinValue))
+                    {
+                        return ResponseUtil.Error($"Please update start date and end date of task: {orderedTask.Title}", ResponseMessages.OperationFailed,
+                            HttpStatusCode.NotFound);
                     }
                     
                     
