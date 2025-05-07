@@ -49,6 +49,15 @@ public class DocumentDetailResponse
     public string? DocumentContent { get; set; } = "";
     public string? NumberOfDocument { get; set; } = "";
     public ProcessingStatus ProcessingStatus { get; set; }
+    public DateTime? DateExpired { get; set; }
+    public DateTime? Deadline { get; set; }
+    public string? Receiver { get; set; } = "";
+    public string? Sender { get; set; } = "";
+    public List<Viewer> ViewerList { get; set; } = [];
+    public List<Viewer> GranterList { get; set; } = [];
+    public string? WorkFlowName { get; set; } = "";
+    public string? Scope { get; set; } = "";
+    public string? SystemNumberDocument { get; set; } = "";
     public DateTime? DateIssued { get; set; }
     public string? DocumentTypeName { get; set; } = "";
     public DateTime? CreatedDate { get; set; } = DateTime.Now;

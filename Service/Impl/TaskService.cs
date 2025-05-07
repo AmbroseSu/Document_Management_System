@@ -1989,65 +1989,117 @@ public partial class TaskService : ITaskService
                     }
                     else
                     {
-                        var workflowFlowAll = await _unitOfWork.WorkflowFlowUOW.FindWorkflowFlowByWorkflowIdAsync(workflow.WorkflowId);
-        var allStepsWithFlowNumber = workflowFlowAll
-            .SelectMany(wf => wf.Flow.Steps.Select(s => new
-            {
-                Step = s,
-                FlowNumber = wf.FlowNumber,
-                StepNumber = s.StepNumber
-            }))
-            .ToList();
+                        var workflowFlowAll =
+                            await _unitOfWork.WorkflowFlowUOW.FindWorkflowFlowByWorkflowIdAsync(workflow.WorkflowId);
+                        var allStepsWithFlowNumber = workflowFlowAll
+                            .SelectMany(wf => wf.Flow.Steps.Select(s => new
+                            {
+                                Step = s,
+                                FlowNumber = wf.FlowNumber,
+                                StepNumber = s.StepNumber
+                            }))
+                            .ToList();
 
-        // Kiểm tra step đầu tiên có role chief
-        var firstChiefStep = allStepsWithFlowNumber
-            .Where(s => s.Step.Role.RoleName.Equals("chief", StringComparison.OrdinalIgnoreCase))
-            .OrderBy(s => s.FlowNumber)
-            .ThenBy(s => s.StepNumber)
-            .FirstOrDefault();
+                        // Kiểm tra step đầu tiên có role chief
+                        var firstChiefStep = allStepsWithFlowNumber
+                            .Where(s => s.Step.Role.RoleName.Equals("chief", StringComparison.OrdinalIgnoreCase))
+                            .OrderBy(s => s.FlowNumber)
+                            .ThenBy(s => s.StepNumber)
+                            .FirstOrDefault();
 
-        if (firstChiefStep != null)
-        {
-            var tasksInChiefStep = await _unitOfWork.TaskUOW.FindTaskByStepIdDocIdAsync(
-                firstChiefStep.Step.StepId, task.DocumentId);
-            if (!tasksInChiefStep.Any(t => t.TaskType == TaskType.Create && !t.IsDeleted))
-            {
-                return ResponseUtil.Error(
-                    "Bước đầu tiên có role chief trong luồng InComing phải có ít nhất một task Create.",
-                    ResponseMessages.OperationFailed,
-                    HttpStatusCode.BadRequest);
-            }
-        }
-
-        // Kiểm tra user với role chief chỉ có một task Create
-        var tasksInDocument = document.Tasks.Where(t => t.IsDeleted == false).ToList();
-        var userCheckIds = tasksInDocument.Select(t => t.UserId).Distinct().ToList();
-        foreach (var userCheckId in userCheckIds)
-        {
-            var user = await _unitOfWork.UserUOW.FindUserByIdAsync(userCheckId);
-            var hasChiefRole = user.UserRoles.Any(ur => ur.Role.RoleName.Equals("chief", StringComparison.OrdinalIgnoreCase));
-            if (hasChiefRole)
-            {
-                var userTasks = tasksInDocument.Where(t => t.UserId == userCheckId && t.TaskType == TaskType.Create && !t.IsDeleted);
-                var secondCreateTask = userTasks.Skip(1).FirstOrDefault();
-                if (secondCreateTask != null)
-                {
-                    return ResponseUtil.Error(
-                        "Người dùng có role chief chỉ được phép có duy nhất một task Create trong tài liệu.",
-                        ResponseMessages.OperationFailed,
-                        HttpStatusCode.BadRequest);
-                }
-            }
-        }
-                    }
-
-                    foreach (var orderedTask in orderedTasks)
-                    {
-                        if (orderedTask.StartDate == DateTime.MinValue)
+                        if (firstChiefStep != null)
                         {
-                            return ResponseUtil.Error($"Please update start date and end date of task: {orderedTask.Title}", ResponseMessages.OperationFailed,
+                            var tasksInChiefStep = await _unitOfWork.TaskUOW.FindTaskByStepIdDocIdAsync(
+                                firstChiefStep.Step.StepId, task.DocumentId);
+                            if (!tasksInChiefStep.Any(t => t.TaskType == TaskType.Create && !t.IsDeleted))
+                            {
+                                return ResponseUtil.Error(
+                                    "Bước đầu tiên có role chief trong luồng InComing phải có ít nhất một task Create.",
+                                    ResponseMessages.OperationFailed,
+                                    HttpStatusCode.BadRequest);
+                            }
+                        }
+
+                        // Kiểm tra user với role chief chỉ có một task Create
+                        var tasksInDocument = document.Tasks.Where(t => t.IsDeleted == false).ToList();
+                        var userCheckIds = tasksInDocument.Select(t => t.UserId).Distinct().ToList();
+                        foreach (var userCheckId in userCheckIds)
+                        {
+                            var user = await _unitOfWork.UserUOW.FindUserByIdAsync(userCheckId);
+                            var hasChiefRole = user.UserRoles.Any(ur =>
+                                ur.Role.RoleName.Equals("chief", StringComparison.OrdinalIgnoreCase));
+                            if (hasChiefRole)
+                            {
+                                var userTasks = tasksInDocument.Where(t =>
+                                    t.UserId == userCheckId && t.TaskType == TaskType.Create && !t.IsDeleted);
+                                var secondCreateTask = userTasks.Skip(1).FirstOrDefault();
+                                if (secondCreateTask != null)
+                                {
+                                    return ResponseUtil.Error(
+                                        "Người dùng có role chief chỉ được phép có duy nhất một task Create trong tài liệu.",
+                                        ResponseMessages.OperationFailed,
+                                        HttpStatusCode.BadRequest);
+                                }
+                            }
+                        }
+
+if (document.FinalArchiveDocument == null)
+                        {
+                            return ResponseUtil.Error("Final archive document not found", ResponseMessages.OperationFailed,
                                 HttpStatusCode.NotFound);
                         }
+                       
+                        var permissions = document.FinalArchiveDocument.UserDocumentPermissions;
+                        if (permissions == null)
+                        {
+                            return ResponseUtil.Error("User document permissions not found", ResponseMessages.OperationFailed,
+                                HttpStatusCode.NotFound);
+                        }
+
+                        foreach (var taskE in orderedTasks)
+                        {
+                            var isInPermission = false;
+                            foreach (var userDocumentPermission in permissions)
+                            {
+                                if (userDocumentPermission.UserId == taskE.UserId)
+                                {
+                                    isInPermission = true;
+                                    break;
+                                }
+                                if (orderedTasks.Any(x => x.UserId == userDocumentPermission.UserId)) continue;
+                                userDocumentPermission.IsDeleted = true;
+                                await _unitOfWork.UserDocPermissionUOW.UpdateAsync(userDocumentPermission);
+                            }
+
+                            var archiveId = document.FinalArchiveDocumentId;
+                            if (archiveId == null)
+                            {
+                                return ResponseUtil.Error("ArchiveId not found", ResponseMessages.OperationFailed,
+                                    HttpStatusCode.NotFound);
+                            }
+
+                            if (isInPermission) continue;
+                            var per = new UserDocumentPermission()
+                            {
+                                CreatedDate = DateTime.Now,
+                                GrantPermission = GrantPermission.Grant,
+                                IsDeleted = false,
+                                UserId = taskE.UserId,
+                                ArchivedDocumentId = (Guid)archiveId,
+                            };
+                            if(per.ArchivedDocumentId == Guid.Empty) 
+                            {
+                                return ResponseUtil.Error("ArchiveId not found", ResponseMessages.OperationFailed,
+                                    HttpStatusCode.NotFound);
+                            }
+                            await _unitOfWork.UserDocPermissionUOW.AddAsync(per);
+                        }
+                    }
+
+                    foreach (var orderedTask in orderedTasks.Where(orderedTask => orderedTask.StartDate == DateTime.MinValue))
+                    {
+                        return ResponseUtil.Error($"Please update start date and end date of task: {orderedTask.Title}", ResponseMessages.OperationFailed,
+                            HttpStatusCode.NotFound);
                     }
                     
                     

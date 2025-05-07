@@ -31,7 +31,13 @@ public class UserDocPermissionRepository : IUserDocPermissionRepository
         await _userDocumentPermission.UpdateRangeAsync(userDocumentPermissions);
     }
 
-    
+    public async Task UpdateAsync(UserDocumentPermission userDocumentPermissions)
+    {
+        if (userDocumentPermissions == null) throw new ArgumentNullException(nameof(userDocumentPermissions));
+        await _userDocumentPermission.UpdateAsync(userDocumentPermissions);
+    }
+
+
     public async Task<bool> ExistsAsync(Guid userId, Guid archivedDocumentId)
     {
         var existing = await _userDocumentPermission.FindByAsync(x =>

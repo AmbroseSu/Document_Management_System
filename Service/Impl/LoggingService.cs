@@ -35,7 +35,7 @@ public class LoggingService : ILoggingService
         await _mongo.CreateLogAsync(log);
     }
 
-    public async Task<ResponseDto> GetAllLogsAsync()
+    public async Task<ResponseDto> GetAllLogsAsync(int page = 1, int pageSize = 10)
     {
         var logs = _mongo.Logs.AsQueryable()
             .Select(log => new LogEntry
@@ -44,6 +44,7 @@ public class LoggingService : ILoggingService
                 UserName = log.UserName,
                 Action = log.Action
             }).ToList();
-        return ResponseUtil.GetCollection(logs, "Logs", HttpStatusCode.Accepted, 10, 1, 10, 10);
+        var totalPage = logs.Count / pageSize + (logs.Count % pageSize > 0 ? 1 : 0);
+        return ResponseUtil.GetCollection(logs.Skip((page - 1) * pageSize).Take(pageSize).ToList(), "Logs", HttpStatusCode.Accepted, logs.Count, page, pageSize, totalPage);
     }
 }

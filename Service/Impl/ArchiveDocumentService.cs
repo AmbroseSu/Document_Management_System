@@ -193,7 +193,8 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
             : data.OrderByDescending(x => x.CreatedDate).ToList();
     
         var paginatedData = data.Skip((page - 1) * pageSize).Take(pageSize).ToList();
-        return ResponseUtil.GetCollection(paginatedData, ResponseMessages.GetSuccessfully, HttpStatusCode.OK, data.Count, page, pageSize, data.Count);
+        var totalPage = data.Count / pageSize + (data.Count % pageSize > 0 ? 1 : 0);
+        return ResponseUtil.GetCollection(paginatedData, ResponseMessages.GetSuccessfully, HttpStatusCode.OK, data.Count, page, pageSize, totalPage);
     }
 
     public async Task<ResponseDto> GetAllArchiveTemplates(string? documentType,string? name,int page, int pageSize)
@@ -219,9 +220,9 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
                 
             }).ToList();
         var final = response.Skip((page - 1) * pageSize).Take(pageSize).ToList();
-        var total = (int)Math.Ceiling((double)(response.Count / pageSize));
+        var totalPage = response.Count / pageSize + (response.Count % pageSize > 0 ? 1 : 0);
         return ResponseUtil.GetCollection(final, ResponseMessages.GetSuccessfully, HttpStatusCode.OK, response.Count, page,
-            pageSize, total);
+            pageSize, totalPage);
     }
 
     public async Task<ResponseDto> GetArchiveDocumentDetail(Guid documentId, Guid userId)
@@ -260,8 +261,8 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
                 return viewer;
             }
         ).ToList());
-        var canGrant = permissions.Any(x => x.UserId == userId && x.GrantPermission == GrantPermission.Grant);
-        var canDownLoad = permissions.Any(x => x.UserId == userId && x.GrantPermission == GrantPermission.Download);
+        var canGrant = permissions.Any(x => x.UserId == userId && x is { GrantPermission: GrantPermission.Grant, IsDeleted: false });
+        var canDownLoad = permissions.Any(x => x.UserId == userId && x is { GrantPermission: GrantPermission.Download, IsDeleted: false });
         var result = new ArchiveDocumentResponse()
         {
             Granters = GranterList,
