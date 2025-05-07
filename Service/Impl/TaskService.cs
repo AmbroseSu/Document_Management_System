@@ -1463,8 +1463,8 @@ public partial class TaskService : ITaskService
                         {
                             var currentTask = orderedTasks[i];
 
-                            if (currentTask.UserId == userId && currentTask.TaskStatus == TasksStatus.InProgress &&
-                                (currentTask.TaskType == TaskType.Browse || currentTask.TaskType == TaskType.View))
+                            if (currentTask.UserId == userId && currentTask.TaskStatus == TasksStatus.InProgress /*&&
+                                (currentTask.TaskType == TaskType.Browse || currentTask.TaskType == TaskType.View || currentTask.TaskType == TaskType.Upload)*/)
                             {
                                 bool previousTasksCompleted = orderedTasks
                                     .Take(i)
