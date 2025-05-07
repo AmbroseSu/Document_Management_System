@@ -777,8 +777,8 @@ public partial class DocumentService : IDocumentService
             var result = new DocumentDetailResponse()
             {
                 Sizes = sizes,
-                DateExpired = document.ExpirationDate==null? DateTime.MinValue : document.Deadline,
-                Deadline = document.Deadline==null? DateTime.MinValue : document.Deadline,
+                DateExpired = document.ExpirationDate,
+                Deadline = document.Deadline,
                 Receiver = document.User.FullName?? string.Empty,
                 Sender = document.Sender ?? string.Empty,
                 WorkFlowName = document.DocumentWorkflowStatuses.FirstOrDefault().Workflow.WorkflowName,
@@ -826,11 +826,12 @@ public partial class DocumentService : IDocumentService
             DocumentContent = documentA.ArchivedDocumentContent,
             NumberOfDocument = documentA.NumberOfDocument,
             ProcessingStatus = 0,
+            Deadline = null,
             DateIssued = documentA.DateIssued,
             DocumentTypeName = documentA.DocumentType.DocumentTypeName,
             CreatedDate = documentA.CreatedDate,
             SystemNumberDocument = documentA.SystemNumberOfDoc,
-            DateExpired = documentA.ExpirationDate==null? DateTime.MinValue : documentA.ExpirationDate,
+            DateExpired = documentA.ExpirationDate,
             Sender = documentA.Sender?? string.Empty,
             Scope = documentA.Scope.ToString()?? string.Empty,
             GranterList = granter.Select(x => new Viewer()
