@@ -593,7 +593,7 @@ public partial class TaskService : ITaskService
                 if (taskDto.TaskType == TaskType.Upload)
                 {
                     return ResponseUtil.Error(
-                        "Nhiệm vụ không được có loại nhệm vụ Tải văn bản lên trong luồng đến.",
+                        "Nhiệm vụ không được có loại nhiệm vụ Tải văn bản lên trong luồng đến.",
                         ResponseMessages.OperationFailed,
                         HttpStatusCode.BadRequest);
                 }
