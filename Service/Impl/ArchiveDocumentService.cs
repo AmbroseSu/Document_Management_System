@@ -441,6 +441,7 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
             return ResponseUtil.Error("Create new document false",ResponseMessages.FailedToSaveData,HttpStatusCode.NotFound);
         }
         newDoc.FinalArchiveDocumentId = newArchiveDocId;
+        archiveDoc.DocumentRevokeId = newArchiveDocId;
         await _unitOfWork.DocumentUOW.UpdateAsync(newDoc);
         await _unitOfWork.ArchivedDocumentUOW.AddAsync(newArchiveDoc);
         await _unitOfWork.SaveChangesAsync();
@@ -476,6 +477,7 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
             return ResponseUtil.Error("Create new document false",ResponseMessages.FailedToSaveData,HttpStatusCode.NotFound);
         }
         newDoc.FinalArchiveDocumentId = newArchiveDocId;
+        archiveDoc.DocumentReplaceId = newArchiveDocId;
         await _unitOfWork.DocumentUOW.UpdateAsync(newDoc);
         await _unitOfWork.ArchivedDocumentUOW.AddAsync(newArchiveDoc);
         await _unitOfWork.SaveChangesAsync();
