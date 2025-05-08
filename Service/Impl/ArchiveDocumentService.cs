@@ -281,7 +281,7 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
             Scope = docA.Scope.ToString(),
             DocumentTypeName = docA.DocumentType?.DocumentTypeName,
             WorkflowName = string.Empty,
-            Deadline = DateTime.MaxValue,
+            Deadline = null,
             Status = docA.ArchivedDocumentStatus.ToString(),
             CreatedBy = docA.CreatedBy,
             DateIssued = docA.DateIssued,

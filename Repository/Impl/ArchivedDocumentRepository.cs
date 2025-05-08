@@ -34,7 +34,13 @@ public class ArchivedDocumentRepository : IArchivedDocumentRepository
                 .Include(d => d.UserDocumentPermissions).ThenInclude(q => q.User).ThenInclude(u => u.Division)
             .Include(d => d.DocumentType)
                 .Include(a => a.ArchiveDocumentSignatures)
-                .ThenInclude(x => x.DigitalCertificate));
+                .ThenInclude(x => x.DigitalCertificate)
+                .Include(x => x.FinalDocument)
+                .ThenInclude(x => x.DocumentVersions)
+                .ThenInclude(x => x.DocumentSignatures)
+                .ThenInclude(x => x.DigitalCertificate)
+                .ThenInclude(x => x.User)
+                .ThenInclude(x => x.Division));
     }
     
     public async Task<ArchivedDocument?> FindArchivedDocumentByNameAsync(string? name)

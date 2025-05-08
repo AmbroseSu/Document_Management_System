@@ -462,12 +462,12 @@ public partial class DocumentService : IDocumentService
 
         var versions = document.DocumentVersions.ToList();
         var signature = document.DocumentVersions.FirstOrDefault(x => x.IsFinalVersion)?.DocumentSignatures;
-        var dateExpires = DateTime.MaxValue;
-        if (signature != null)
-            foreach (var sig in signature.Where(sig => sig.SignedAt < dateExpires))
-            {
-                dateExpires = sig.SignedAt;
-            }
+        var dateExpires = document.ExpirationDate;
+        // if (signature != null)
+        //     foreach (var sig in signature.Where(sig => sig.SignedAt < dateExpires))
+        //     {
+        //         dateExpires = sig.SignedAt;
+        //     }
 
 
         signature ??= [];
@@ -781,7 +781,7 @@ public partial class DocumentService : IDocumentService
             var approveList = userApprove.Select(x => new Viewer()
             {
                 UserId = x.UserId,
-                FullName = x.UserName,
+                FullName = x.FullName,
                 DivisionName = x.Division.DivisionName,
                 Avatar = x.Avatar,
                 UserName = x.UserName
@@ -829,6 +829,16 @@ public partial class DocumentService : IDocumentService
         //     FullName = u.UserName,
         //     DivisionName = u.Division.DivisionName
         // }).ToList();
+        var ver = documentA.FinalDocument.DocumentVersions.FirstOrDefault(x => x.IsFinalVersion);
+        var userApproveA = ver.DocumentSignatures.Where(x=>x.DigitalCertificate.IsUsb==null).Select(x => x.DigitalCertificate.User).Distinct().ToList();
+        var approveListA = userApproveA.Select(x => new Viewer()
+        {
+            UserId = x.UserId,
+            FullName = x.FullName,
+            DivisionName = x.Division.DivisionName,
+            Avatar = x.Avatar,
+            UserName = x.UserName
+        }).ToList();
         var resultA = new DocumentDetailResponse()
         {
             Sizes = await GetDocumentSize(Path.Combine(Directory.GetCurrentDirectory(), "data", "storage",
@@ -841,6 +851,7 @@ public partial class DocumentService : IDocumentService
             ProcessingStatus = 0,
             Deadline = null,
             DateIssued = documentA.DateIssued,
+            ApproveByList = approveListA,
             DocumentTypeName = documentA.DocumentType.DocumentTypeName,
             CreatedDate = documentA.CreatedDate,
             SystemNumberDocument = documentA.SystemNumberOfDoc,
@@ -852,14 +863,17 @@ public partial class DocumentService : IDocumentService
                 UserId = x.UserId,
                 Avatar = x.Avatar,
                 FullName = x.FullName,
-                UserName = x.UserName
+                UserName = x.UserName,
+                DivisionName = x.Division.DivisionName
             }).ToList(),
             ViewerList = viewer.Select(x => new Viewer()
             {
                 UserId = x.UserId,
                 Avatar = x.Avatar,
                 FullName = x.FullName,
-                UserName = x.UserName
+                UserName = x.UserName,
+                DivisionName = x.Division.DivisionName
+
             }).ToList(),
             CreatedBy = documentA.CreatedBy,
             DivisionList = divisionsA,
