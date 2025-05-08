@@ -424,9 +424,39 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
         return ResponseUtil.GetObject(newDocId, ResponseMessages.CreatedSuccessfully, HttpStatusCode.OK, 1);
     }
 
-    public Task<ResponseDto> ReplaceArchiveDocument(Guid archiveDocumentId, DocumentPreInfo documentPreInfo, Guid userId)
+    public async Task<ResponseDto> ReplaceArchiveDocument(Guid archiveDocumentId, DocumentPreInfo documentPreInfo, Guid userId)
     {
-        throw new NotImplementedException();
+        var user = await _unitOfWork.UserUOW.FindUserByIdAsync(userId);
+        var archiveDoc = await _unitOfWork.ArchivedDocumentUOW.FindArchivedDocumentByIdAsync(archiveDocumentId);
+        if (archiveDoc == null)
+        {
+            return ResponseUtil.Error("Archive document not found",ResponseMessages.FailedToSaveData,HttpStatusCode.NotFound);
+        }
+        var newArchiveDocId = Guid.NewGuid();
+        var newDocId =(Guid) (await  _documentService.CreateDocumentByTemplate(documentPreInfo, userId)).Content;
+        var newDoc = await _unitOfWork.DocumentUOW.FindDocumentByIdAsync(newDocId);
+        
+        var newArchiveDoc = new ArchivedDocument()
+        {
+            ArchivedDocumentId = newArchiveDocId,
+            CreatedDate = DateTime.Now,
+            SystemNumberOfDoc = newDoc.SystemNumberOfDoc,
+            ArchivedDocumentStatus = ArchivedDocumentStatus.Archived,
+            IsTemplate = false,
+            DocumentTypeId = documentPreInfo.DocumentTypeId,
+            DocumentReplaceId = archiveDoc.ArchivedDocumentId,
+            Scope = archiveDoc.Scope,
+            FinalDocumentId = newDocId
+        };
+        if (newDoc == null)
+        {
+            return ResponseUtil.Error("Create new document false",ResponseMessages.FailedToSaveData,HttpStatusCode.NotFound);
+        }
+        newDoc.FinalArchiveDocumentId = newArchiveDocId;
+        await _unitOfWork.DocumentUOW.UpdateAsync(newDoc);
+        await _unitOfWork.ArchivedDocumentUOW.AddAsync(newArchiveDoc);
+        await _unitOfWork.SaveChangesAsync();
+        return ResponseUtil.GetObject(newDocId, ResponseMessages.CreatedSuccessfully, HttpStatusCode.OK, 1);
     }
 
     private static string ExtractSigners(string? signature)
