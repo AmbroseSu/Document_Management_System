@@ -340,7 +340,22 @@ public partial class DocumentService : IDocumentService
                 g.Select(x => x.Document).ToList()
             )
             .ToList();
-        return ResponseUtil.GetObject(result, ResponseMessages.GetSuccessfully, HttpStatusCode.OK, 1);
+        
+        var result1 = cache.Where(wo => wo.DocumentTypes != null)
+            .SelectMany(wo => wo.DocumentTypes!.Select(dt => new { DocumentType = dt, WorkFlowId = wo.WorkFlowId }))
+            .Where(x => x.DocumentType.DocumentResponseMobiles != null && x.DocumentType.DocumentTypeId == documentTypeId)
+            .SelectMany(x => x.DocumentType.DocumentResponseMobiles!,
+                (x, doc) => new { x.DocumentType.DocumentTypeId, x.DocumentType.DocumentTypeName, Document = doc, x.WorkFlowId })
+            .GroupBy(x => x.DocumentTypeId)
+            .Select(g =>
+                g.Select(x =>
+                {
+                    x.Document.WorkFlowId = x.WorkFlowId ?? Guid.Parse("00000000-0000-0000-0000-000000000000"); // Gán PropertyX vào Document
+                    return x.Document;
+                }).ToList()
+            )
+            .ToList();
+        return ResponseUtil.GetObject(result1, ResponseMessages.GetSuccessfully, HttpStatusCode.OK, 1);
     }
 
     public async Task<ResponseDto> GetDocumentByNameMobile(string documentName, Guid userId)
