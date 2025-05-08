@@ -38,6 +38,14 @@ public class ArchiveDocumentResponse : DocumentResponse
     
     public string? ArchivedBy { get; set; }
     public DateTime? ArchivedDate { get; set; }
+    
+    public SimpleDocumentResponse? RevokeDocument { get; set; }
+    public SimpleDocumentResponse? ReplacedDocument { get; set; }
+}
+public class SimpleDocumentResponse : DocumentResponse
+{
+    public Guid? documentId { get; set; }
+    public string? DocumentName { get; set; }
 }
 
 public class Viewer

@@ -304,6 +304,16 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
             Scope = docA.Scope.ToString(),
             DocumentTypeName = docA.DocumentType?.DocumentTypeName,
             WorkflowName = string.Empty,
+            RevokeDocument = new SimpleDocumentResponse()
+            {
+                documentId = docA.DocumentRevokeId,
+                DocumentName = docA.DocumentRevokes?.FirstOrDefault()?.ArchivedDocumentName,
+            },
+            ReplacedDocument = new SimpleDocumentResponse()
+            {
+                documentId = docA.DocumentReplaceId,
+                DocumentName = docA.DocumentReplaces?.FirstOrDefault()?.ArchivedDocumentName,
+            },
             Deadline = null,
             Status = docA.ArchivedDocumentStatus.ToString(),
             CreatedBy = docA.FinalDocument.User.UserName,
