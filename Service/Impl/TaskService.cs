@@ -933,7 +933,7 @@ public partial class TaskService : ITaskService
             if (task.IsDeleted)
                 return ResponseUtil.Error(ResponseMessages.TaskAlreadyDeleted, ResponseMessages.OperationFailed,
                     HttpStatusCode.NotFound);
-            if (task.TaskStatus != TasksStatus.Waiting || task.TaskStatus != TasksStatus.Revised)
+            if (task.TaskStatus != TasksStatus.Waiting && task.TaskStatus != TasksStatus.Revised)
                 return ResponseUtil.Error(ResponseMessages.TaskCanNotUpdate, ResponseMessages.OperationFailed,
                     HttpStatusCode.NotFound);
 
