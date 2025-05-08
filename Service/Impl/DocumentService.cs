@@ -518,10 +518,14 @@ public partial class DocumentService : IDocumentService
             Versions = versions.Select(v => new VersionDetailRespone()
             {
                 VersionNumber = v.VersionNumber,
-                
                 CreatedDate = v.CreateDate,
                 Url = v.DocumentVersionUrl,
-                IsFinal = v.IsFinalVersion
+                IsFinal = v.IsFinalVersion,
+                ReasonReject = v.Comments?.FirstOrDefault(x=> x.IsDeleted==false)?.CommentContent,
+                DateReject = v.Comments?.FirstOrDefault(x=> x.IsDeleted==false)?.CreateDate,
+                UserName = v.Comments?.FirstOrDefault(x=> x.IsDeleted==false)?.User?.UserName,
+                FullName = v.Comments?.FirstOrDefault(x=> x.IsDeleted==false)?.User?.FullName,
+                Avatar = v.Comments?.FirstOrDefault(x=> x.IsDeleted==false)?.User?.Avatar
             }).ToList(),
             Tasks = task.Select(t => new TasksResponse()
             {

@@ -424,6 +424,11 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
         return ResponseUtil.GetObject(newDocId, ResponseMessages.CreatedSuccessfully, HttpStatusCode.OK, 1);
     }
 
+    public Task<ResponseDto> ReplaceArchiveDocument(Guid archiveDocumentId, DocumentPreInfo documentPreInfo, Guid userId)
+    {
+        throw new NotImplementedException();
+    }
+
     private static string ExtractSigners(string? signature)
     {
         var regex = MyRegex();

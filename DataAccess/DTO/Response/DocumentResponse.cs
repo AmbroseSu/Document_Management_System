@@ -60,6 +60,11 @@ public class VersionDetailRespone
     public string? Url { get; set; }
     public bool? IsFinal { get; set; }
     public List<SizeDocumentResponse>? Sizes { get; set; }
+    public string? ReasonReject { get; set; }
+    public DateTime? DateReject { get; set; }
+    public string? Avatar { get; set; }
+    public string? UserName { get; set; }
+    public string? FullName { get; set; }
 }
 public class SizeDocumentResponse
 {

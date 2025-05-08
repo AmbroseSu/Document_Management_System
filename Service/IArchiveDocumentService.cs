@@ -14,4 +14,5 @@ public interface IArchiveDocumentService
     Task<ResponseDto> CreateArchiveTemplate(ArchiveDocumentRequest archiveDocumentRequest, Guid userId);
     Task<IActionResult> DownloadTemplate(string templateId, Guid userId,bool? isPdf);
     Task<ResponseDto> WithdrawArchiveDocument(Guid archiveDocumentId,DocumentPreInfo documentPreInfo, Guid userId);
+    Task<ResponseDto> ReplaceArchiveDocument(Guid archiveDocumentId, DocumentPreInfo documentPreInfo, Guid userId);
 }
