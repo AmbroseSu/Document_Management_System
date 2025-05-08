@@ -3157,7 +3157,7 @@ public partial class TaskService : ITaskService
                 }
                 else
                 {
-                    orderedTask.TaskStatus = TasksStatus.Waiting;
+                    orderedTask.TaskStatus = TasksStatus.Revised;
                     orderedTask.StartDate = DateTime.MinValue;
                     orderedTask.EndDate = DateTime.MinValue;
                     orderedTask.UpdatedDate = DateTime.UtcNow;
