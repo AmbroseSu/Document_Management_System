@@ -264,6 +264,11 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
         var canGrant = permissions.Any(x => x.UserId == userId && x is { GrantPermission: GrantPermission.Grant, IsDeleted: false });
         var canDownLoad = permissions.Any(x => x.UserId == userId && x is { GrantPermission: GrantPermission.Download, IsDeleted: false });
         bool? canRevoke = null;
+        if (docA.FinalDocument.UserId != userId)
+        {
+            canRevoke = null;
+        }
+        else
         if (docA.ArchivedDocumentStatus is not  (ArchivedDocumentStatus.Sent or ArchivedDocumentStatus.Withdrawn ) || docA is { DocumentReplaceId: not null, DocumentRevokeId: null })
         {
             canRevoke = null;
