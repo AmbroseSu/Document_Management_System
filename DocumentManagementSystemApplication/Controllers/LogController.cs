@@ -33,7 +33,7 @@ namespace DocumentManagementSystemApplication.Controllers
         }
 
 
-        [HttpPost("upload")]
+        [HttpPost("update-upload")]
         public async Task<IActionResult> UploadTool(IFormFile file)
         {
             try

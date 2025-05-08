@@ -26,4 +26,5 @@ jobs:
             docker compose down
             docker image prune -f
             docker compose up -d
+            docker builder prune --filter "until=1h" --force
           EOF
