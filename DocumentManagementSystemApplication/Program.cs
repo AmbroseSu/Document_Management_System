@@ -205,7 +205,8 @@ builder.Services.AddCors(options =>
                 "http://dms.signdoc-core.io.vn",
                 "http://103.90.227.64:8084",
                 "https://signdoc-core.io.vn",
-                "https://dms.signdoc-core.io.vn"
+                "https://dms.signdoc-core.io.vn",
+                "https://www.signdoc-core.io.vn"
                
            
             ) // địa chỉ chạy file HTML
