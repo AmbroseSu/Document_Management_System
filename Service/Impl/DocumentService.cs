@@ -931,13 +931,15 @@ public partial class DocumentService : IDocumentService
         var signerNames = GetList<string>(documentUploadDto.CannotChange.GetValueOrDefault("SignerName"));
         var singingDates = GetList<DateTime>(documentUploadDto.CannotChange.GetValueOrDefault("SingingDate"));
         var serialNumbers = GetList<string>(documentUploadDto.CannotChange.GetValueOrDefault("SerialNumber"));
-        var validFroms = GetList<DateTime>(documentUploadDto.CannotChange.GetValueOrDefault("ValidFrom"));
+        var validFroms = GetDateTime(documentUploadDto.CanChange.GetValueOrDefault("validFrom"));
+        var validTo = GetDateTime(documentUploadDto.CanChange.GetValueOrDefault("validTo"));
+        var validFromsCannot = GetList<DateTime>(documentUploadDto.CannotChange.GetValueOrDefault("ValidFrom"));
         var expirationDates = GetList<DateTime>(documentUploadDto.CannotChange.GetValueOrDefault("ExpirationDate"));
         var dateReceived = GetDateTime(documentUploadDto.CanChange.GetValueOrDefault("DateReceived"));
         var documentTypeId = GetGuid(documentUploadDto.CanChange.GetValueOrDefault("DocumentTypeId"));
         var workflowId = GetGuid(documentUploadDto.CanChange.GetValueOrDefault("WorkflowId"));
         var deadline = GetDateTime(documentUploadDto.CanChange.GetValueOrDefault("Deadline")) ?? DateTime.Now;
-        var validFrom = GetDateTime(documentUploadDto.CanChange.GetValueOrDefault("ValidFrom")) ?? DateTime.Now;
+        // var validFrom = GetDateTime(documentUploadDto.CanChange.GetValueOrDefault("ValidFrom")) ?? DateTime.Now;
         var workflowO = await _unitOfWork.WorkflowUOW.FindWorkflowByIdAsync(workflowId);
         var workflowFlow = workflowO.WorkflowFlows.Select(x => x).FirstOrDefault(x => x.FlowNumber == 1);
         var filter = Builders<Count>.Filter.Eq(x => x.Id, "base");
@@ -957,10 +959,11 @@ public partial class DocumentService : IDocumentService
             NumberOfDocument = numberOfDocument,
             CreatedDate = DateTime.Now,
             DocumentTypeId = documentTypeId,
+            ExpirationDate = validTo ?? DateTime.Now,
             ProcessingStatus = ProcessingStatus.InProgress,
             IsDeleted = false,
             Sender = sender,
-            DateIssued = validFrom,
+            DateIssued = validFroms,
             DateReceived = dateReceived,
             Deadline = deadline,
             UserId = userId,
@@ -999,7 +1002,7 @@ public partial class DocumentService : IDocumentService
                 Subject = signerNames[i], 
                 Issuer = issuers[i], 
                 SerialNumber = serialNumbers[i], 
-                ValidFrom = validFroms[i],
+                ValidFrom = validFromsCannot[i],
                 IsUsb = false
             };
             var signature = new DocumentSignature
