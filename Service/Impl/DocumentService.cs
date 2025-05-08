@@ -533,7 +533,16 @@ public partial class DocumentService : IDocumentService
                 TaskTitle = t.Title,
                 Description = t.Description,
                 TaskType = t.TaskType.ToString(),
-                Status = t.TaskStatus.ToString()
+                Status = t.TaskStatus.ToString(),
+                IsUsb = t.User.DigitalCertificates.Select(x =>
+                    {
+                        if (t.TaskType == TaskType.Sign)
+                        {
+                            if (x.IsUsb != null) return x.IsUsb;
+                        }
+                        return null;
+                    }
+                    ).FirstOrDefault()
             }).ToList(),
             DigitalSignatures = signature.Where(x => x.DigitalCertificate!=null).Where(x => x.DigitalCertificate.IsUsb != null).Select(x => new SignatureResponse()
                 {
