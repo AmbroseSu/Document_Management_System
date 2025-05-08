@@ -35,6 +35,8 @@ public class DocumentTypeResponseMobile
 }
 public  class DocumentResponseMobile
 {
+    public Guid WorkFlowId { get; set; }
+
     public Guid Id { get; set; }
     public string? DocumentName { get; set; } 
     public DateTime? CreatedDate { get; set; }
@@ -55,6 +57,7 @@ public class DocumentDetailResponse
     public string? Sender { get; set; } 
     public List<Viewer> ViewerList { get; set; }
     public List<Viewer> GranterList { get; set; }
+    public List<Viewer> ApproveByList { get; set; } = [];
     public string? WorkFlowName { get; set; } 
     public string? Scope { get; set; } 
     public string? SystemNumberDocument { get; set; } 

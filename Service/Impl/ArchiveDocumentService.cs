@@ -270,6 +270,7 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
             DocumentName = docA.ArchivedDocumentName,
             DocumentContent = docA.ArchivedDocumentContent,
             NumberOfDocument = docA.NumberOfDocument,
+            SystemNumberOfDocument = docA.SystemNumberOfDoc,
             Sender = docA.Sender,
             CanGrant = canGrant,
             CanDownLoad = canDownLoad,

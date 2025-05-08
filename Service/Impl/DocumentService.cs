@@ -301,12 +301,12 @@ public partial class DocumentService : IDocumentService
             cache = await _unitOfWork.RedisCacheUOW.GetDataAsync<List<AllDocumentResponseMobile>>(
                 "GetAllTypeDocumentsMobile_userId_" + userId);
         }
-
+        
         var result = cache.Where(w => w.DocumentTypes != null)
             .SelectMany(w => w.DocumentTypes!)
             .GroupBy(dt => dt.DocumentTypeId)
             .Select(g => new DocumentTypeResponseMobile
-            {
+            {   
                 DocumentTypeId = g.Key,
                 DocumentTypeName = g.FirstOrDefault()?.DocumentTypeName,
                 Percent = g.Sum(x => x.Percent ?? 0),
@@ -480,6 +480,7 @@ public partial class DocumentService : IDocumentService
             NumberOfDocument = document.NumberOfDocument ?? String.Empty,
             Sender = document.Sender ?? String.Empty,
             CreateDate = document.CreatedDate ,
+            SystemNumberOfDocument = document.SystemNumberOfDoc,
             CreatedBy = document.User.FullName ?? String.Empty,
             DateReceived = document.DateReceived,
             WorkflowName = document.DocumentWorkflowStatuses.FirstOrDefault().Workflow.WorkflowName ?? String.Empty,
@@ -776,6 +777,15 @@ public partial class DocumentService : IDocumentService
             var sizes = await GetDocumentSize(Path.Combine(Directory.GetCurrentDirectory(), "data", "storage",
                 "document",
                 documentId.ToString(), v.DocumentVersionId.ToString(), document.DocumentName));
+            var userApprove = v.DocumentSignatures.Where(x=>x.DigitalCertificate.IsUsb==null).Select(x => x.DigitalCertificate.User).Distinct().ToList();
+            var approveList = userApprove.Select(x => new Viewer()
+            {
+                UserId = x.UserId,
+                FullName = x.UserName,
+                DivisionName = x.Division.DivisionName,
+                Avatar = x.Avatar,
+                UserName = x.UserName
+            }).ToList();
             var result = new DocumentDetailResponse()
             {
                 Sizes = sizes,
@@ -787,6 +797,7 @@ public partial class DocumentService : IDocumentService
                 Scope = document.DocumentWorkflowStatuses.FirstOrDefault().Workflow.Scope.ToString(),
                 SystemNumberDocument = document.SystemNumberOfDoc,
                 DocumentId = document.DocumentId,
+                ApproveByList = approveList,
                 DocumentName = document.DocumentName,
                 DocumentContent = document.DocumentContent,
                 NumberOfDocument = document.NumberOfDocument,
