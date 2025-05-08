@@ -42,7 +42,9 @@ public class ArchivedDocumentRepository : IArchivedDocumentRepository
                 .ThenInclude(x => x.DocumentSignatures)
                 .ThenInclude(x => x.DigitalCertificate)
                 .ThenInclude(x => x.User)
-                .ThenInclude(x => x.Division));
+                .ThenInclude(x => x.Division)
+                .Include(x => x.DocumentReplaces)
+                .Include(x => x.DocumentRevokes));
     }
     
     public async Task<ArchivedDocument?> FindArchivedDocumentByNameAsync(string? name)

@@ -308,6 +308,7 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
             {
                 documentId = docA.DocumentRevokeId,
                 DocumentName = docA.DocumentRevokes?.FirstOrDefault()?.ArchivedDocumentName,
+                
             },
             ReplacedDocument = new SimpleDocumentResponse()
             {

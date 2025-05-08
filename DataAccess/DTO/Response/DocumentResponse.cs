@@ -42,7 +42,7 @@ public class ArchiveDocumentResponse : DocumentResponse
     public SimpleDocumentResponse? RevokeDocument { get; set; }
     public SimpleDocumentResponse? ReplacedDocument { get; set; }
 }
-public class SimpleDocumentResponse : DocumentResponse
+public class SimpleDocumentResponse 
 {
     public Guid? documentId { get; set; }
     public string? DocumentName { get; set; }
