@@ -977,7 +977,7 @@ public partial class TaskService : ITaskService
             if (currentIndex < orderedTasks.Count - 1) // Kiểm tra xem có task tiếp theo hay không
             {
                 var nextTask = orderedTasks[currentIndex + 1];
-                if (nextTask.StartDate < taskRequest.EndDate)
+                if (nextTask.StartDate < taskRequest.EndDate && nextTask.StartDate != DateTime.MinValue)
                 {
                     return ResponseUtil.Error(
                         ResponseMessages.TaskStartdayNextTaskLowerEndDayCurrentTask,
