@@ -268,8 +268,8 @@ public class EmailService : IEmailService
             { "code", code },
             { "client_id", Environment.GetEnvironmentVariable("CLIENT_ID")! },
             { "client_secret", Environment.GetEnvironmentVariable("CLIENT_SECRET")! },
-            //{ "redirect_uri", "http://signdoc-core.io.vn/send-email" },
-            { "redirect_uri", "http://localhost:3000/send-email" },
+            { "redirect_uri", "http://signdoc-core.io.vn/send-email" },
+            //{ "redirect_uri", "http://localhost:3000/send-email" },
             //{ "redirect_uri", "http://127.0.0.1:5500/test.html" },
             { "grant_type", "authorization_code" }
         };
