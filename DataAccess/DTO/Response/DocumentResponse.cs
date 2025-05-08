@@ -35,6 +35,9 @@ public class ArchiveDocumentResponse : DocumentResponse
     public List<Viewer> Viewers { get; set; } = [];
     public List<Viewer> Granters { get; set; } = [];
     public bool? CanRevoke { get; set; }
+    
+    public string? ArchivedBy { get; set; }
+    public DateTime? ArchivedDate { get; set; }
 }
 
 public class Viewer

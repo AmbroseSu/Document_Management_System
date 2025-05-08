@@ -208,7 +208,7 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
         {
             templates = templates.Where(x => x.DocumentType.DocumentTypeName.ToLower().Contains(documentType.ToLower()));
         }
-        var response = templates.Where(p => p.ArchivedDocumentStatus==ArchivedDocumentStatus.Archived).Select(x =>
+        var response = templates.Where(p => p.ArchivedDocumentStatus==ArchivedDocumentStatus.Archived && p.Page != -99).Select(x =>
             new
             {
                 Id = x.ArchivedDocumentId,
@@ -293,13 +293,15 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
             Viewers = ViewerList,
             DateExpires = docA.ExpirationDate,
             DateReceived = docA.DateReceived,
-            CreateDate = docA.CreatedDate,
+            CreateDate = docA.FinalDocument.CreatedDate,
+            ArchivedBy = docA.CreatedBy,
+            ArchivedDate = docA.CreatedDate,
             Scope = docA.Scope.ToString(),
             DocumentTypeName = docA.DocumentType?.DocumentTypeName,
             WorkflowName = string.Empty,
             Deadline = null,
             Status = docA.ArchivedDocumentStatus.ToString(),
-            CreatedBy = docA.CreatedBy,
+            CreatedBy = docA.FinalDocument.User.UserName,
             DateIssued = docA.DateIssued,
             DigitalSignatures = docA.ArchiveDocumentSignatures?.Where(x => x.DigitalCertificate!=null).Where(x =>x.DigitalCertificate.IsUsb!=null).Select(x => new SignatureResponse()
             {
@@ -473,6 +475,15 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
         await _unitOfWork.ArchivedDocumentUOW.AddAsync(newArchiveDoc);
         await _unitOfWork.SaveChangesAsync();
         return ResponseUtil.GetObject(newDocId, ResponseMessages.CreatedSuccessfully, HttpStatusCode.OK, 1);
+    }
+
+    public async Task<ResponseDto> DeleteArchiveTemplate(Guid templateId, Guid userId)
+    {
+        var archiveDoc = await _unitOfWork.ArchivedDocumentUOW.FindArchivedDocumentByIdAsync(templateId);
+        archiveDoc.Page = -99;
+        await _unitOfWork.ArchivedDocumentUOW.UpdateAsync(archiveDoc);
+        await _unitOfWork.SaveChangesAsync();
+        return ResponseUtil.GetObject("Delete success", ResponseMessages.DeleteSuccessfully, HttpStatusCode.OK, 1);
     }
 
     private static string ExtractSigners(string? signature)

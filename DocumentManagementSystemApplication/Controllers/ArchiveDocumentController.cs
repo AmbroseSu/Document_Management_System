@@ -85,6 +85,14 @@ namespace DocumentManagementSystemApplication.Controllers
             return result;
         }
         
+        [HttpDelete("delete-template")]
+        public async Task<ResponseDto> DeleteTemplate([FromQuery] Guid templateId)
+        {
+            var userId = User.FindFirst("userid")?.Value;
+            var result = await _archiveDocumentService.DeleteArchiveTemplate(templateId, Guid.Parse(userId));
+            return result;
+        }
+        
         [HttpGet("view-download-template")]
         public async Task<IActionResult> DownloadTemplate([FromQuery] string templateId,[FromQuery]bool? isPdf = false)
         {

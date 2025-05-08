@@ -36,6 +36,8 @@ public class ArchivedDocumentRepository : IArchivedDocumentRepository
                 .Include(a => a.ArchiveDocumentSignatures)
                 .ThenInclude(x => x.DigitalCertificate)
                 .Include(x => x.FinalDocument)
+                .ThenInclude(x => x.User)
+                .Include(x => x.FinalDocument)
                 .ThenInclude(x => x.DocumentVersions)
                 .ThenInclude(x => x.DocumentSignatures)
                 .ThenInclude(x => x.DigitalCertificate)
