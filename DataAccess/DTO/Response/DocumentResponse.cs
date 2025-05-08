@@ -8,6 +8,7 @@ public class DocumentResponse
     public Guid DocumentId { get; set; }
     public string? DocumentName { get; set; }
     public string? NumberOfDocument { get; set; }
+    public string? SystemNumberOfDocument { get; set; }
     public string? DocumentContent { get; set; }
     public string? Sender { get; set; }
     public DateTime? DateReceived { get; set; }
@@ -41,6 +42,7 @@ public class Viewer
     public string UserName { get; set; }
     public string Avatar { get; set; }
     public Guid UserId { get; set; }
+    public string? DivisionName { get; set; }
 }
 
 public class SignatureResponse

@@ -6,4 +6,5 @@ public class UpdateSignatureRequest
 {
     public IFormFile? NormalSignature { get; set; }
     public IFormFile? DigitalSignature { get; set; }
+    public bool? isUsb { get; set; }
 }

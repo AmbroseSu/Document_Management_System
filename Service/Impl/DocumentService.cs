@@ -232,11 +232,21 @@ public partial class DocumentService : IDocumentService
                 WorkFlowId = Guid.Parse("00000000-0000-0000-0000-000000000000"),
                 WorkFlowName = "Đã lưu",
                 DocumentTypes = archiveDoc.Select(x =>
-                    new DocumentTypeResponseMobile()
                     {
-                        DocumentTypeId = x.DocumentTypeId,
-                        DocumentTypeName = x.DocumentType.DocumentTypeName,
-                        DocumentResponseMobiles = []
+                        var isRevoke = false;
+                        var isRevokedBy = false;
+                        var isReplaced = false;
+                        var isReplacedBy = false;
+                        if(x.ArchivedDocumentStatus == ArchivedDocumentStatus.Withdrawn && x.DocumentRevokeId != null) isRevokedBy = true;
+                        if(x.DocumentRevokeId != null && x.ArchivedDocumentStatus!= ArchivedDocumentStatus.Withdrawn) isRevoke = true;
+                        if(x.ArchivedDocumentStatus == ArchivedDocumentStatus.Withdrawn && x.DocumentRevokeId != null && x.DocumentReplaceId != null) isRevokedBy = true;
+
+                            return new DocumentTypeResponseMobile()
+                            {
+                                DocumentTypeId = x.DocumentTypeId,
+                                DocumentTypeName = x.DocumentType.DocumentTypeName,
+                                DocumentResponseMobiles = []
+                            };
                     }
                 ).Distinct().ToList()
             };
@@ -301,12 +311,12 @@ public partial class DocumentService : IDocumentService
             cache = await _unitOfWork.RedisCacheUOW.GetDataAsync<List<AllDocumentResponseMobile>>(
                 "GetAllTypeDocumentsMobile_userId_" + userId);
         }
-
+        
         var result = cache.Where(w => w.DocumentTypes != null)
             .SelectMany(w => w.DocumentTypes!)
             .GroupBy(dt => dt.DocumentTypeId)
             .Select(g => new DocumentTypeResponseMobile
-            {
+            {   
                 DocumentTypeId = g.Key,
                 DocumentTypeName = g.FirstOrDefault()?.DocumentTypeName,
                 Percent = g.Sum(x => x.Percent ?? 0),
@@ -340,7 +350,22 @@ public partial class DocumentService : IDocumentService
                 g.Select(x => x.Document).ToList()
             )
             .ToList();
-        return ResponseUtil.GetObject(result, ResponseMessages.GetSuccessfully, HttpStatusCode.OK, 1);
+        
+        var result1 = cache.Where(wo => wo.DocumentTypes != null)
+            .SelectMany(wo => wo.DocumentTypes!.Select(dt => new { DocumentType = dt, WorkFlowId = wo.WorkFlowId }))
+            .Where(x => x.DocumentType.DocumentResponseMobiles != null && x.DocumentType.DocumentTypeId == documentTypeId)
+            .SelectMany(x => x.DocumentType.DocumentResponseMobiles!,
+                (x, doc) => new { x.DocumentType.DocumentTypeId, x.DocumentType.DocumentTypeName, Document = doc, x.WorkFlowId })
+            .GroupBy(x => x.DocumentTypeId)
+            .Select(g =>
+                g.Select(x =>
+                {
+                    x.Document.WorkFlowId = x.WorkFlowId ?? Guid.Parse("00000000-0000-0000-0000-000000000000"); // Gán PropertyX vào Document
+                    return x.Document;
+                }).ToList()
+            )
+            .ToList();
+        return ResponseUtil.GetObject(result1, ResponseMessages.GetSuccessfully, HttpStatusCode.OK, 1);
     }
 
     public async Task<ResponseDto> GetDocumentByNameMobile(string documentName, Guid userId)
@@ -462,12 +487,12 @@ public partial class DocumentService : IDocumentService
 
         var versions = document.DocumentVersions.ToList();
         var signature = document.DocumentVersions.FirstOrDefault(x => x.IsFinalVersion)?.DocumentSignatures;
-        var dateExpires = DateTime.MaxValue;
-        if (signature != null)
-            foreach (var sig in signature.Where(sig => sig.SignedAt < dateExpires))
-            {
-                dateExpires = sig.SignedAt;
-            }
+        var dateExpires = document.ExpirationDate;
+        // if (signature != null)
+        //     foreach (var sig in signature.Where(sig => sig.SignedAt < dateExpires))
+        //     {
+        //         dateExpires = sig.SignedAt;
+        //     }
 
 
         signature ??= [];
@@ -480,6 +505,7 @@ public partial class DocumentService : IDocumentService
             NumberOfDocument = document.NumberOfDocument ?? String.Empty,
             Sender = document.Sender ?? String.Empty,
             CreateDate = document.CreatedDate ,
+            SystemNumberOfDocument = document.SystemNumberOfDoc,
             CreatedBy = document.User.FullName ?? String.Empty,
             DateReceived = document.DateReceived,
             WorkflowName = document.DocumentWorkflowStatuses.FirstOrDefault().Workflow.WorkflowName ?? String.Empty,
@@ -758,11 +784,13 @@ public partial class DocumentService : IDocumentService
             users = users.Distinct().ToList();
             users = users.Where(u => u != null).ToList();
             var divisions = users.Select(u => u?.Division?.DivisionName).Distinct().ToList();
-            var userList = users.Select(u => new UserResponseMobile()
+            var userList = users.Select(u => new Viewer()
             {
                 UserId = u.UserId,
                 FullName = u.UserName,
-                DivisionName = u.Division.DivisionName
+                DivisionName = u.Division.DivisionName,
+                Avatar = u.Avatar,
+                UserName = u.UserName
             }).ToList();
             var version = "0";
             var user = await _unitOfWork.UserUOW.FindUserByIdAsync(userId);
@@ -774,22 +802,32 @@ public partial class DocumentService : IDocumentService
             var sizes = await GetDocumentSize(Path.Combine(Directory.GetCurrentDirectory(), "data", "storage",
                 "document",
                 documentId.ToString(), v.DocumentVersionId.ToString(), document.DocumentName));
+            var userApprove = v.DocumentSignatures.Where(x=>x.DigitalCertificate.IsUsb==null).Select(x => x.DigitalCertificate.User).Distinct().ToList();
+            var approveList = userApprove.Select(x => new Viewer()
+            {
+                UserId = x.UserId,
+                FullName = x.FullName,
+                DivisionName = x.Division.DivisionName,
+                Avatar = x.Avatar,
+                UserName = x.UserName
+            }).ToList();
             var result = new DocumentDetailResponse()
             {
                 Sizes = sizes,
-                DateExpired = document.ExpirationDate==null? DateTime.MinValue : document.Deadline,
-                Deadline = document.Deadline==null? DateTime.MinValue : document.Deadline,
-                Receiver = document.User.FullName?? string.Empty,
-                Sender = document.Sender ?? string.Empty,
+                DateExpired = document.ExpirationDate,
+                Deadline = document.Deadline,
+                Receiver = document.User.FullName,
+                Sender = document.Sender,
                 WorkFlowName = document.DocumentWorkflowStatuses.FirstOrDefault().Workflow.WorkflowName,
                 Scope = document.DocumentWorkflowStatuses.FirstOrDefault().Workflow.Scope.ToString(),
                 SystemNumberDocument = document.SystemNumberOfDoc,
                 DocumentId = document.DocumentId,
+                ApproveByList = approveList,
                 DocumentName = document.DocumentName,
                 DocumentContent = document.DocumentContent,
                 NumberOfDocument = document.NumberOfDocument,
                 ProcessingStatus = document.ProcessingStatus,
-                DateIssued = document.DateIssued ?? DateTime.MinValue,
+                DateIssued = document.DateIssued,
                 DocumentTypeName = document.DocumentType.DocumentTypeName,
                 CreatedDate = document.CreatedDate,
                 CreatedBy = document.User.UserName,
@@ -807,11 +845,24 @@ public partial class DocumentService : IDocumentService
         var usersA = documentA.UserDocumentPermissions.Select(x => x.User).Distinct().ToList();
 
         var divisionsA = usersA.Select(u => u?.Division?.DivisionName).Distinct().ToList();
-        var userListA = usersA.Select(u => new UserResponseMobile()
+        var granter = documentA.UserDocumentPermissions.Where(x => x is { IsDeleted: false, GrantPermission: GrantPermission.Grant })
+            .Select(x => x.User).Distinct().ToList();
+        var viewer = documentA.UserDocumentPermissions.Where(x => x is { IsDeleted: false }).Select(x => x.User);
+        // var userListA = usersA.Select(u => new UserResponseMobile()
+        // {
+        //     UserId = u.UserId,
+        //     FullName = u.UserName,
+        //     DivisionName = u.Division.DivisionName
+        // }).ToList();
+        var ver = documentA.FinalDocument.DocumentVersions.FirstOrDefault(x => x.IsFinalVersion);
+        var userApproveA = ver.DocumentSignatures.Where(x=>x.DigitalCertificate.IsUsb==null).Select(x => x.DigitalCertificate.User).Distinct().ToList();
+        var approveListA = userApproveA.Select(x => new Viewer()
         {
-            UserId = u.UserId,
-            FullName = u.UserName,
-            DivisionName = u.Division.DivisionName
+            UserId = x.UserId,
+            FullName = x.FullName,
+            DivisionName = x.Division.DivisionName,
+            Avatar = x.Avatar,
+            UserName = x.UserName
         }).ToList();
         var resultA = new DocumentDetailResponse()
         {
@@ -823,12 +874,35 @@ public partial class DocumentService : IDocumentService
             DocumentContent = documentA.ArchivedDocumentContent,
             NumberOfDocument = documentA.NumberOfDocument,
             ProcessingStatus = 0,
+            Deadline = null,
             DateIssued = documentA.DateIssued,
+            ApproveByList = approveListA,
             DocumentTypeName = documentA.DocumentType.DocumentTypeName,
             CreatedDate = documentA.CreatedDate,
+            SystemNumberDocument = documentA.SystemNumberOfDoc,
+            DateExpired = documentA.ExpirationDate,
+            Sender = documentA.Sender,
+            Scope = documentA.Scope.ToString(),
+            GranterList = granter.Select(x => new Viewer()
+            {
+                UserId = x.UserId,
+                Avatar = x.Avatar,
+                FullName = x.FullName,
+                UserName = x.UserName,
+                DivisionName = x.Division.DivisionName
+            }).ToList(),
+            ViewerList = viewer.Select(x => new Viewer()
+            {
+                UserId = x.UserId,
+                Avatar = x.Avatar,
+                FullName = x.FullName,
+                UserName = x.UserName,
+                DivisionName = x.Division.DivisionName
+
+            }).ToList(),
             CreatedBy = documentA.CreatedBy,
             DivisionList = divisionsA,
-            UserList = userListA,
+            UserList = [],
             SignBys = ExtractSigners(documentA.ArchiveDocumentSignatures),
             DocumentUrl = documentA.ArchivedDocumentUrl
         };

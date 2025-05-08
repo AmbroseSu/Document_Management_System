@@ -773,10 +773,10 @@ public async Task<ResponseDto> UploadSignatureImgAsync(UpdateSignatureRequest up
                 ValidFrom = DateTime.Now,
                 ValidTo = DateTime.Now.AddYears(99),
                 Subject = user.FullName,
-                IsUsb = null,
+                IsUsb = updateSignatureRequest.isUsb,
                 SignatureImageUrl = url,
                 UserId = user.UserId,
-                User = user
+                User = user,
             };
             await _unitOfWork.DigitalCertificateUOW.AddAsync(cer);
             // _fileService.InsertTextToImage(name, updateSignatureRequest.Name);

@@ -7,24 +7,23 @@ services:
       dockerfile: Dockerfile
     container_name: dms
     ports:
-      - "5290:5290"  # Chỉ giữ cổng 5290
+      - "5290:5290"
+      - "5291:5291"
     volumes:
       - ./DocumentManagementSystemApplication/data:/app/data
     env_file:
       - ./.env
     networks:
-      - app-network
+      - dmsBe
     restart: unless-stopped
-
+    
   ai:
     image: ambrose47/ocr-flask-app:latest
     container_name: aiDms
     ports:
       - "5000:5000"
     networks:
-      - app-network
-    restart: unless-stopped
-
+      - dmsBe
 networks:
-  app-network:
-    external: true
+  dmsBe:
+    driver: bridge
