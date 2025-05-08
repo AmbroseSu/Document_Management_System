@@ -1076,6 +1076,13 @@ public partial class TaskService : ITaskService
         }
             
             
+        if (task.TaskStatus == TasksStatus.Revised)
+        {
+            if (task.StartDate == DateTime.MinValue)
+            {
+                task.TaskStatus = TasksStatus.Waiting;
+            }
+        }
 
             var hasChanges = false;
 
@@ -1103,6 +1110,8 @@ public partial class TaskService : ITaskService
                 task.EndDate = taskRequest.EndDate.Value;
                 hasChanges = true;
             }
+
+
 
             if (taskRequest.UserId != null && task.UserId != taskRequest.UserId)
             {
@@ -1874,7 +1883,12 @@ public partial class TaskService : ITaskService
                         var documentVersion =
                             documentVersions.OrderByDescending(dv => dv.VersionNumber).FirstOrDefault();
                         documentVersion.IsFinalVersion = false;
+                        // var documentVersionTemplVersion =
+                        //     documentVersions.Where(dv => dv.VersionNumber.Equals("0")).FirstOrDefault();
+                        // documentVersionTemplVersion.IsFinalVersion = true;
+                        
                         await _unitOfWork.DocumentVersionUOW.UpdateAsync(documentVersion);
+                       // await _unitOfWork.DocumentVersionUOW.UpdateAsync(documentVersionTemplVersion);
                         await _unitOfWork.SaveChangesAsync();
                     }
 
@@ -1909,7 +1923,7 @@ public partial class TaskService : ITaskService
                         }
                         else
                         {
-                            orderedTask.TaskStatus = TasksStatus.Waiting;
+                            orderedTask.TaskStatus = TasksStatus.Revised;
                             orderedTask.StartDate = DateTime.MinValue;
                             orderedTask.EndDate = DateTime.MinValue;
                             orderedTask.UpdatedDate = DateTime.UtcNow;
@@ -2089,7 +2103,7 @@ public partial class TaskService : ITaskService
                             }
                         }
 
-if (document.FinalArchiveDocument == null)
+                       if (document.FinalArchiveDocument == null)
                         {
                             return ResponseUtil.Error("Final archive document not found", ResponseMessages.OperationFailed,
                                 HttpStatusCode.NotFound);
