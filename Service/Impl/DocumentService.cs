@@ -232,11 +232,21 @@ public partial class DocumentService : IDocumentService
                 WorkFlowId = Guid.Parse("00000000-0000-0000-0000-000000000000"),
                 WorkFlowName = "Đã lưu",
                 DocumentTypes = archiveDoc.Select(x =>
-                    new DocumentTypeResponseMobile()
                     {
-                        DocumentTypeId = x.DocumentTypeId,
-                        DocumentTypeName = x.DocumentType.DocumentTypeName,
-                        DocumentResponseMobiles = []
+                        var isRevoke = false;
+                        var isRevokedBy = false;
+                        var isReplaced = false;
+                        var isReplacedBy = false;
+                        if(x.ArchivedDocumentStatus == ArchivedDocumentStatus.Withdrawn && x.DocumentRevokeId != null) isRevokedBy = true;
+                        if(x.DocumentRevokeId != null && x.ArchivedDocumentStatus!= ArchivedDocumentStatus.Withdrawn) isRevoke = true;
+                        if(x.ArchivedDocumentStatus == ArchivedDocumentStatus.Withdrawn && x.DocumentRevokeId != null && x.DocumentReplaceId != null) isRevokedBy = true;
+
+                            return new DocumentTypeResponseMobile()
+                            {
+                                DocumentTypeId = x.DocumentTypeId,
+                                DocumentTypeName = x.DocumentType.DocumentTypeName,
+                                DocumentResponseMobiles = []
+                            };
                     }
                 ).Distinct().ToList()
             };

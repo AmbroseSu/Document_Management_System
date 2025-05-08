@@ -65,7 +65,10 @@ public class ArchivedDocumentRepository : IArchivedDocumentRepository
                 .Include(d => d.DocumentType)
                 .Include(d => d.ArchiveDocumentSignatures)
                 .ThenInclude(d => d.DigitalCertificate)
-                .ThenInclude(d => d.User));
+                .ThenInclude(d => d.User)
+                .Include(x => x.DocumentRevokes)
+                .Include(x => x.FinalDocument)
+                .Include(x => x.DocumentReplaces));
     }
 
     public async Task<IEnumerable<ArchivedDocument>> GetAllArchiveTemplates()
