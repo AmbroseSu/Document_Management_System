@@ -933,7 +933,7 @@ public partial class TaskService : ITaskService
             if (task.IsDeleted)
                 return ResponseUtil.Error(ResponseMessages.TaskAlreadyDeleted, ResponseMessages.OperationFailed,
                     HttpStatusCode.NotFound);
-            if (task.TaskStatus != TasksStatus.Waiting || task.TaskStatus != TasksStatus.Revised)
+            if (task.TaskStatus != TasksStatus.Waiting && task.TaskStatus != TasksStatus.Revised)
                 return ResponseUtil.Error(ResponseMessages.TaskCanNotUpdate, ResponseMessages.OperationFailed,
                     HttpStatusCode.NotFound);
 
@@ -977,7 +977,7 @@ public partial class TaskService : ITaskService
             if (currentIndex < orderedTasks.Count - 1) // Kiểm tra xem có task tiếp theo hay không
             {
                 var nextTask = orderedTasks[currentIndex + 1];
-                if (nextTask.StartDate < taskRequest.EndDate)
+                if (nextTask.StartDate < taskRequest.EndDate && nextTask.StartDate != DateTime.MinValue)
                 {
                     return ResponseUtil.Error(
                         ResponseMessages.TaskStartdayNextTaskLowerEndDayCurrentTask,
