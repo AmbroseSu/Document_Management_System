@@ -88,8 +88,9 @@ namespace DocumentManagementSystemApplication.Controllers
             return result;
         }
 
+        //[AllowAnonymous]
         [HttpGet("view-all-type-documents-by-workflow-mobile")]
-        [AuthorizeResource("[Document] View All Type Documents By WorkFlow Mobile")]
+        //[AuthorizeResource("[Document] View All Type Documents By WorkFlow Mobile")]
         public async Task<ResponseDto> ViewAllTypeDocumentsByWorkFlowMobile()
         {
             var id = User.FindFirst("userid")?.Value;
@@ -98,7 +99,7 @@ namespace DocumentManagementSystemApplication.Controllers
         }
 
         [HttpGet("view-all-type-documents-mobile")]
-        [AuthorizeResource("[Document] View All Type Documents Mobile")]
+        //[AuthorizeResource("[Document] View All Type Documents Mobile")]
         public async Task<ResponseDto> ViewAllTypeDocumentsMobile()
         {
             var id = User.FindFirst("userid")?.Value;
@@ -107,7 +108,7 @@ namespace DocumentManagementSystemApplication.Controllers
         }
 
         [HttpGet("view-all-documents-mobile")]
-        [AuthorizeResource("[Document] View All Documents Mobile")]
+        //[AuthorizeResource("[Document] View All Documents Mobile")]
         public async Task<ResponseDto> ViewAllDocumentsMobile([FromQuery] Guid? workFlowId,
             [FromQuery] Guid documentTypeId)
         {
@@ -117,7 +118,7 @@ namespace DocumentManagementSystemApplication.Controllers
         }
 
         [HttpGet("view-detail-documents-mobile")]
-        [AuthorizeResource("[Document] View Detail Documents Mobile")]
+        //[AuthorizeResource("[Document] View Detail Documents Mobile")]
         public async Task<ResponseDto> ViewDetailDocumentsMobile([FromQuery] Guid documentId,
             [FromQuery] Guid workFlowId)
         {
@@ -127,7 +128,7 @@ namespace DocumentManagementSystemApplication.Controllers
         }
 
         [HttpGet("view-all-documents-by-document-type-mobile")]
-        [AuthorizeResource("[Document] View All Documents By Document Type Mobile")]
+        //[AuthorizeResource("[Document] View All Documents By Document Type Mobile")]
         public async Task<ResponseDto> ViewAllDocumentsByTypeMobile([FromQuery] Guid documentTypeId)
         {
             var id = User.FindFirst("userid")?.Value;
@@ -136,7 +137,7 @@ namespace DocumentManagementSystemApplication.Controllers
         }
 
         [HttpGet("update-clear-cache-document-mobile")]
-        [AuthorizeResource("[Document] Update Clear Cache Document Mobile")]
+        //[AuthorizeResource("[Document] Update Clear Cache Document Mobile")]
         public async Task<ResponseDto> UpdateClearCacheDocumentMobile()
         {
             var id = User.FindFirst("userid")?.Value;
