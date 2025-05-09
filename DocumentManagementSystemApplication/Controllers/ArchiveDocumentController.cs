@@ -42,7 +42,8 @@ namespace DocumentManagementSystemApplication.Controllers
         [AuthorizeResource("[ArchiveDocument] Create Send Email")]
         public async Task<ResponseDto> SendEmail([FromBody] EmailRequest emailRequest)
         {
-            var result = await _emailService.SendEmailWithOAuth2(emailRequest);
+            var userId = User.FindFirst("userid")?.Value;
+            var result = await _emailService.SendEmailWithOAuth2(emailRequest, Guid.Parse(userId));
             return result;
         }
         

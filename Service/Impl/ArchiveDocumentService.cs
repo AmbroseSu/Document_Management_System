@@ -38,15 +38,17 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
     private readonly IFileService _fileService;
     private readonly IDocumentService _documentService;
     private readonly MongoDbService _mongoDbService;
+    private readonly ILoggingService _loggingService;
 
 
-    public ArchiveDocumentService(IMapper mapper, IUnitOfWork unitOfWork,IOptions<AppsetingOptions> options, IFileService fileService, IDocumentService documentService, MongoDbService mongoDbService)
+    public ArchiveDocumentService(IMapper mapper, IUnitOfWork unitOfWork,IOptions<AppsetingOptions> options, IFileService fileService, IDocumentService documentService, MongoDbService mongoDbService, ILoggingService loggingService)
     {
         _mapper = mapper;
         _unitOfWork = unitOfWork;
         _fileService = fileService;
         _documentService = documentService;
         _mongoDbService = mongoDbService;
+        _loggingService = loggingService;
         _host = options.Value.Host;
 
     }
@@ -308,7 +310,6 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
             {
                 documentId = docA.DocumentRevokeId,
                 DocumentName = docA.DocumentRevokes?.ArchivedDocumentName,
-                
             },
             ReplacedDocument = new SimpleDocumentResponse()
             {
@@ -411,6 +412,7 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
 
         await _unitOfWork.ArchivedDocumentUOW.AddAsync(template);
         await _unitOfWork.SaveChangesAsync();
+        await _loggingService.WriteLogAsync(userId, $"Tạo mẫu tài liệu {template.ArchivedDocumentName} thành công.");
         return ResponseUtil.GetObject("hehe", ResponseMessages.CreatedSuccessfully, HttpStatusCode.OK, 1);
     }
 
