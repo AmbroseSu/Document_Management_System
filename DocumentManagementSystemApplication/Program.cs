@@ -4,6 +4,8 @@ using System.Text.Json.Serialization;
 using BusinessObject.Option;
 using DataAccess;
 using DotNetEnv;
+using Elastic.Clients.Elasticsearch;
+using Elastic.Transport;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.IdentityModel.Tokens;
@@ -108,6 +110,11 @@ builder.Services.AddSwaggerGen(options =>
         }
     });
 });
+
+var esConfig = builder.Configuration.GetSection("Elasticsearch");
+var url = esConfig["Url"];
+var username = esConfig["Username"];
+var password = esConfig["Password"];
 
 builder.Services.AddAuthentication(options =>
     {
@@ -216,7 +223,15 @@ builder.Services.AddCors(options =>
     });
 });
 
+
+builder.Services.AddSingleton<ElasticsearchClient>(sp =>
+{
+    var settings = new ElasticsearchClientSettings(new Uri(url))
+        .Authentication(new BasicAuthentication(username, password));
+    return new ElasticsearchClient(settings);
+});
 /*builder.Services.AddScoped(typeof(IBaseRepository<>), typeof(BaseRepository<>));*/
+builder.Services.AddScoped<IDocumentElasticRepository, DocumentElasticRepository>();
 builder.Services.AddSingleton<ILoggerFactory, LoggerFactory>(); // Đảm bảo ILogger được inject
 builder.Services.AddSingleton<MongoDbService>();
 builder.Services.AddScoped<ILoggingService, LoggingService>();

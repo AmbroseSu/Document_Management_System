@@ -14,7 +14,7 @@ public class UnitOfWork : IUnitOfWork
         IResourceRepository resourceUow, IPermissionRepository permissionUow, IRoleRepository roleUow,
         IRoleResourceRepository roleResourceUow, IUserRoleRepository userRoleUow,
         IVerificationOtpRepository verificationOtpUow, IDigitalCertificateRepository digitalCertificateUow,
-        IDivisionRepository divisionUow, IDocumentTypeRepository documentTypeUow, IWorkflowRepository workflowUow, IStepRepository stepUow, IFlowRepository flowUow, IWorkflowFlowTransitionRepository workflowFlowTransitionUow, IWorkflowFlowRepository workflowFlowUow, ITaskRepository taskUow, IArchivedDocumentRepository archivedDocumentUow, IArchiveDocumentSignatureRepository archiveDocumentSignatureUow, IDocumentRepository documentUow, IDocumentSignatureRepository documentSignatureUow, IDocumentWorkflowStatusRepository documentWorkflowStatusUow, IDocumentTypeWorkflowRepository documentTypeWorkflowUow, IRedisCacheRepository redisCacheUow, IDocumentVersionRepository documentVersionUow, ICommentRepository commentUow, IUserDocPermissionRepository userDocPermissionUow)
+        IDivisionRepository divisionUow, IDocumentTypeRepository documentTypeUow, IWorkflowRepository workflowUow, IStepRepository stepUow, IFlowRepository flowUow, IWorkflowFlowTransitionRepository workflowFlowTransitionUow, IWorkflowFlowRepository workflowFlowUow, ITaskRepository taskUow, IArchivedDocumentRepository archivedDocumentUow, IArchiveDocumentSignatureRepository archiveDocumentSignatureUow, IDocumentRepository documentUow, IDocumentSignatureRepository documentSignatureUow, IDocumentWorkflowStatusRepository documentWorkflowStatusUow, IDocumentTypeWorkflowRepository documentTypeWorkflowUow, IRedisCacheRepository redisCacheUow, IDocumentVersionRepository documentVersionUow, ICommentRepository commentUow, IUserDocPermissionRepository userDocPermissionUow,IDocumentElasticRepository documentElasticUow)
     {
         UserUOW = userUow ?? throw new ArgumentNullException(nameof(userUow));
         _disposed = false;
@@ -45,6 +45,7 @@ public class UnitOfWork : IUnitOfWork
         DocumentVersionUOW = documentVersionUow;
         CommentUOW = commentUow;
         UserDocPermissionUOW = userDocPermissionUow;
+        DocumentElasticUOW = documentElasticUow;
     }
 
     public IUserRepository UserUOW { get; }
@@ -75,6 +76,7 @@ public class UnitOfWork : IUnitOfWork
     public IDocumentVersionRepository DocumentVersionUOW { get; set; }
     public ICommentRepository CommentUOW { get; set; }
     public IUserDocPermissionRepository UserDocPermissionUOW { get; set; }
+    public IDocumentElasticRepository DocumentElasticUOW { get; set; }
 
     public async Task<int> SaveChangesAsync()
     {

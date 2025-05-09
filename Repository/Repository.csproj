@@ -11,4 +11,8 @@
         <ProjectReference Include="..\DataAccess\DataAccess.csproj"/>
     </ItemGroup>
 
+    <ItemGroup>
+      <PackageReference Include="Elastic.Clients.Elasticsearch" Version="9.0.3" />
+    </ItemGroup>
+
 </Project>

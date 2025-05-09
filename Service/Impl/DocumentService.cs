@@ -1678,6 +1678,13 @@ public partial class DocumentService : IDocumentService
         // throw new NotImplementedException();
     }
 
+    public async Task<ResponseDto> GetAllDocumentElastic(string query)
+    {
+        var documents = await _unitOfWork.DocumentElasticUOW.SearchAsync(query);
+        return ResponseUtil.GetObject(documents,
+            ResponseMessages.GetSuccessfully, HttpStatusCode.OK, 1);
+    }
+
     private static DateTime ParsePdfDate(string pdfDate)
     {
         // Bỏ tiền tố "D:"

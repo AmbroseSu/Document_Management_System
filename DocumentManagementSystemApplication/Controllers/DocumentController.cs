@@ -39,6 +39,15 @@ namespace DocumentManagementSystemApplication.Controllers
         {
             return await _fileService.ConvertDocToPdf(file);
         }
+        
+        [AllowAnonymous]
+        [HttpGet("view-document-elasticsearch")]
+        public async Task<ResponseDto> ViewDocumentElasticsearch([FromQuery]string query)
+        {
+            var id = User.FindFirst("userid")?.Value;
+            var result = await _documentService.GetAllDocumentElastic(query);
+            return result;
+        }
 
 
         [HttpPost("create-upload-document")]
