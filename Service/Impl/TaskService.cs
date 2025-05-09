@@ -2533,6 +2533,7 @@ public partial class TaskService : ITaskService
                     SignedBy = signBy,
                     ArchivedDocumentUrl = url,
                     CreatedDate = DateTime.Now,
+                    ExpirationDate = doc.ExpirationDate,
                     Sender = null,
                     CreatedBy = doc.User.FullName,
                     ExternalPartner = null,
@@ -2563,6 +2564,7 @@ public partial class TaskService : ITaskService
                 archivedDoc.SignedBy = signBy;
                 archivedDoc.ArchivedDocumentUrl =
                     $"{_host}/api/Document/view-file/{archivedDoc.ArchivedDocumentId}?version=1&isArchive=true";
+                archivedDoc.ExpirationDate = doc.ExpirationDate;
                 archivedDoc.CreatedBy = doc.User.UserName;
                 archivedDoc.ArchivedDocumentStatus = ArchivedDocumentStatus.Archived;
                 archivedDoc.Scope = (await _unitOfWork.WorkflowUOW.FindWorkflowByIdAsync(workflowId)).Scope;
@@ -2901,6 +2903,7 @@ public partial class TaskService : ITaskService
                             NumberOfDocument = doc.NumberOfDocument,
                             SignedBy = signByString,
                             CreatedDate = DateTime.Now,
+                            ExpirationDate = doc.ExpirationDate,
                             CreatedBy = currentTask.User.UserName,
                             ArchivedDocumentStatus = ArchivedDocumentStatus.Archived,
                             DateIssued = doc.DateIssued??DateTime.Now,
@@ -2933,6 +2936,7 @@ public partial class TaskService : ITaskService
                         archiveDoc.ArchivedDocumentContent = doc.DocumentContent;
                         archiveDoc.NumberOfDocument = doc.NumberOfDocument;
                         archiveDoc.SignedBy = signByString;
+                        archiveDoc.ExpirationDate = doc.ExpirationDate;
                         archiveDoc.ArchivedDocumentUrl =
                             $"{_host}/api/Document/view-file/{archiveId}?version=1&isArchive=true";
                         archiveDoc.CreatedBy = doc.User.UserName;
