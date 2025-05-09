@@ -19,7 +19,7 @@ public class ResourceController : ControllerBase
     }
 
     [HttpPost("create-resource")]
-    [AuthorizeResource("[Resource] Create Resource")]
+    //AuthorizeResource("[Resource] Create Resource")]
     public async Task<ResponseDto> CreateResource([FromBody] ResourceDto resourceDto)
     {
         return await _resourceService.CreateResource(resourceDto);
