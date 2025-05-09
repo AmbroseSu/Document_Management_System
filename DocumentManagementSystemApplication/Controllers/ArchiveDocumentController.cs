@@ -39,7 +39,7 @@ namespace DocumentManagementSystemApplication.Controllers
         
         
         [HttpPost("create-send-email")]
-        [AuthorizeResource("[ArchiveDocument] Create Send Email")]
+        [AuthorizeResource("[Archivedocument] Create Send Email")]
         public async Task<ResponseDto> SendEmail([FromBody] EmailRequest emailRequest)
         {
             var userId = User.FindFirst("userid")?.Value;
@@ -56,7 +56,7 @@ namespace DocumentManagementSystemApplication.Controllers
         // }
         
         [HttpPost("view-all-documents")]
-        [AuthorizeResource("[ArchiveDocument] View All Documents")]
+        [AuthorizeResource("[Archivedocument] View All Documents")]
         public async Task<ResponseDto> GetAllDocuments([FromBody]GetAllArchiveRequestDto getAllArchiveRequestDto, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
             
@@ -67,7 +67,7 @@ namespace DocumentManagementSystemApplication.Controllers
         }
 
         [HttpGet("view-archive-document-detail")]
-        [AuthorizeResource("[ArchiveDocument] View Archive Document Detail")]
+        [AuthorizeResource("[Archivedocument] View Archive Document Detail")]
         public async Task<ResponseDto> GetArchiveDocumentDetail([FromQuery] Guid documentId)
         {
             var userId = User.FindFirst("userid")?.Value;
@@ -76,7 +76,7 @@ namespace DocumentManagementSystemApplication.Controllers
         }
         
         [HttpGet("view-all-templates")]
-        [AuthorizeResource("[ArchiveDocument] View All Templates")]
+        [AuthorizeResource("[Archivedocument] View All Templates")]
         public async Task<ResponseDto> GetAllTemplates([FromQuery]string? documentName, [FromQuery]string? name,[FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
             var templates = await _archiveDocumentService.GetAllArchiveTemplates(documentName,name,page,pageSize);
@@ -84,7 +84,7 @@ namespace DocumentManagementSystemApplication.Controllers
         }
         
         [HttpPost("create-template")]
-        [AuthorizeResource("[ArchiveDocument] Create Template")]
+        [AuthorizeResource("[Archivedocument] Create Template")]
         public async Task<ResponseDto> CreateTemplate([FromForm] ArchiveDocumentRequest archiveDocumentRequest)
         {
             var userId = User.FindFirst("userid")?.Value;
@@ -101,7 +101,7 @@ namespace DocumentManagementSystemApplication.Controllers
         }
         
         [HttpGet("view-download-template")]
-        [AuthorizeResource("[ArchiveDocument] View Download Template")]
+        [AuthorizeResource("[Archivedocument] View Download Template")]
         public async Task<IActionResult> DownloadTemplate([FromQuery] string templateId,[FromQuery]bool? isPdf = false)
         {
             var userId = User.FindFirst("userid")?.Value;
@@ -133,7 +133,7 @@ namespace DocumentManagementSystemApplication.Controllers
         // }
         
         [HttpPost("create-withdraw-document")]
-        [AuthorizeResource("[ArchiveDocument] Create Withdraw Document")]
+        [AuthorizeResource("[Archivedocument] Create Withdraw Document")]
         public async Task<ResponseDto> WithdrawDocument([FromQuery]Guid archiveDocumentId,[FromBody]DocumentPreInfo documentPreInfo)
         {
             var userId = User.FindFirst("userid")?.Value;

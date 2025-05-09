@@ -34,7 +34,7 @@ namespace DocumentManagementSystemApplication.Controllers
         
         [AllowAnonymous]
         [HttpPost("create-convert-doc-to-pdf")]
-        [AuthorizeResource("[Document] Create Convert Doc To Pdf")]
+        //[AuthorizeResource("[Document] Create Convert Doc To Pdf")]
         public async Task<IActionResult> ConvertDocToPdf(IFormFile file)
         {
             return await _fileService.ConvertDocToPdf(file);
