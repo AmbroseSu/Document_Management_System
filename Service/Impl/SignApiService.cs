@@ -21,12 +21,14 @@ public class SignApiService : ISignApiService
     private readonly IUnitOfWork _unitOfWork;
     private readonly IEmailService _emailService;
     private readonly string _storagePath = Path.Combine(Directory.GetCurrentDirectory(), "data", "storage");
-
-    public SignApiService(IFileService fileService, IUnitOfWork unitOfWork, IEmailService emailService)
+    private readonly IDocumentService _documentService;
+    
+    public SignApiService(IFileService fileService, IUnitOfWork unitOfWork, IEmailService emailService, IDocumentService documentService)
     {
         _fileService = fileService;
         _unitOfWork = unitOfWork;
         _emailService = emailService;
+        _documentService = documentService;
     }
 
 
@@ -290,6 +292,15 @@ public class SignApiService : ISignApiService
                 OrderIndex = version?.DocumentSignatures?.Count + 1 ?? 0,
                 SignedAt = DateTime.UtcNow
             };
+            var listMeta = _documentService.CheckMetaDataFile(filePath);
+            var latestMeta = listMeta
+                .Where(x => x.SingingDate != null)
+                .OrderByDescending(x => x.SingingDate)
+                .FirstOrDefault();
+            digitalCertificate.SerialNumber = latestMeta?.SerialNumber;
+            digitalCertificate.Issuer = latestMeta?.Issuer;
+            digitalCertificate.Subject = latestMeta.SignerName;
+            await _unitOfWork.DigitalCertificateUOW.UpdateAsync(digitalCertificate);
             await _unitOfWork.DocumentSignatureUOW.AddAsync(documentSignature);
             await _unitOfWork.SaveChangesAsync();
             
