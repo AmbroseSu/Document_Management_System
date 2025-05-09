@@ -42,7 +42,7 @@ namespace DocumentManagementSystemApplication.Controllers
 
 
         [HttpPost("create-upload-document")]
-        [AuthorizeResource("[Document] Create Upload Document")]
+        //[AuthorizeResource("[Document] Create Upload Document")]
         public async Task<ResponseDto> UploadDocument(IFormFile file)
         {
             var id = User.FindFirst("userid")?.Value;
@@ -51,7 +51,7 @@ namespace DocumentManagementSystemApplication.Controllers
         }
 
         [HttpPost("create-incoming-document")]
-        [AuthorizeResource("[Document] Create Incoming Document")]
+        //[AuthorizeResource("[Document] Create Incoming Document")]
         public async Task<ResponseDto> CreateIncomingDocument([FromBody] DocumentUploadDto documentUploadDto)
         {
             var id = User.FindFirst("userid")?.Value;
@@ -61,7 +61,7 @@ namespace DocumentManagementSystemApplication.Controllers
 
 
         [HttpGet("view-file/{documentId}")]
-        [AuthorizeResource("[Document] View File")]
+        //[AuthorizeResource("[Document] View File")]
         public async Task<IActionResult> DownloadDocumentByName([FromRoute] Guid documentId,
             [FromQuery] string? version, [FromQuery] bool isArchive,[FromQuery]bool isDoc=false)
         {
@@ -72,7 +72,7 @@ namespace DocumentManagementSystemApplication.Controllers
         }
 
         [HttpGet("view-file-by-name")]
-        [AuthorizeResource("[Document] View File By Name")]
+        //[AuthorizeResource("[Document] View File By Name")]
         public async Task<IActionResult> DownloadDocumentByFileName([FromQuery] string documentName)
         {
             var id = User.FindFirst("userid")?.Value;
@@ -80,7 +80,7 @@ namespace DocumentManagementSystemApplication.Controllers
         }
 
         [HttpPost("update-confirm-task-with-document")]
-        [AuthorizeResource("[Document] Update Confirm Task With Document")]
+        //[AuthorizeResource("[Document] Update Confirm Task With Document")]
         public async Task<ResponseDto> UpdateConfirmTaskWithDocument([FromQuery] Guid documentId)
         {
             var id = User.FindFirst("userid")?.Value;
@@ -148,7 +148,7 @@ namespace DocumentManagementSystemApplication.Controllers
         }
 
         [HttpGet("view-document-by-name")]
-        [AuthorizeResource("[Document] View Document By Name")]
+        //[AuthorizeResource("[Document] View Document By Name")]
         public async Task<ResponseDto> GetDocumentByNameMobile([FromQuery] string documentName)
         {
             var id = User.FindFirst("userid")?.Value;
@@ -158,7 +158,7 @@ namespace DocumentManagementSystemApplication.Controllers
         }
 
         [HttpGet("view-detail-document")]
-        [AuthorizeResource("[Document] View Detail Document")]
+        //[AuthorizeResource("[Document] View Detail Document")]
         public async Task<ResponseDto> ViewDetailDocument([FromQuery] Guid documentId)
         {
             var id = User.FindFirst("userid")?.Value;
@@ -167,7 +167,7 @@ namespace DocumentManagementSystemApplication.Controllers
         }
 
         [HttpPost("view-my-self-document")]
-        [AuthorizeResource("[Document] View My Self Document")]
+        //[AuthorizeResource("[Document] View My Self Document")]
         public async Task<ResponseDto> ViewMySelfDocument([FromBody] GetAllMySelfRequestDto getAllMySelfRequestDto, [FromQuery] int page = 1,
             int pageSize = 10)
         {
@@ -177,14 +177,14 @@ namespace DocumentManagementSystemApplication.Controllers
         }
 
         [HttpGet("view-process-document-detail")]
-        [AuthorizeResource("[Document] View Process Document Detail")]
+        //[AuthorizeResource("[Document] View Process Document Detail")]
         public async Task<ResponseDto> ViewProcessDocumentDetail([FromQuery] Guid? documentId)
         {
             var result = await _documentService.ShowProcessDocumentDetail(documentId);
             return result;
         }
         [HttpPost("create-document-by-template")]
-        [AuthorizeResource("[Document] Create Document By Template")]
+        //[AuthorizeResource("[Document] Create Document By Template")]
         public async Task<ResponseDto> CreateDocumentByTemplate([FromBody] DocumentPreInfo documentPreInfo)
         {
             var id = User.FindFirst("userid")?.Value;
@@ -193,7 +193,7 @@ namespace DocumentManagementSystemApplication.Controllers
         }
         
         [HttpPost("create-upload-document-for-submit")]
-        [AuthorizeResource("[Document] Create Upload Document For Submit")]
+        //[AuthorizeResource("[Document] Create Upload Document For Submit")]
         public async Task<ResponseDto> UploadDocumentForSubmit([FromForm] DocumentUpload documentUpload)
         {
             var id = User.FindFirst("userid")?.Value;
@@ -202,7 +202,7 @@ namespace DocumentManagementSystemApplication.Controllers
         }
         
         [HttpPost("update-confirm-document-by-submit")]
-        [AuthorizeResource("[Document] Update Confirm Document By Submit")]
+        //[AuthorizeResource("[Document] Update Confirm Document By Submit")]
         public async Task<ResponseDto> UpdateConfirmDocumentBySubmit([FromBody] DocumentCompareDto documentUpload)
         {
             var id = User.FindFirst("userid")?.Value;

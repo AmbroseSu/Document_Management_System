@@ -21,7 +21,7 @@ namespace DocumentManagementSystemApplication.Controllers
         }
 
         [HttpPost("create-grand-permission-for-document")]
-        [AuthorizeResource("[Userdocpermission] Create Grand Permission For Document")]
+        //[AuthorizeResource("[Userdocpermission] Create Grand Permission For Document")]
         public async Task<ResponseDto> CreateGrandPermissionForDocument(
             [FromBody] GrantDocumentRequest grantDocumentRequest)
         {
