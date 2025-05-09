@@ -276,6 +276,7 @@ public partial class DocumentService : IDocumentService
                 .SelectMany(wf => wf.DocumentTypes ?? [])
                 .Sum(dt => dt.DocumentResponseMobiles?.Count ?? 0);
 
+            
             foreach (var wf in result)
             {
                 foreach (var dt in wf.DocumentTypes ?? [])
@@ -284,6 +285,7 @@ public partial class DocumentService : IDocumentService
                     dt.Percent = totalDocuments > 0
                         ? (float)Math.Round((count * 1f) / totalDocuments, 2)
                         : 0;
+                    dt.SumDoc = totalDocuments;
                 }
             }
 
@@ -319,6 +321,7 @@ public partial class DocumentService : IDocumentService
             .GroupBy(dt => dt.DocumentTypeId)
             .Select(g => new DocumentTypeResponseMobile
             {   
+                SumDoc = g.Sum(x => x.SumDoc),
                 DocumentTypeId = g.Key,
                 DocumentTypeName = g.FirstOrDefault()?.DocumentTypeName,
                 Percent = g.Sum(x => x.Percent ?? 0),

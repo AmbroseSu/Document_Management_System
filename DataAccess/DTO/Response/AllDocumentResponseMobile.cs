@@ -10,6 +10,7 @@ public class AllDocumentResponseMobile
 }
 public class DocumentTypeResponseMobile
 {
+    public int? SumDoc { get; set; } = 0;
     public Guid DocumentTypeId { get; set; }
     public string? DocumentTypeName { get; set; } 
     public float? Percent { get; set; } = 0;
