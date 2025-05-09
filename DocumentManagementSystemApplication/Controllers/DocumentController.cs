@@ -211,7 +211,7 @@ namespace DocumentManagementSystemApplication.Controllers
         }   
         
         [HttpGet("view-document-for-usb")]
-        [AuthorizeResource("[Document] View Document For Usb")]
+        //[AuthorizeResource("[Document] View Document For Usb")]
         public async Task<ResponseDto> ViewDocumentForUsb([FromQuery] Guid documentId)
         {
             var id = User.FindFirst("userid")?.Value;
@@ -220,7 +220,7 @@ namespace DocumentManagementSystemApplication.Controllers
         }
         
         [HttpPost("update-document-from-usb/{documentId:guid}")]
-        [AuthorizeResource("[Document] Update Document From Usb")]
+        //[AuthorizeResource("[Document] Update Document From Usb")]
         public async Task<ResponseDto> UpdateDocumentFromUsb([FromBody] DocumentForSignByUsb documentForSignByUsb,[FromRoute] Guid documentId)
         {
             var id = User.FindFirst("userid")?.Value;
