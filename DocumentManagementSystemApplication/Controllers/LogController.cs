@@ -83,7 +83,7 @@ namespace DocumentManagementSystemApplication.Controllers
         }
         
         [AllowAnonymous]
-        [HttpGet("download")]
+        [HttpGet("view-download")]
         public async Task<IActionResult> DownloadTool()
         {
             try
