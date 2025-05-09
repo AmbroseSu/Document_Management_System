@@ -93,7 +93,7 @@ public class UserController : ControllerBase
     }
     
     [AllowAnonymous]
-    //[HttpGet("view-avatar/{fileName}")]
+    [HttpGet("view-avatar/{fileName}")]
     //[AuthorizeResource("[User] View Avatar")]
     public async Task<IActionResult> GetAvatar(string fileName)
     {
