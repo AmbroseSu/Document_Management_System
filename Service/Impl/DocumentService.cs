@@ -44,6 +44,7 @@ public partial class DocumentService : IDocumentService
     private readonly MongoDbService _notificationCollection;
     private readonly IHubContext<NotificationHub> _hubContext;
     private readonly MongoDbService _mongoDbService;
+    private readonly ILoggingService _loggingService;
     private readonly string _storagePath = Path.Combine(Directory.GetCurrentDirectory(), "data", "storage");
 
 
@@ -51,7 +52,7 @@ public partial class DocumentService : IDocumentService
         ILogger<DocumentService> logger, IExternalApiService externalApiService,
         IDigitalCertificateService digitalCertificateService, IDocumentSignatureService documentSignatureService,
         IOptions<AppsetingOptions> options, INotificationService notificationService,
-        MongoDbService notificationCollection, IHubContext<NotificationHub> hubContext, MongoDbService mongoDbService)
+        MongoDbService notificationCollection, IHubContext<NotificationHub> hubContext, MongoDbService mongoDbService, ILoggingService loggingService)
     {
         _unitOfWork = unitOfWork;
         _mapper = mapper;
@@ -64,6 +65,7 @@ public partial class DocumentService : IDocumentService
         _notificationCollection = notificationCollection;
         _hubContext = hubContext;
         _mongoDbService = mongoDbService;
+        _loggingService = loggingService;
         _host = options.Value.Host;
     }
 
@@ -493,7 +495,7 @@ public partial class DocumentService : IDocumentService
         //     {
         //         dateExpires = sig.SignedAt;
         //     }
-
+        
 
         signature ??= [];
 
@@ -518,10 +520,14 @@ public partial class DocumentService : IDocumentService
             Versions = versions.Select(v => new VersionDetailRespone()
             {
                 VersionNumber = v.VersionNumber,
-                
                 CreatedDate = v.CreateDate,
                 Url = v.DocumentVersionUrl,
-                IsFinal = v.IsFinalVersion
+                IsFinal = v.IsFinalVersion,
+                ReasonReject = v.Comments?.FirstOrDefault(x=> x.IsDeleted==false)?.CommentContent,
+                DateReject = v.Comments?.FirstOrDefault(x=> x.IsDeleted==false)?.CreateDate,
+                UserName = v.Comments?.FirstOrDefault(x=> x.IsDeleted==false)?.User?.UserName,
+                FullName = v.Comments?.FirstOrDefault(x=> x.IsDeleted==false)?.User?.FullName,
+                Avatar = v.Comments?.FirstOrDefault(x=> x.IsDeleted==false)?.User?.Avatar
             }).ToList(),
             Tasks = task.Select(t => new TasksResponse()
             {
@@ -529,7 +535,15 @@ public partial class DocumentService : IDocumentService
                 TaskTitle = t.Title,
                 Description = t.Description,
                 TaskType = t.TaskType.ToString(),
-                Status = t.TaskStatus.ToString()
+                Status = t.TaskStatus.ToString(),
+                IsUsb = t.User.DigitalCertificates != null &&
+                        t.TaskStatus == TasksStatus.InProgress &&
+                        t.TaskType == TaskType.Sign
+                    ? t.User.DigitalCertificates
+                        .Where(x => x.IsUsb != null)
+                        .Select(x => x.IsUsb)
+                        .FirstOrDefault()
+                    : null
             }).ToList(),
             DigitalSignatures = signature.Where(x => x.DigitalCertificate!=null).Where(x => x.DigitalCertificate.IsUsb != null).Select(x => new SignatureResponse()
                 {
@@ -917,7 +931,6 @@ public partial class DocumentService : IDocumentService
 
     public async Task<ResponseDto> CreateIncomingDoc(DocumentUploadDto documentUploadDto, Guid userId)
     {
-        
         var name = GetString(documentUploadDto.CanChange.GetValueOrDefault("Name"));
         var sender = GetString(documentUploadDto.CanChange.GetValueOrDefault("Sender"));
         var numberOfDocument = GetString(documentUploadDto.CanChange.GetValueOrDefault("NumberOfDocument"));
@@ -927,13 +940,15 @@ public partial class DocumentService : IDocumentService
         var signerNames = GetList<string>(documentUploadDto.CannotChange.GetValueOrDefault("SignerName"));
         var singingDates = GetList<DateTime>(documentUploadDto.CannotChange.GetValueOrDefault("SingingDate"));
         var serialNumbers = GetList<string>(documentUploadDto.CannotChange.GetValueOrDefault("SerialNumber"));
-        var validFroms = GetList<DateTime>(documentUploadDto.CannotChange.GetValueOrDefault("ValidFrom"));
+        var validFroms = GetDateTime(documentUploadDto.CanChange.GetValueOrDefault("validFrom"));
+        var validTo = GetDateTime(documentUploadDto.CanChange.GetValueOrDefault("validTo"));
+        var validFromsCannot = GetList<DateTime>(documentUploadDto.CannotChange.GetValueOrDefault("ValidFrom"));
         var expirationDates = GetList<DateTime>(documentUploadDto.CannotChange.GetValueOrDefault("ExpirationDate"));
         var dateReceived = GetDateTime(documentUploadDto.CanChange.GetValueOrDefault("DateReceived"));
         var documentTypeId = GetGuid(documentUploadDto.CanChange.GetValueOrDefault("DocumentTypeId"));
         var workflowId = GetGuid(documentUploadDto.CanChange.GetValueOrDefault("WorkflowId"));
         var deadline = GetDateTime(documentUploadDto.CanChange.GetValueOrDefault("Deadline")) ?? DateTime.Now;
-        var validFrom = GetDateTime(documentUploadDto.CanChange.GetValueOrDefault("ValidFrom")) ?? DateTime.Now;
+        // var validFrom = GetDateTime(documentUploadDto.CanChange.GetValueOrDefault("ValidFrom")) ?? DateTime.Now;
         var workflowO = await _unitOfWork.WorkflowUOW.FindWorkflowByIdAsync(workflowId);
         var workflowFlow = workflowO.WorkflowFlows.Select(x => x).FirstOrDefault(x => x.FlowNumber == 1);
         var filter = Builders<Count>.Filter.Eq(x => x.Id, "base");
@@ -953,10 +968,11 @@ public partial class DocumentService : IDocumentService
             NumberOfDocument = numberOfDocument,
             CreatedDate = DateTime.Now,
             DocumentTypeId = documentTypeId,
+            ExpirationDate = validTo ?? DateTime.Now,
             ProcessingStatus = ProcessingStatus.InProgress,
             IsDeleted = false,
             Sender = sender,
-            DateIssued = validFrom,
+            DateIssued = validFroms,
             DateReceived = dateReceived,
             Deadline = deadline,
             UserId = userId,
@@ -995,7 +1011,7 @@ public partial class DocumentService : IDocumentService
                 Subject = signerNames[i], 
                 Issuer = issuers[i], 
                 SerialNumber = serialNumbers[i], 
-                ValidFrom = validFroms[i],
+                ValidFrom = validFromsCannot[i],
                 IsUsb = false
             };
             var signature = new DocumentSignature
@@ -1029,7 +1045,7 @@ public partial class DocumentService : IDocumentService
         var result = _mapper.Map<WorkflowDto>(workflow);
         var doc = _mapper.Map<DocumentDto>(document);
         // doc.DocumentVersion = _mapper.Map<DocumentVersionDto>(version);
-
+        await _loggingService.WriteLogAsync(userId, $"Tạo mới văn bản đầu vào với tên là: {document.DocumentName}");
         return ResponseUtil.GetCollection(new List<object> { result, doc }, "Success", HttpStatusCode.OK, 2, 1, 2, 2);
 
         Guid? GetGuid(object? obj)
@@ -1337,7 +1353,7 @@ public partial class DocumentService : IDocumentService
         await _unitOfWork.DocumentWorkflowStatusUOW.AddAsync(workflowStatus);
         await _unitOfWork.DocumentUOW.AddAsync(doc);
         await _unitOfWork.SaveChangesAsync();
-
+        await _loggingService.WriteLogAsync(userId,$"Tạo văn bản từ mẫu với tên là: {documentPreInfo.DocumentName}");
         return ResponseUtil.GetObject(docId, ResponseMessages.CreatedSuccessfully, HttpStatusCode.OK, 1);
         // throw new NotImplementedException();
     }
@@ -1383,7 +1399,7 @@ public partial class DocumentService : IDocumentService
             FileBase64 = base64,
         };
         File.Delete(url);
-
+        await _loggingService.WriteLogAsync(userId,$"Tải lên văn bản với tên là: {result.DocumentName}");
         return ResponseUtil.GetObject(result, ResponseMessages.CreatedSuccessfully, HttpStatusCode.OK, 1);
     }
 
@@ -1435,6 +1451,7 @@ public partial class DocumentService : IDocumentService
         // doc.DocumentVersions.Add(versionNow);
         await _unitOfWork.DocumentVersionUOW.AddAsync(versionNow);
         await _unitOfWork.SaveChangesAsync();
+        await _loggingService.WriteLogAsync(userId,$"Xác nhận thông tin cho văn bản {doc.DocumentName}");
         return ResponseUtil.GetObject(url, ResponseMessages.CreatedSuccessfully, HttpStatusCode.OK, 1);
     }
 
@@ -1612,6 +1629,7 @@ public partial class DocumentService : IDocumentService
                                     Path.Combine(_storagePath, "document", documentId.ToString(),
                                         version.DocumentVersionId.ToString(), document.DocumentName + ".pdf"), null);
                                 Console.WriteLine("Cer != null");
+                                await _loggingService.WriteLogAsync(userId,$"Ký văn bản với tên là {document.DocumentName} bằng USB thành công");
                                 return ResponseUtil.GetObject("Sign success",
                                     ResponseMessages.GetSuccessfully, HttpStatusCode.OK, 1);
                             }
@@ -1650,7 +1668,7 @@ public partial class DocumentService : IDocumentService
             //     HttpStatusCode.NotFound);
             throw new Exception("Document not found");
         }
-
+        
         // throw new NotImplementedException();
     }
 

@@ -38,15 +38,17 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
     private readonly IFileService _fileService;
     private readonly IDocumentService _documentService;
     private readonly MongoDbService _mongoDbService;
+    private readonly ILoggingService _loggingService;
 
 
-    public ArchiveDocumentService(IMapper mapper, IUnitOfWork unitOfWork,IOptions<AppsetingOptions> options, IFileService fileService, IDocumentService documentService, MongoDbService mongoDbService)
+    public ArchiveDocumentService(IMapper mapper, IUnitOfWork unitOfWork,IOptions<AppsetingOptions> options, IFileService fileService, IDocumentService documentService, MongoDbService mongoDbService, ILoggingService loggingService)
     {
         _mapper = mapper;
         _unitOfWork = unitOfWork;
         _fileService = fileService;
         _documentService = documentService;
         _mongoDbService = mongoDbService;
+        _loggingService = loggingService;
         _host = options.Value.Host;
 
     }
@@ -208,7 +210,7 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
         {
             templates = templates.Where(x => x.DocumentType.DocumentTypeName.ToLower().Contains(documentType.ToLower()));
         }
-        var response = templates.Where(p => p.ArchivedDocumentStatus==ArchivedDocumentStatus.Archived).Select(x =>
+        var response = templates.Where(p => p.ArchivedDocumentStatus==ArchivedDocumentStatus.Archived && p.Page != -99).Select(x =>
             new
             {
                 Id = x.ArchivedDocumentId,
@@ -263,6 +265,26 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
         ).ToList());
         var canGrant = permissions.Any(x => x.UserId == userId && x is { GrantPermission: GrantPermission.Grant, IsDeleted: false });
         var canDownLoad = permissions.Any(x => x.UserId == userId && x is { GrantPermission: GrantPermission.Download, IsDeleted: false });
+        bool? canRevoke = null;
+        if (docA.FinalDocument.UserId != userId)
+        {
+            canRevoke = null;
+        }
+        else
+        if (docA.ArchivedDocumentStatus is not  (ArchivedDocumentStatus.Sent or ArchivedDocumentStatus.Withdrawn ) || docA is { DocumentReplaceId: not null, DocumentRevokeId: null })
+        {
+            canRevoke = null;
+        }
+        else if (docA is { ArchivedDocumentStatus: ArchivedDocumentStatus.Sent, DocumentRevokeId: null } )
+        {
+            canRevoke = true;
+        }
+        else if (docA.ArchivedDocumentStatus == ArchivedDocumentStatus.Withdrawn && docA.DocumentRevokeId != null && docA.DocumentReplaceId == null)
+        {
+            canRevoke = false;
+
+        }
+       
         var result = new ArchiveDocumentResponse()
         {
             Granters = GranterList,
@@ -274,16 +296,29 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
             Sender = docA.Sender,
             CanGrant = canGrant,
             CanDownLoad = canDownLoad,
+            CanRevoke = canRevoke,
             Viewers = ViewerList,
             DateExpires = docA.ExpirationDate,
             DateReceived = docA.DateReceived,
-            CreateDate = docA.CreatedDate,
+            CreateDate = docA.FinalDocument.CreatedDate,
+            ArchivedBy = docA.CreatedBy,
+            ArchivedDate = docA.CreatedDate,
             Scope = docA.Scope.ToString(),
             DocumentTypeName = docA.DocumentType?.DocumentTypeName,
             WorkflowName = string.Empty,
+            RevokeDocument = new SimpleDocumentResponse()
+            {
+                documentId = docA.DocumentRevokeId,
+                DocumentName = docA.DocumentRevokes?.ArchivedDocumentName,
+            },
+            ReplacedDocument = new SimpleDocumentResponse()
+            {
+                documentId = docA.DocumentReplaceId,
+                DocumentName = docA.DocumentReplaces?.ArchivedDocumentName,
+            },
             Deadline = null,
             Status = docA.ArchivedDocumentStatus.ToString(),
-            CreatedBy = docA.CreatedBy,
+            CreatedBy = docA.FinalDocument.User.UserName,
             DateIssued = docA.DateIssued,
             DigitalSignatures = docA.ArchiveDocumentSignatures?.Where(x => x.DigitalCertificate!=null).Where(x =>x.DigitalCertificate.IsUsb!=null).Select(x => new SignatureResponse()
             {
@@ -377,6 +412,7 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
 
         await _unitOfWork.ArchivedDocumentUOW.AddAsync(template);
         await _unitOfWork.SaveChangesAsync();
+        await _loggingService.WriteLogAsync(userId, $"Tạo mẫu tài liệu {template.ArchivedDocumentName} thành công.");
         return ResponseUtil.GetObject("hehe", ResponseMessages.CreatedSuccessfully, HttpStatusCode.OK, 1);
     }
 
@@ -418,10 +454,56 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
             return ResponseUtil.Error("Create new document false",ResponseMessages.FailedToSaveData,HttpStatusCode.NotFound);
         }
         newDoc.FinalArchiveDocumentId = newArchiveDocId;
+        archiveDoc.DocumentRevokeId = newArchiveDocId;
         await _unitOfWork.DocumentUOW.UpdateAsync(newDoc);
         await _unitOfWork.ArchivedDocumentUOW.AddAsync(newArchiveDoc);
         await _unitOfWork.SaveChangesAsync();
         return ResponseUtil.GetObject(newDocId, ResponseMessages.CreatedSuccessfully, HttpStatusCode.OK, 1);
+    }
+
+    public async Task<ResponseDto> ReplaceArchiveDocument(Guid archiveDocumentId, DocumentPreInfo documentPreInfo, Guid userId)
+    {
+        var user = await _unitOfWork.UserUOW.FindUserByIdAsync(userId);
+        var archiveDoc = await _unitOfWork.ArchivedDocumentUOW.FindArchivedDocumentByIdAsync(archiveDocumentId);
+        if (archiveDoc == null)
+        {
+            return ResponseUtil.Error("Archive document not found",ResponseMessages.FailedToSaveData,HttpStatusCode.NotFound);
+        }
+        var newArchiveDocId = Guid.NewGuid();
+        var newDocId =(Guid) (await  _documentService.CreateDocumentByTemplate(documentPreInfo, userId)).Content;
+        var newDoc = await _unitOfWork.DocumentUOW.FindDocumentByIdAsync(newDocId);
+        
+        var newArchiveDoc = new ArchivedDocument()
+        {
+            ArchivedDocumentId = newArchiveDocId,
+            CreatedDate = DateTime.Now,
+            SystemNumberOfDoc = newDoc.SystemNumberOfDoc,
+            ArchivedDocumentStatus = ArchivedDocumentStatus.Archived,
+            IsTemplate = false,
+            DocumentTypeId = documentPreInfo.DocumentTypeId,
+            DocumentReplaceId = archiveDoc.ArchivedDocumentId,
+            Scope = archiveDoc.Scope,
+            FinalDocumentId = newDocId
+        };
+        if (newDoc == null)
+        {
+            return ResponseUtil.Error("Create new document false",ResponseMessages.FailedToSaveData,HttpStatusCode.NotFound);
+        }
+        newDoc.FinalArchiveDocumentId = newArchiveDocId;
+        archiveDoc.DocumentReplaceId = newArchiveDocId;
+        await _unitOfWork.DocumentUOW.UpdateAsync(newDoc);
+        await _unitOfWork.ArchivedDocumentUOW.AddAsync(newArchiveDoc);
+        await _unitOfWork.SaveChangesAsync();
+        return ResponseUtil.GetObject(newDocId, ResponseMessages.CreatedSuccessfully, HttpStatusCode.OK, 1);
+    }
+
+    public async Task<ResponseDto> DeleteArchiveTemplate(Guid templateId, Guid userId)
+    {
+        var archiveDoc = await _unitOfWork.ArchivedDocumentUOW.FindArchivedDocumentByIdAsync(templateId);
+        archiveDoc.Page = -99;
+        await _unitOfWork.ArchivedDocumentUOW.UpdateAsync(archiveDoc);
+        await _unitOfWork.SaveChangesAsync();
+        return ResponseUtil.GetObject("Delete success", ResponseMessages.DeleteSuccessfully, HttpStatusCode.OK, 1);
     }
 
     private static string ExtractSigners(string? signature)

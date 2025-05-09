@@ -24,13 +24,15 @@ public class EmailService : IEmailService
     private readonly IUnitOfWork _unitOfWork;
     private readonly IFileService _fileService;
     private readonly string _host;
+    private readonly ILoggingService _loggingService;
 
 
-    public EmailService(IConfiguration config, IUnitOfWork unitOfWork, IFileService fileService, IOptions<AppsetingOptions> options)
+    public EmailService(IConfiguration config, IUnitOfWork unitOfWork, IFileService fileService, IOptions<AppsetingOptions> options, ILoggingService loggingService)
     {
         _config = config;
         _unitOfWork = unitOfWork;
         _fileService = fileService;
+        _loggingService = loggingService;
         _host = options.Value.redirect_uri;
     }
 
@@ -90,7 +92,7 @@ public class EmailService : IEmailService
         return otp;
     }
     
-    public async Task<ResponseDto> SendEmailWithOAuth2(EmailRequest emailRequest)
+    public async Task<ResponseDto> SendEmailWithOAuth2(EmailRequest emailRequest,Guid userId)
     {
         var document = await _unitOfWork.ArchivedDocumentUOW.FindArchivedDocumentByIdAsync(emailRequest.DocumentId);
         
@@ -257,6 +259,7 @@ public class EmailService : IEmailService
         {
             memoryStream.Dispose();
         }*/
+        await _loggingService.WriteLogAsync(userId,$"Đã gửi Email với thông tin: {emailRequest}, thành công.");
         return ResponseUtil.GetObject(ResponseMessages.SendEmailSuccessfully, ResponseMessages.CreatedSuccessfully, HttpStatusCode.OK, 1);
     }
     

@@ -34,6 +34,18 @@ public class ArchiveDocumentResponse : DocumentResponse
     public bool CanDownLoad { get; set; }
     public List<Viewer> Viewers { get; set; } = [];
     public List<Viewer> Granters { get; set; } = [];
+    public bool? CanRevoke { get; set; }
+    
+    public string? ArchivedBy { get; set; }
+    public DateTime? ArchivedDate { get; set; }
+    
+    public SimpleDocumentResponse? RevokeDocument { get; set; }
+    public SimpleDocumentResponse? ReplacedDocument { get; set; }
+}
+public class SimpleDocumentResponse 
+{
+    public Guid? documentId { get; set; }
+    public string? DocumentName { get; set; }
 }
 
 public class Viewer
@@ -60,6 +72,11 @@ public class VersionDetailRespone
     public string? Url { get; set; }
     public bool? IsFinal { get; set; }
     public List<SizeDocumentResponse>? Sizes { get; set; }
+    public string? ReasonReject { get; set; }
+    public DateTime? DateReject { get; set; }
+    public string? Avatar { get; set; }
+    public string? UserName { get; set; }
+    public string? FullName { get; set; }
 }
 public class SizeDocumentResponse
 {
@@ -74,4 +91,5 @@ public class TasksResponse
     public string? Description { get; set; }
     public string? TaskType { get; set; }
     public string? Status { get; set; }
+    public bool? IsUsb { get; set; }
 }

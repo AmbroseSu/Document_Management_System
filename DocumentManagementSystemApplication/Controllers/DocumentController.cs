@@ -83,8 +83,10 @@ namespace DocumentManagementSystemApplication.Controllers
         [AuthorizeResource("[Document] Update Confirm Task With Document")]
         public async Task<ResponseDto> UpdateConfirmTaskWithDocument([FromQuery] Guid documentId)
         {
-            // var id = User.FindFirst("userid")?.Value;
+            var id = User.FindFirst("userid")?.Value;
+            
             var result = await _documentService.UpdateConfirmTaskWithDocument(documentId);
+            await _loggingService.WriteLogAsync(Guid.Parse(id), $"Xác nhận task với văn bản có ID:{documentId}");
             return result;
         }
 

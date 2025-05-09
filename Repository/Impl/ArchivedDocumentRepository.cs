@@ -36,11 +36,15 @@ public class ArchivedDocumentRepository : IArchivedDocumentRepository
                 .Include(a => a.ArchiveDocumentSignatures)
                 .ThenInclude(x => x.DigitalCertificate)
                 .Include(x => x.FinalDocument)
+                .ThenInclude(x => x.User)
+                .Include(x => x.FinalDocument)
                 .ThenInclude(x => x.DocumentVersions)
                 .ThenInclude(x => x.DocumentSignatures)
                 .ThenInclude(x => x.DigitalCertificate)
                 .ThenInclude(x => x.User)
-                .ThenInclude(x => x.Division));
+                .ThenInclude(x => x.Division)
+                .Include(x => x.DocumentReplaces)
+                .Include(x => x.DocumentRevokes));
     }
     
     public async Task<ArchivedDocument?> FindArchivedDocumentByNameAsync(string? name)

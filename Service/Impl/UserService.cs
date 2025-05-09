@@ -773,7 +773,7 @@ public async Task<ResponseDto> UploadSignatureImgAsync(UpdateSignatureRequest up
                 ValidFrom = DateTime.Now,
                 ValidTo = DateTime.Now.AddYears(99),
                 Subject = user.FullName,
-                IsUsb = updateSignatureRequest.isUsb,
+                IsUsb = null,
                 SignatureImageUrl = url,
                 UserId = user.UserId,
                 User = user,
@@ -796,7 +796,7 @@ public async Task<ResponseDto> UploadSignatureImgAsync(UpdateSignatureRequest up
                     ValidFrom = DateTime.Now,
                     ValidTo = DateTime.Now.AddYears(1),
                     Subject = user.FullName,
-                    IsUsb = false,
+                    IsUsb = updateSignatureRequest.isUsb,
                     SignatureImageUrl = urlDigital,
                     UserId = user.UserId,
                     User = user

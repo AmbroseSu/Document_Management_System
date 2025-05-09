@@ -42,7 +42,8 @@ namespace DocumentManagementSystemApplication.Controllers
         [AuthorizeResource("[Archivedocument] Create Send Email")]
         public async Task<ResponseDto> SendEmail([FromBody] EmailRequest emailRequest)
         {
-            var result = await _emailService.SendEmailWithOAuth2(emailRequest);
+            var userId = User.FindFirst("userid")?.Value;
+            var result = await _emailService.SendEmailWithOAuth2(emailRequest, Guid.Parse(userId));
             return result;
         }
         
@@ -91,6 +92,14 @@ namespace DocumentManagementSystemApplication.Controllers
             return result;
         }
         
+        [HttpDelete("delete-template")]
+        public async Task<ResponseDto> DeleteTemplate([FromQuery] Guid templateId)
+        {
+            var userId = User.FindFirst("userid")?.Value;
+            var result = await _archiveDocumentService.DeleteArchiveTemplate(templateId, Guid.Parse(userId));
+            return result;
+        }
+        
         [HttpGet("view-download-template")]
         [AuthorizeResource("[Archivedocument] View Download Template")]
         public async Task<IActionResult> DownloadTemplate([FromQuery] string templateId,[FromQuery]bool? isPdf = false)
@@ -129,6 +138,14 @@ namespace DocumentManagementSystemApplication.Controllers
         {
             var userId = User.FindFirst("userid")?.Value;
             var result = await _archiveDocumentService.WithdrawArchiveDocument(archiveDocumentId,documentPreInfo, Guid.Parse(userId));
+            return result;
+        }
+        
+        [HttpPost("create-replace-document")]
+        public async Task<ResponseDto> ReplaceDocument([FromQuery]Guid archiveDocumentId,[FromBody]DocumentPreInfo documentPreInfo)
+        {
+            var userId = User.FindFirst("userid")?.Value;
+            var result = await _archiveDocumentService.ReplaceArchiveDocument(archiveDocumentId,documentPreInfo, Guid.Parse(userId));
             return result;
         }
     }
