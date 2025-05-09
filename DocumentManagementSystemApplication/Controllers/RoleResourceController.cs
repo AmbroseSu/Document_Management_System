@@ -21,14 +21,14 @@ public class RoleResourceController : ControllerBase
     }
 
     [HttpPost("create-role-with-resources")]
-    [AuthorizeResource("[RoleResource] Create Role With Resources")]
+    [AuthorizeResource("[Roleresource] Create Role With Resources")]
     public async Task<ResponseDto> CreateRoleWithResource([FromBody] List<RoleResourceRequest> roleResourceRequests)
     {
         return await _roleResourceService.UpdateRoleResourceAsync(roleResourceRequests);
     }
     
     [HttpGet("view-role-resources")]
-    [AuthorizeResource("[RoleResource] View Role Resources")]
+    [AuthorizeResource("[Roleresource] View Role Resources")]
     public async Task<ResponseDto> ViewRoleResources([FromQuery] RoleFillter roleFillter)
     {
         return await _roleResourceService.GetRoleResourceAsync(roleFillter);
