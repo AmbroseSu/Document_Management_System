@@ -136,7 +136,7 @@ public class UserController : ControllerBase
     
     [AllowAnonymous]
     [HttpGet("view-signature-img/{fileName}")]
-    [AuthorizeResource("[User] View Signature Img")]
+    //[AuthorizeResource("[User] View Signature Img")]
     public async Task<IActionResult> GetSignatureImg([FromRoute] string fileName)
     {
         return await _userService.GetSignatureImg(fileName);
