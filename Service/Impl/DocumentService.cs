@@ -1319,6 +1319,7 @@ public partial class DocumentService : IDocumentService
                                "/" + documentType.Acronym + "-TNABC",
             CreatedDate = DateTime.Now,
             UpdatedDate = DateTime.Now,
+            ExpirationDate = documentPreInfo.ExpireDate,
             Deadline = documentPreInfo.Deadline,
             ProcessingStatus = ProcessingStatus.InProgress,
             DocumentPriority = DocumentPriority.High,
