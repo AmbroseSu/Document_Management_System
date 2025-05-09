@@ -281,11 +281,13 @@ public partial class DocumentService : IDocumentService
             {
                 foreach (var dt in wf.DocumentTypes ?? [])
                 {
+                    
                     var count = dt.DocumentResponseMobiles?.Count ?? 0;
+                    dt.SumDoc = count;
+
                     dt.Percent = totalDocuments > 0
                         ? (float)Math.Round((count * 1f) / totalDocuments, 2)
                         : 0;
-                    dt.SumDoc = totalDocuments;
                 }
             }
 
