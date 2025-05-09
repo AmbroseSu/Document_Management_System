@@ -307,13 +307,13 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
             RevokeDocument = new SimpleDocumentResponse()
             {
                 documentId = docA.DocumentRevokeId,
-                DocumentName = docA.DocumentRevokes?.FirstOrDefault()?.ArchivedDocumentName,
+                DocumentName = docA.DocumentRevokes?.ArchivedDocumentName,
                 
             },
             ReplacedDocument = new SimpleDocumentResponse()
             {
                 documentId = docA.DocumentReplaceId,
-                DocumentName = docA.DocumentReplaces?.FirstOrDefault()?.ArchivedDocumentName,
+                DocumentName = docA.DocumentReplaces?.ArchivedDocumentName,
             },
             Deadline = null,
             Status = docA.ArchivedDocumentStatus.ToString(),
