@@ -93,7 +93,7 @@ public class UserController : ControllerBase
     }
     
     [AllowAnonymous]
-    //[HttpGet("view-avatar/{fileName}")]
+    [HttpGet("view-avatar/{fileName}")]
     //[AuthorizeResource("[User] View Avatar")]
     public async Task<IActionResult> GetAvatar(string fileName)
     {
@@ -103,7 +103,7 @@ public class UserController : ControllerBase
     }
     
     [AllowAnonymous]
-    //[HttpPost("update-insert-name-signature-img")]
+    [HttpPost("update-insert-name-signature-img")]
     //[AuthorizeResource("[User] Update Insert Name Signature Img")]
     public  IActionResult InsertNameSignatureImg(IFormFile file,[FromForm] string fullName)
     {
