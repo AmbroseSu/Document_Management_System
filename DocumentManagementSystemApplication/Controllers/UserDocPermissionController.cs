@@ -1,5 +1,6 @@
 using DataAccess.DTO;
 using DataAccess.DTO.Request;
+using DocumentManagementSystemApplication.Middleware;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -20,6 +21,7 @@ namespace DocumentManagementSystemApplication.Controllers
         }
 
         [HttpPost("create-grand-permission-for-document")]
+        [AuthorizeResource("[UserDocPermission] Create Grand Permission For Document")]
         public async Task<ResponseDto> CreateGrandPermissionForDocument(
             [FromBody] GrantDocumentRequest grantDocumentRequest)
         {

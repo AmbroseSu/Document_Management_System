@@ -1,4 +1,5 @@
 using DataAccess.DTO;
+using DocumentManagementSystemApplication.Middleware;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Service;
@@ -18,6 +19,7 @@ public class ResourceController : ControllerBase
     }
 
     [HttpPost("create-resource")]
+    [AuthorizeResource("[Resource] Create Resource")]
     public async Task<ResponseDto> CreateResource([FromBody] ResourceDto resourceDto)
     {
         return await _resourceService.CreateResource(resourceDto);

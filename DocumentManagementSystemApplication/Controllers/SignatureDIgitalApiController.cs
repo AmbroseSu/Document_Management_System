@@ -1,5 +1,7 @@
 using DataAccess.DTO;
 using DataAccess.DTO.Request;
+using DocumentManagementSystemApplication.Middleware;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Service;
@@ -8,6 +10,7 @@ namespace DocumentManagementSystemApplication.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class SignatureDIgitalApiController : ControllerBase
     {
         private readonly ISignApiService _signApiService;
@@ -18,6 +21,7 @@ namespace DocumentManagementSystemApplication.Controllers
         }
         
         [HttpPost("create-sign-in-signature-digital")]
+        [AuthorizeResource("[SignatureDIgitalApi] Create Sign In Signature Digital")]
         public async Task<ResponseDto> SignInSignatureDigital([FromBody] SignInSignature signInSignature)
         {
             var id = User.FindFirst("userid")?.Value;
@@ -25,6 +29,7 @@ namespace DocumentManagementSystemApplication.Controllers
         }
         
         [HttpPost("create-signature-digital")]
+        [AuthorizeResource("[SignatureDIgitalApi] Create Signature Digital")]
         public async Task<ResponseDto> SignatureDigital([FromBody] SignRequest signRequest)
         {
             var id = User.FindFirst("userid")?.Value;
