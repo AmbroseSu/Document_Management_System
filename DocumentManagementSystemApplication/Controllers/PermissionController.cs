@@ -19,7 +19,7 @@ public class PermissionController : ControllerBase
     }
 
     [HttpPost("create-permission")]
-    [AuthorizeResource("[Permission] Create Permission")]
+    //[AuthorizeResource("[Permission] Create Permission")]
     public async Task<ResponseDto> CreatePermission([FromBody] PermissionDto permissionDto)
     {
         return await _permissionService.CreatePermission(permissionDto);

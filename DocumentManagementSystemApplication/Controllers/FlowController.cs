@@ -19,7 +19,7 @@ namespace DocumentManagementSystemApplication.Controllers
             _flowService = flowService;
         }
         [HttpGet("view-all-flow")]
-        [AuthorizeResource("[Flow] View All Flow")]
+        //[AuthorizeResource("[Flow] View All Flow")]
         public async Task<ResponseDto> ViewAllFlow()
         {
             return await _flowService.FindAllFlowAsync();

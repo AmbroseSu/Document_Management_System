@@ -21,7 +21,7 @@ namespace DocumentManagementSystemApplication.Controllers
         }
         
         [HttpPost("create-sign-in-signature-digital")]
-        [AuthorizeResource("[Signaturedigitalapi] Create Sign In Signature Digital")]
+        //[AuthorizeResource("[Signaturedigitalapi] Create Sign In Signature Digital")]
         public async Task<ResponseDto> SignInSignatureDigital([FromBody] SignInSignature signInSignature)
         {
             var id = User.FindFirst("userid")?.Value;
@@ -29,7 +29,7 @@ namespace DocumentManagementSystemApplication.Controllers
         }
         
         [HttpPost("create-signature-digital")]
-        [AuthorizeResource("[Signaturedigitalapi] Create Signature Digital")]
+        //[AuthorizeResource("[Signaturedigitalapi] Create Signature Digital")]
         public async Task<ResponseDto> SignatureDigital([FromBody] SignRequest signRequest)
         {
             var id = User.FindFirst("userid")?.Value;
