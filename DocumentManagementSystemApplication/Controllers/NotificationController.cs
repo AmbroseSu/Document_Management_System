@@ -18,7 +18,7 @@ namespace DocumentManagementSystemApplication.Controllers
         }
         
         [HttpGet("view-notifications-by-user-id")]
-        [AuthorizeResource("[Notification] View Notifications By User Id")]
+        //[AuthorizeResource("[Notification] View Notifications By User Id")]
         public async Task<IActionResult> GetNotificationsByUserId([FromQuery] string userId, [FromQuery] int page = 1, [FromQuery] int limit = 10)
         {
             var response = await _notificationService.GetNotificationsByUserIdAsync(userId, page, limit);
@@ -26,7 +26,7 @@ namespace DocumentManagementSystemApplication.Controllers
         }
 
         [HttpPost("update-mark-notification-as-read")]
-        [AuthorizeResource("[Notification] Update Mark Notification As Read")]
+        //[AuthorizeResource("[Notification] Update Mark Notification As Read")]
         public async Task MarkNotificationAsRead([FromQuery] Guid notificationId)
         {
             await _notificationService.MarkNotificationAsReadAsync(notificationId);
