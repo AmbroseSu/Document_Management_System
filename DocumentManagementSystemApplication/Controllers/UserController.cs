@@ -103,7 +103,7 @@ public class UserController : ControllerBase
     }
     
     [AllowAnonymous]
-    //[HttpPost("update-insert-name-signature-img")]
+    [HttpPost("update-insert-name-signature-img")]
     //[AuthorizeResource("[User] Update Insert Name Signature Img")]
     public  IActionResult InsertNameSignatureImg(IFormFile file,[FromForm] string fullName)
     {
