@@ -39,20 +39,23 @@ namespace DocumentManagementSystemApplication.Controllers
         
         
         [HttpPost("create-send-email")]
+        [AuthorizeResource("[ArchiveDocument] Create Send Email")]
         public async Task<ResponseDto> SendEmail([FromBody] EmailRequest emailRequest)
         {
             var result = await _emailService.SendEmailWithOAuth2(emailRequest);
             return result;
         }
         
-        [HttpPost("create-send")]
-        public async Task<IActionResult> SendNotification([FromBody] string message)
-        {
-            await _hubContext.Clients.All.SendAsync("ReceiveMessage", message);
-            return Ok(new { message = "Notification sent" });
-        }
+        // [HttpPost("create-send")]
+        // [AuthorizeResource("[ArchiveDocument] Create Send Notification")]
+        // public async Task<IActionResult> SendNotification([FromBody] string message)
+        // {
+        //     await _hubContext.Clients.All.SendAsync("ReceiveMessage", message);
+        //     return Ok(new { message = "Notification sent" });
+        // }
         
         [HttpPost("view-all-documents")]
+        [AuthorizeResource("[ArchiveDocument] View All Documents")]
         public async Task<ResponseDto> GetAllDocuments([FromBody]GetAllArchiveRequestDto getAllArchiveRequestDto, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
             
@@ -63,6 +66,7 @@ namespace DocumentManagementSystemApplication.Controllers
         }
 
         [HttpGet("view-archive-document-detail")]
+        [AuthorizeResource("[ArchiveDocument] View Archive Document Detail")]
         public async Task<ResponseDto> GetArchiveDocumentDetail([FromQuery] Guid documentId)
         {
             var userId = User.FindFirst("userid")?.Value;
@@ -71,6 +75,7 @@ namespace DocumentManagementSystemApplication.Controllers
         }
         
         [HttpGet("view-all-templates")]
+        [AuthorizeResource("[ArchiveDocument] View All Templates")]
         public async Task<ResponseDto> GetAllTemplates([FromQuery]string? documentName, [FromQuery]string? name,[FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
             var templates = await _archiveDocumentService.GetAllArchiveTemplates(documentName,name,page,pageSize);
@@ -78,6 +83,7 @@ namespace DocumentManagementSystemApplication.Controllers
         }
         
         [HttpPost("create-template")]
+        [AuthorizeResource("[ArchiveDocument] Create Template")]
         public async Task<ResponseDto> CreateTemplate([FromForm] ArchiveDocumentRequest archiveDocumentRequest)
         {
             var userId = User.FindFirst("userid")?.Value;
@@ -94,6 +100,7 @@ namespace DocumentManagementSystemApplication.Controllers
         }
         
         [HttpGet("view-download-template")]
+        [AuthorizeResource("[ArchiveDocument] View Download Template")]
         public async Task<IActionResult> DownloadTemplate([FromQuery] string templateId,[FromQuery]bool? isPdf = false)
         {
             var userId = User.FindFirst("userid")?.Value;
@@ -115,16 +122,17 @@ namespace DocumentManagementSystemApplication.Controllers
             return Ok(new { message = $"Notification sent to user {userId}" });
         }*/
         
-        [HttpPost("create-send-test")]
-        public async Task SendPushNotificationMobileAsync([FromQuery] string deviceToken)
-        {
-            var id = User.FindFirst("userid")?.Value;
-            var noti = _notificationService.TestNotification(Guid.Parse(id));
-            await _notificationService.SendPushNotificationMobileAsync(deviceToken, noti);
-            await _hubContext.Clients.All.SendAsync("ReceiveMessage", noti);
-        }
+        // [HttpPost("create-send-test")]
+        // public async Task SendPushNotificationMobileAsync([FromQuery] string deviceToken)
+        // {
+        //     var id = User.FindFirst("userid")?.Value;
+        //     var noti = _notificationService.TestNotification(Guid.Parse(id));
+        //     await _notificationService.SendPushNotificationMobileAsync(deviceToken, noti);
+        //     await _hubContext.Clients.All.SendAsync("ReceiveMessage", noti);
+        // }
         
         [HttpPost("create-withdraw-document")]
+        [AuthorizeResource("[ArchiveDocument] Create Withdraw Document")]
         public async Task<ResponseDto> WithdrawDocument([FromQuery]Guid archiveDocumentId,[FromBody]DocumentPreInfo documentPreInfo)
         {
             var userId = User.FindFirst("userid")?.Value;

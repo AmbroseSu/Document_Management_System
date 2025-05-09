@@ -3,6 +3,7 @@ using BusinessObject.Option;
 using DataAccess;
 using DataAccess.DTO;
 using DataAccess.DTO.Request;
+using DocumentManagementSystemApplication.Middleware;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -33,6 +34,7 @@ namespace DocumentManagementSystemApplication.Controllers
         
         [AllowAnonymous]
         [HttpPost("create-convert-doc-to-pdf")]
+        [AuthorizeResource("[Document] Create Convert Doc To Pdf")]
         public async Task<IActionResult> ConvertDocToPdf(IFormFile file)
         {
             return await _fileService.ConvertDocToPdf(file);
@@ -40,6 +42,7 @@ namespace DocumentManagementSystemApplication.Controllers
 
 
         [HttpPost("create-upload-document")]
+        [AuthorizeResource("[Document] Create Upload Document")]
         public async Task<ResponseDto> UploadDocument(IFormFile file)
         {
             var id = User.FindFirst("userid")?.Value;
@@ -48,6 +51,7 @@ namespace DocumentManagementSystemApplication.Controllers
         }
 
         [HttpPost("create-incoming-document")]
+        [AuthorizeResource("[Document] Create Incoming Document")]
         public async Task<ResponseDto> CreateIncomingDocument([FromBody] DocumentUploadDto documentUploadDto)
         {
             var id = User.FindFirst("userid")?.Value;
@@ -57,6 +61,7 @@ namespace DocumentManagementSystemApplication.Controllers
 
 
         [HttpGet("view-file/{documentId}")]
+        [AuthorizeResource("[Document] View File")]
         public async Task<IActionResult> DownloadDocumentByName([FromRoute] Guid documentId,
             [FromQuery] string? version, [FromQuery] bool isArchive,[FromQuery]bool isDoc=false)
         {
@@ -67,6 +72,7 @@ namespace DocumentManagementSystemApplication.Controllers
         }
 
         [HttpGet("view-file-by-name")]
+        [AuthorizeResource("[Document] View File By Name")]
         public async Task<IActionResult> DownloadDocumentByFileName([FromQuery] string documentName)
         {
             var id = User.FindFirst("userid")?.Value;
@@ -74,6 +80,7 @@ namespace DocumentManagementSystemApplication.Controllers
         }
 
         [HttpPost("update-confirm-task-with-document")]
+        [AuthorizeResource("[Document] Update Confirm Task With Document")]
         public async Task<ResponseDto> UpdateConfirmTaskWithDocument([FromQuery] Guid documentId)
         {
             // var id = User.FindFirst("userid")?.Value;
@@ -82,6 +89,7 @@ namespace DocumentManagementSystemApplication.Controllers
         }
 
         [HttpGet("view-all-type-documents-by-workflow-mobile")]
+        [AuthorizeResource("[Document] View All Type Documents By WorkFlow Mobile")]
         public async Task<ResponseDto> ViewAllTypeDocumentsByWorkFlowMobile()
         {
             var id = User.FindFirst("userid")?.Value;
@@ -90,6 +98,7 @@ namespace DocumentManagementSystemApplication.Controllers
         }
 
         [HttpGet("view-all-type-documents-mobile")]
+        [AuthorizeResource("[Document] View All Type Documents Mobile")]
         public async Task<ResponseDto> ViewAllTypeDocumentsMobile()
         {
             var id = User.FindFirst("userid")?.Value;
@@ -98,6 +107,7 @@ namespace DocumentManagementSystemApplication.Controllers
         }
 
         [HttpGet("view-all-documents-mobile")]
+        [AuthorizeResource("[Document] View All Documents Mobile")]
         public async Task<ResponseDto> ViewAllDocumentsMobile([FromQuery] Guid? workFlowId,
             [FromQuery] Guid documentTypeId)
         {
@@ -107,6 +117,7 @@ namespace DocumentManagementSystemApplication.Controllers
         }
 
         [HttpGet("view-detail-documents-mobile")]
+        [AuthorizeResource("[Document] View Detail Documents Mobile")]
         public async Task<ResponseDto> ViewDetailDocumentsMobile([FromQuery] Guid documentId,
             [FromQuery] Guid workFlowId)
         {
@@ -116,6 +127,7 @@ namespace DocumentManagementSystemApplication.Controllers
         }
 
         [HttpGet("view-all-documents-by-document-type-mobile")]
+        [AuthorizeResource("[Document] View All Documents By Document Type Mobile")]
         public async Task<ResponseDto> ViewAllDocumentsByTypeMobile([FromQuery] Guid documentTypeId)
         {
             var id = User.FindFirst("userid")?.Value;
@@ -124,6 +136,7 @@ namespace DocumentManagementSystemApplication.Controllers
         }
 
         [HttpGet("update-clear-cache-document-mobile")]
+        [AuthorizeResource("[Document] Update Clear Cache Document Mobile")]
         public async Task<ResponseDto> UpdateClearCacheDocumentMobile()
         {
             var id = User.FindFirst("userid")?.Value;
@@ -132,6 +145,7 @@ namespace DocumentManagementSystemApplication.Controllers
         }
 
         [HttpGet("view-document-by-name")]
+        [AuthorizeResource("[Document] View Document By Name")]
         public async Task<ResponseDto> GetDocumentByNameMobile([FromQuery] string documentName)
         {
             var id = User.FindFirst("userid")?.Value;
@@ -141,6 +155,7 @@ namespace DocumentManagementSystemApplication.Controllers
         }
 
         [HttpGet("view-detail-document")]
+        [AuthorizeResource("[Document] View Detail Document")]
         public async Task<ResponseDto> ViewDetailDocument([FromQuery] Guid documentId)
         {
             var id = User.FindFirst("userid")?.Value;
@@ -149,6 +164,7 @@ namespace DocumentManagementSystemApplication.Controllers
         }
 
         [HttpPost("view-my-self-document")]
+        [AuthorizeResource("[Document] View My Self Document")]
         public async Task<ResponseDto> ViewMySelfDocument([FromBody] GetAllMySelfRequestDto getAllMySelfRequestDto, [FromQuery] int page = 1,
             int pageSize = 10)
         {
@@ -158,12 +174,14 @@ namespace DocumentManagementSystemApplication.Controllers
         }
 
         [HttpGet("view-process-document-detail")]
+        [AuthorizeResource("[Document] View Process Document Detail")]
         public async Task<ResponseDto> ViewProcessDocumentDetail([FromQuery] Guid? documentId)
         {
             var result = await _documentService.ShowProcessDocumentDetail(documentId);
             return result;
         }
         [HttpPost("create-document-by-template")]
+        [AuthorizeResource("[Document] Create Document By Template")]
         public async Task<ResponseDto> CreateDocumentByTemplate([FromBody] DocumentPreInfo documentPreInfo)
         {
             var id = User.FindFirst("userid")?.Value;
@@ -172,6 +190,7 @@ namespace DocumentManagementSystemApplication.Controllers
         }
         
         [HttpPost("create-upload-document-for-submit")]
+        [AuthorizeResource("[Document] Create Upload Document For Submit")]
         public async Task<ResponseDto> UploadDocumentForSubmit([FromForm] DocumentUpload documentUpload)
         {
             var id = User.FindFirst("userid")?.Value;
@@ -180,6 +199,7 @@ namespace DocumentManagementSystemApplication.Controllers
         }
         
         [HttpPost("update-confirm-document-by-submit")]
+        [AuthorizeResource("[Document] Update Confirm Document By Submit")]
         public async Task<ResponseDto> UpdateConfirmDocumentBySubmit([FromBody] DocumentCompareDto documentUpload)
         {
             var id = User.FindFirst("userid")?.Value;
@@ -188,6 +208,7 @@ namespace DocumentManagementSystemApplication.Controllers
         }   
         
         [HttpGet("view-document-for-usb")]
+        [AuthorizeResource("[Document] View Document For Usb")]
         public async Task<ResponseDto> ViewDocumentForUsb([FromQuery] Guid documentId)
         {
             var id = User.FindFirst("userid")?.Value;
@@ -196,6 +217,7 @@ namespace DocumentManagementSystemApplication.Controllers
         }
         
         [HttpPost("update-document-from-usb/{documentId:guid}")]
+        [AuthorizeResource("[Document] Update Document From Usb")]
         public async Task<ResponseDto> UpdateDocumentFromUsb([FromBody] DocumentForSignByUsb documentForSignByUsb,[FromRoute] Guid documentId)
         {
             var id = User.FindFirst("userid")?.Value;

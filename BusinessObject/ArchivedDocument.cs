@@ -76,8 +76,8 @@ public class ArchivedDocument
     public List<UserDocumentPermission>? UserDocumentPermissions { get; set; }
     public List<AttachmentArchivedDocument>? AttachmentArchivedDocuments { get; set; }
     public List<ArchiveDocumentSignature>? ArchiveDocumentSignatures { get; set; }
-    public List<ArchivedDocument>? DocumentReplaces { get; set; }
-    public List<ArchivedDocument>? DocumentRevokes { get; set; }
+    public ArchivedDocument? DocumentReplaces { get; set; }
+    public ArchivedDocument? DocumentRevokes { get; set; }
 
     public List<Document>? CreateDocuments { get; set; }
     /*public ArchivedDocument()

@@ -1,5 +1,6 @@
 using Azure;
 using DataAccess.DTO;
+using DocumentManagementSystemApplication.Middleware;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Service;
@@ -27,6 +28,7 @@ namespace DocumentManagementSystemApplication.Controllers
         
         
         [HttpGet("view-all-log")]
+        [AuthorizeResource("[Log] View All Log")]
         public async Task<ResponseDto> ViewAllLog([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
             return await _logService.GetAllLogsAsync(page, pageSize);
@@ -34,6 +36,7 @@ namespace DocumentManagementSystemApplication.Controllers
 
 
         [HttpPost("update-upload")]
+        [AuthorizeResource("[Log] Update Upload")]
         public async Task<IActionResult> UploadTool(IFormFile file)
         {
             try

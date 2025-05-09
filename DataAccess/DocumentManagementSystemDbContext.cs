@@ -109,12 +109,12 @@ public class DocumentManagementSystemDbContext : DbContext
             entity.HasMany(e => e.ArchiveDocumentSignatures)
                 .WithOne(e => e.ArchivedDocument)
                 .HasForeignKey(e => e.ArchivedDocumentId);
-            entity.HasMany(e => e.DocumentReplaces)
+            entity.HasOne(e => e.DocumentReplaces)
                 .WithOne()
-                .HasForeignKey(e => e.DocumentRevokeId);
-            entity.HasMany(e => e.DocumentRevokes)
+                .HasForeignKey<ArchivedDocument>(e => e.DocumentReplaceId);
+            entity.HasOne(e => e.DocumentRevokes)
                 .WithOne()
-                .HasForeignKey(e => e.DocumentReplaceId);
+                .HasForeignKey<ArchivedDocument>(e => e.DocumentRevokeId);
             entity.HasMany(e => e.CreateDocuments)
                 .WithOne(e => e.TemplateArchiveDocument)
                 .HasForeignKey(e => e.TemplateArchiveDocumentId);
