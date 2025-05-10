@@ -523,7 +523,7 @@ public class FileService : IFileService
         using (var wordDoc = WordprocessingDocument.Open(filePath, false)) // Open in read-only mode
         {
             var packageProperties = wordDoc.PackageProperties;
-            var identifier = packageProperties.Identifier;
+            var identifier = packageProperties.Subject;
             if(identifier is null || identifier != templateId.ToString()) 
             {
                 throw new Exception("File không phải là mẫu");

@@ -405,7 +405,7 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
         using (var wordDoc = WordprocessingDocument.Open(filePath, true))
         {
             var packageProperties = wordDoc.PackageProperties;
-            packageProperties.Identifier = templateId.ToString();
+            packageProperties.Subject = templateId.ToString();
         }
         extension = Path.GetExtension(filePath);
         template.ArchivedDocumentUrl = _host + "/api/ArchiveDocument/view-download-template?templateId=" + templateId + extension;
