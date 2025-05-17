@@ -16,14 +16,16 @@ public class AuthenticationService : IAuthenticationService
     private readonly IJwtService _jwtService;
     private readonly IMapper _mapper;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly ILoggingService _loggingService;
 
     public AuthenticationService(IUnitOfWork unitOfWork, IMapper mapper, IJwtService jwtService,
-        IEmailService emailService)
+        IEmailService emailService, ILoggingService loggingService)
     {
         _unitOfWork = unitOfWork;
         _mapper = mapper;
         _jwtService = jwtService;
         _emailService = emailService;
+        _loggingService = loggingService;
     }
 
     public async Task<ResponseDto> SignIn(SignInRequest signInRequest)
@@ -100,6 +102,7 @@ public class AuthenticationService : IAuthenticationService
                 user.FcmToken = signInRequest.FcmToken;
             await _unitOfWork.UserUOW.UpdateAsync(user);
             await _unitOfWork.SaveChangesAsync();
+            await _loggingService.WriteLogAsync(user.UserId,$"Đã đăng nhâp vào hệ thống");
             return ResponseUtil.GetObject(jwtAuthResponse, ResponseMessages.CreatedSuccessfully, HttpStatusCode.Created,
                 0);
         }
@@ -297,6 +300,7 @@ public class AuthenticationService : IAuthenticationService
             otp.IsDeleted = true;
             await _unitOfWork.VerificationOtpUOW.UpdateAsync(otp);
             await _unitOfWork.SaveChangesAsync();
+            await _loggingService.WriteLogAsync(user.UserId,$"Đã thay đổi mật khẩu");
             return ResponseUtil.GetObject(ResponseMessages.PasswordChangeSuccess, ResponseMessages.UpdateSuccessfully,
                 HttpStatusCode.OK, 1);
         }
@@ -339,6 +343,7 @@ public class AuthenticationService : IAuthenticationService
             otp.IsDeleted = true;
             await _unitOfWork.VerificationOtpUOW.UpdateAsync(otp);
             await _unitOfWork.SaveChangesAsync();
+            await _loggingService.WriteLogAsync(user.UserId,$"Đã thay đổi mật khẩu");
             return ResponseUtil.GetObject(ResponseMessages.PasswordChangeSuccess, ResponseMessages.UpdateSuccessfully,
                 HttpStatusCode.OK, 1);
         }

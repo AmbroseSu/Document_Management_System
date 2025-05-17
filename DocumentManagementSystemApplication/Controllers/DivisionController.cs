@@ -23,14 +23,16 @@ namespace DocumentManagementSystemApplication.Controllers
         //[AuthorizeResource("[Division] Create Division")]
         public async Task<ResponseDto> CreateDivision([FromQuery] string divisionName)
         {
-            return await _divisionService.AddDivisionAsync(divisionName);
+            var id = User.FindFirst("userid")?.Value;
+            return await _divisionService.AddDivisionAsync(divisionName,Guid.Parse(id));
         }
         
         [HttpPost("update-division")]
         //[AuthorizeResource("[Division] Update Division")]
         public async Task<ResponseDto> UpdateDivision([FromBody] DivisionDto divisionDto)
         {
-            return await _divisionService.UpdateDivisionAsync(divisionDto);
+            var id = User.FindFirst("userid")?.Value;
+            return await _divisionService.UpdateDivisionAsync(divisionDto,Guid.Parse(id));
         }
         
         [HttpGet("view-all-division")]
@@ -44,7 +46,8 @@ namespace DocumentManagementSystemApplication.Controllers
         //[AuthorizeResource("[Division] Delete Division")]
         public async Task<ResponseDto> DeleteDivision([FromQuery] Guid divisionId)
         {
-            return await _divisionService.UpdateDivisionActiveOrDeleteAsync(divisionId);
+            var id = User.FindFirst("userid")?.Value;
+            return await _divisionService.UpdateDivisionActiveOrDeleteAsync(divisionId,Guid.Parse(id));
         }
         
         [HttpGet("view-division-details")]

@@ -9,6 +9,6 @@ public interface IRoleResourceService
 {
     Task ScanAndSaveRoleResourcesAsync();
     Task ScanAndSaveRoleResourcesForOneRoleAsync(Role role);
-    Task<ResponseDto> UpdateRoleResourceAsync(List<RoleResourceRequest> roleResourceRequests);
+    Task<ResponseDto> UpdateRoleResourceAsync(List<RoleResourceRequest> roleResourceRequests,Guid userId);
     Task<ResponseDto> GetRoleResourceAsync(RoleFillter roleFillter);
 }

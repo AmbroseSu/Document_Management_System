@@ -26,7 +26,8 @@ public class UserController : ControllerBase
     //[AuthorizeResource("[User] Create User By Form")]
     public async Task<ResponseDto> CreateUserByForm([FromBody] UserRequest userRequest)
     {
-        return await _userService.CreateUserByForm(userRequest);
+        var id = User.FindFirst("userid")?.Value;
+        return await _userService.CreateUserByForm(userRequest,Guid.Parse(id));
     }
 
     [HttpGet("view-profile-user")]
@@ -68,7 +69,8 @@ public class UserController : ControllerBase
     //[AuthorizeResource("[User] Create Import Users From Excel")]
     public async Task<ResponseDto> CreateImportUsersFromExcel([FromBody] List<FileImportData> fileImportDatas, [FromQuery] Guid divisionId)
     {
-        return await _userService.ImportUsersFromFileAsync(fileImportDatas, divisionId);
+        var id = User.FindFirst("userid")?.Value;
+        return await _userService.ImportUsersFromFileAsync(fileImportDatas, divisionId, Guid.Parse(id));
     }
     
     [HttpPost("view-users-from-excel")]

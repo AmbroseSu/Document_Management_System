@@ -38,7 +38,7 @@ public class DocumentElasticRepository : IDocumentElasticRepository
                 .Match(m => m
                     .Field("documentname")
                     .Query(query)
-                    .Fuzziness("AUTO")
+                    .Fuzziness(new Fuzziness("AUTO"))
                 )
             ));
 

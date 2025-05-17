@@ -19,15 +19,17 @@ public class ResourceService : IResourceService
 
     private readonly IResourceRepository _resourceRepository;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly ILoggingService _loggingService;
 
     public ResourceService(
         IResourceRepository resourceRepository,
-        IActionDescriptorCollectionProvider actionDescriptorProvider, IUnitOfWork unitOfWork, IMapper mapper)
+        IActionDescriptorCollectionProvider actionDescriptorProvider, IUnitOfWork unitOfWork, IMapper mapper, ILoggingService loggingService)
     {
         _resourceRepository = resourceRepository;
         _actionDescriptorProvider = actionDescriptorProvider;
         _unitOfWork = unitOfWork;
         _mapper = mapper;
+        _loggingService = loggingService;
     }
 
     public async Task ScanAndSaveResourcesAsync()
@@ -80,7 +82,7 @@ public class ResourceService : IResourceService
         }
     }
 
-    public async Task<ResponseDto> CreateResource(ResourceDto resourceDto)
+    public async Task<ResponseDto> CreateResource(ResourceDto resourceDto,Guid userId)
     {
         try
         {
@@ -107,6 +109,7 @@ public class ResourceService : IResourceService
             if (saveChange > 0)
             {
                 var result = _mapper.Map<ResourceDto>(resourceNew);
+                await _loggingService.WriteLogAsync(userId,$"Tạo resource mới với api: {resourceDto.ResourceApi} thành công");
                 return ResponseUtil.GetObject(result, ResponseMessages.CreatedSuccessfully, HttpStatusCode.Created, 1);
             }
 

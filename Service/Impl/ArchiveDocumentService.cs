@@ -421,13 +421,17 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
         return ResponseUtil.GetObject("hehe", ResponseMessages.CreatedSuccessfully, HttpStatusCode.OK, 1);
     }
 
-    public Task<IActionResult> DownloadTemplate(string templateId, Guid userId,bool? isPdf)
+    public async Task<IActionResult> DownloadTemplate(string templateId, Guid userId,bool? isPdf)
     {
 
         var filePath = Path.Combine(Directory.GetCurrentDirectory(), "data", "storage","template", $"{templateId}");
         if (isPdf.HasValue && isPdf.Value)
-            return _fileService.ConvertDocToPdf(filePath);
-        return _fileService.GetPdfFile(filePath);
+        {
+            await _loggingService.WriteLogAsync(userId, $"Tải mẫu tài liệu {templateId} thành công.");
+            return await _fileService.ConvertDocToPdf(filePath);
+        }
+        await _loggingService.WriteLogAsync(userId, $"Tải mẫu tài liệu {templateId} thành công.");
+        return await _fileService.GetPdfFile(filePath);
     }
 
     public async Task<ResponseDto> WithdrawArchiveDocument(Guid archiveDocumentId,DocumentPreInfo documentPreInfo, Guid userId)
@@ -463,6 +467,7 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
         await _unitOfWork.DocumentUOW.UpdateAsync(newDoc);
         await _unitOfWork.ArchivedDocumentUOW.AddAsync(newArchiveDoc);
         await _unitOfWork.SaveChangesAsync();
+        await _loggingService.WriteLogAsync(userId,$"Thu hồi tài liệu {archiveDoc.SystemNumberOfDoc} thành công.");
         return ResponseUtil.GetObject(newDocId, ResponseMessages.CreatedSuccessfully, HttpStatusCode.OK, 1);
     }
 
@@ -499,6 +504,7 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
         await _unitOfWork.DocumentUOW.UpdateAsync(newDoc);
         await _unitOfWork.ArchivedDocumentUOW.AddAsync(newArchiveDoc);
         await _unitOfWork.SaveChangesAsync();
+        await _loggingService.WriteLogAsync(userId,$"Tạo văn bản thay thế {archiveDoc.SystemNumberOfDoc} thành công.");
         return ResponseUtil.GetObject(newDocId, ResponseMessages.CreatedSuccessfully, HttpStatusCode.OK, 1);
     }
 
@@ -508,6 +514,7 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
         archiveDoc.Page = -99;
         await _unitOfWork.ArchivedDocumentUOW.UpdateAsync(archiveDoc);
         await _unitOfWork.SaveChangesAsync();
+        await _loggingService.WriteLogAsync(userId, $"Xóa mẫu tài liệu {archiveDoc.ArchivedDocumentName} thành công.");
         return ResponseUtil.GetObject("Delete success", ResponseMessages.DeleteSuccessfully, HttpStatusCode.OK, 1);
     }
 

@@ -12,14 +12,16 @@ public class DocumentTypeService : IDocumentTypeService
 {
     private readonly IMapper _mapper;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly ILoggingService _loggingService;
 
-    public DocumentTypeService(IMapper mapper, IUnitOfWork unitOfWork)
+    public DocumentTypeService(IMapper mapper, IUnitOfWork unitOfWork, ILoggingService loggingService)
     {
         _mapper = mapper;
         _unitOfWork = unitOfWork;
+        _loggingService = loggingService;
     }
     
-    public async Task<ResponseDto> AddDocumentTypeAsync(DocumentTypeDto documentTypeDto)
+    public async Task<ResponseDto> AddDocumentTypeAsync(DocumentTypeDto documentTypeDto, Guid userId)
     {
         try
         {
@@ -44,6 +46,7 @@ public class DocumentTypeService : IDocumentTypeService
             await _unitOfWork.DocumentTypeUOW.AddAsync(documentType);
             await _unitOfWork.SaveChangesAsync();
             var result = _mapper.Map<DocumentTypeDto>(documentType);
+            await _loggingService.WriteLogAsync(userId,$"Tạo mới loại tài liệu {documentType.DocumentTypeName} thành công");
             return ResponseUtil.GetObject(result, ResponseMessages.CreatedSuccessfully, HttpStatusCode.Created, 1);
         }
         catch (Exception e)
@@ -52,7 +55,7 @@ public class DocumentTypeService : IDocumentTypeService
         }
     }
     
-    public async Task<ResponseDto> UpdateDocumentTypeAsync(DocumentTypeDto documentTypeDto)
+    public async Task<ResponseDto> UpdateDocumentTypeAsync(DocumentTypeDto documentTypeDto, Guid userId)
     {
         try
         {
@@ -80,6 +83,7 @@ public class DocumentTypeService : IDocumentTypeService
             await _unitOfWork.DocumentTypeUOW.UpdateAsync(documentType);
             await _unitOfWork.SaveChangesAsync();
             var result = _mapper.Map<DocumentTypeDto>(documentType);
+            await _loggingService.WriteLogAsync(userId,$"Cập nhật loại tài liệu {documentType.DocumentTypeName} thành công");
             return ResponseUtil.GetObject(result, ResponseMessages.UpdateSuccessfully, HttpStatusCode.OK, 1);
         }
         catch (Exception e)
@@ -117,7 +121,7 @@ public class DocumentTypeService : IDocumentTypeService
         }
     }
     
-    public async Task<ResponseDto> UpdateDocumentTypeActiveOrDeleteAsync(Guid documentTypeId)
+    public async Task<ResponseDto> UpdateDocumentTypeActiveOrDeleteAsync(Guid documentTypeId, Guid userId)
     {
         try
         {
@@ -143,6 +147,7 @@ public class DocumentTypeService : IDocumentTypeService
             documentType.IsDeleted = true;
             await _unitOfWork.DocumentTypeUOW.UpdateAsync(documentType);
             await _unitOfWork.SaveChangesAsync();
+            await _loggingService.WriteLogAsync(userId,$"Xóa loại tài liệu {documentType.DocumentTypeName} thành công");
             return ResponseUtil.GetObject(ResponseMessages.DivisionHasDeleted, ResponseMessages.DeleteSuccessfully,
                 HttpStatusCode.OK, 1);
         }

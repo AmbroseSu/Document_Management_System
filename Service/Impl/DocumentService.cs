@@ -1158,7 +1158,6 @@ public partial class DocumentService : IDocumentService
             default:
                 return ResponseUtil.Error("Invalid Workflow Scope", "Operation Failed", HttpStatusCode.BadRequest);
         }
-
         return ResponseUtil.GetObject("oke", "Success", HttpStatusCode.OK, 1);
     }
 
@@ -1359,7 +1358,7 @@ public partial class DocumentService : IDocumentService
         await _unitOfWork.DocumentWorkflowStatusUOW.AddAsync(workflowStatus);
         await _unitOfWork.DocumentUOW.AddAsync(doc);
         await _unitOfWork.SaveChangesAsync();
-        await _loggingService.WriteLogAsync(userId,$"Tạo văn bản từ mẫu với tên là: {documentPreInfo.DocumentName}");
+        await _loggingService.WriteLogAsync(userId,$"Tạo văn bản từ mẫu với số hiệu hệ thống là: {doc.SystemNumberOfDoc}");
         return ResponseUtil.GetObject(docId, ResponseMessages.CreatedSuccessfully, HttpStatusCode.OK, 1);
         // throw new NotImplementedException();
     }
@@ -1635,7 +1634,7 @@ public partial class DocumentService : IDocumentService
                                     Path.Combine(_storagePath, "document", documentId.ToString(),
                                         version.DocumentVersionId.ToString(), document.DocumentName + ".pdf"), null);
                                 Console.WriteLine("Cer != null");
-                                await _loggingService.WriteLogAsync(userId,$"Ký văn bản với tên là {document.DocumentName} bằng USB thành công");
+                                await _loggingService.WriteLogAsync(userId,$"Ký văn bản với số hiệu hệ thống là {document.SystemNumberOfDoc} bằng USB thành công");
                                 return ResponseUtil.GetObject("Sign success",
                                     ResponseMessages.GetSuccessfully, HttpStatusCode.OK, 1);
                             }
@@ -1683,6 +1682,13 @@ public partial class DocumentService : IDocumentService
         var documents = await _unitOfWork.DocumentElasticUOW.SearchAsync(query);
         return ResponseUtil.GetObject(documents,
             ResponseMessages.GetSuccessfully, HttpStatusCode.OK, 1);
+    }
+
+    public async Task<ResponseDto> CreateLogDownload(Guid documentId, Guid userId)
+    {
+        var document = await _unitOfWork.DocumentUOW.FindDocumentByIdAsync(documentId);
+        await _loggingService.WriteLogAsync(userId,$"Tải xuống văn bản với Số hiệu Hệ thống là: {document.SystemNumberOfDoc}");
+        return ResponseUtil.GetObject("oke", ResponseMessages.GetSuccessfully, HttpStatusCode.OK, 1);
     }
 
     private static DateTime ParsePdfDate(string pdfDate)

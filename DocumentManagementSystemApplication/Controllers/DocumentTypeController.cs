@@ -24,14 +24,17 @@ namespace DocumentManagementSystemApplication.Controllers
         //[AuthorizeResource("[Documenttype] Create Document Type")]
         public async Task<ResponseDto> CreateDocumentType([FromBody] DocumentTypeDto documentTypeDto)
         {
-            return await _documentTypeService.AddDocumentTypeAsync(documentTypeDto);
+            var id = User.FindFirst("userid")?.Value;
+            return await _documentTypeService.AddDocumentTypeAsync(documentTypeDto,Guid.Parse(id));
         }
         
         [HttpPost("update-document-type")]
         //[AuthorizeResource("[Documenttype] Update Document Type")]
         public async Task<ResponseDto> UpdateDocumentType([FromBody] DocumentTypeDto documentTypeDto)
         {
-            return await _documentTypeService.UpdateDocumentTypeAsync(documentTypeDto);
+            var id = User.FindFirst("userid")?.Value;
+
+            return await _documentTypeService.UpdateDocumentTypeAsync(documentTypeDto,Guid.Parse(id));
         }
         
         [HttpGet("view-all-document-type")]
@@ -45,7 +48,9 @@ namespace DocumentManagementSystemApplication.Controllers
         //[AuthorizeResource("[Documenttype] Delete Document Type")]
         public async Task<ResponseDto> DeleteDocumentType([FromQuery] Guid documentTypeId)
         {
-            return await _documentTypeService.UpdateDocumentTypeActiveOrDeleteAsync(documentTypeId);
+            var id = User.FindFirst("userid")?.Value;
+
+            return await _documentTypeService.UpdateDocumentTypeActiveOrDeleteAsync(documentTypeId,Guid.Parse(id));
         }
         
         [HttpGet("view-document-type-details")]

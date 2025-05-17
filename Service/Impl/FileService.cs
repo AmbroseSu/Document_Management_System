@@ -8,7 +8,6 @@ using Microsoft.Extensions.Options;
 using Syncfusion.DocIO;
 using Syncfusion.DocIO.DLS;
 using Syncfusion.DocIORenderer;
-using Syncfusion.Pdf;
 using Syncfusion.Pdf.Graphics;
 using Syncfusion.Pdf.Parsing;
 using SixLabors.ImageSharp;
@@ -28,14 +27,19 @@ using SixLabors.ImageSharp.PixelFormats;
 using System.IO;
 using DataAccess.DTO.Request;
 using DocumentFormat.OpenXml.Packaging;
+using iText.Kernel.Colors;
+using iText.Kernel.Pdf;
+using iText.Layout.Element;
 using Color = SixLabors.ImageSharp.Color;
 using DocumentVersion = BusinessObject.DocumentVersion;
 using Font = SixLabors.Fonts.Font;
 using FontStyle = SixLabors.Fonts.FontStyle;
 using HorizontalAlignment = SixLabors.Fonts.HorizontalAlignment;
 using Image = SixLabors.ImageSharp.Image;
+using PdfDocument = Syncfusion.Pdf.PdfDocument;
 using Point = SixLabors.ImageSharp.Point;
 using PointF = SixLabors.ImageSharp.PointF;
+using TextAlignment = iText.Layout.Properties.TextAlignment;
 using VerticalAlignment = SixLabors.Fonts.VerticalAlignment;
 
 namespace Service.Impl;
@@ -211,7 +215,7 @@ public class FileService : IFileService
             case ".docx":
                 extension = "openxmlformats-officedocument.wordprocessingml.document";
                 break;
-            case "doc":
+            case ".doc":
                 extension = "vnd.ms-word";
                 break;
         }
@@ -228,6 +232,38 @@ public class FileService : IFileService
                 FileDownloadName = Guid.NewGuid() + tmp
             }
             ;
+    }
+    public void AddFooterToPdf(string inputFilePath, string outputFilePath)
+    {
+        if (!File.Exists(inputFilePath))
+        {
+            Console.WriteLine("Input file not found.");
+            return;
+        }
+
+        using (var pdfReader = new PdfReader(inputFilePath))
+        using (var pdfWriter = new PdfWriter(outputFilePath))
+        using (var pdfDocument = new iText.Kernel.Pdf.PdfDocument(pdfReader, pdfWriter))
+        {
+            var document = new iText.Layout.Document(pdfDocument);
+
+            // Define the footer text
+            var footerText = new Paragraph("Copyright by DMS")
+                .SetFontSize(6)
+                .SetFontColor(new DeviceRgb(0xb4, 0xb6, 0xb8))
+                .SetTextAlignment(TextAlignment.CENTER);
+
+            // Add the footer to each page
+            for (int i = 1; i <= pdfDocument.GetNumberOfPages(); i++)
+            {
+                var pageSize = pdfDocument.GetPage(i).GetPageSize();
+                float x = pageSize.GetWidth() / 2;
+                float y = pageSize.GetBottom() + 20; // Adjust the Y position as needed
+                document.ShowTextAligned(footerText, x, y, i, TextAlignment.CENTER, iText.Layout.Properties.VerticalAlignment.BOTTOM, 0);
+            }
+        }
+
+        Console.WriteLine($"Footer added. Modified file saved at: {outputFilePath}");
     }
     
     public async Task<(byte[] FileBytes, string FileName, string ContentType)> GetFileBytes(string filePath)

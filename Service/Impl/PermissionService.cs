@@ -14,11 +14,13 @@ public class PermissionService : IPermissionService
     private readonly IMapper _mapper;
 
     private readonly IUnitOfWork _unitOfWork;
+    private readonly ILoggingService _logger;
 
-    public PermissionService(IUnitOfWork unitOfWork, IMapper mapper)
+    public PermissionService(IUnitOfWork unitOfWork, IMapper mapper, ILoggingService logger)
     {
         _unitOfWork = unitOfWork;
         _mapper = mapper;
+        _logger = logger;
     }
 
     public async Task SeedPermissionsAsync()
@@ -48,7 +50,7 @@ public class PermissionService : IPermissionService
         }
     }
 
-    public async Task<ResponseDto> CreatePermission(PermissionDto permissionDto)
+    public async Task<ResponseDto> CreatePermission(PermissionDto permissionDto, Guid userId)
     {
         try
         {
@@ -67,9 +69,9 @@ public class PermissionService : IPermissionService
             if (saveChange > 0)
             {
                 var result = _mapper.Map<PermissionDto>(permissionNew);
+                await _logger.WriteLogAsync(userId,$"Tạo quyền {permissionDto.PermissionName} thành công");
                 return ResponseUtil.GetObject(result, ResponseMessages.CreatedSuccessfully, HttpStatusCode.Created, 1);
             }
-
             return ResponseUtil.Error(ResponseMessages.FailedToSaveData, ResponseMessages.OperationFailed,
                 HttpStatusCode.InternalServerError);
         }

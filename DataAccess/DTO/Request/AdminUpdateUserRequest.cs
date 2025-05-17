@@ -15,4 +15,21 @@ public class AdminUpdateUserRequest
     public Guid? DivisionId { get; set; }
     public string? Avatar { get; set; }
     public Guid? SubRoleId { get; set; }
+
+    public override string ToString()
+    {
+        return $"""
+                UserId: {UserId}
+                FullName: {FullName ?? "N/A"}
+                Email: {Email ?? "N/A"}
+                Address: {Address ?? "N/A"}
+                PhoneNumber: {PhoneNumber ?? "N/A"}
+                Gender: {Gender?.ToString() ?? "N/A"}
+                DateOfBirth: {(DateOfBirth.HasValue ? DateOfBirth.Value.ToString("yyyy-MM-dd") : "N/A")}
+                Position: {Position ?? "N/A"}
+                DivisionId: {DivisionId?.ToString() ?? "N/A"}
+                Avatar: {Avatar ?? "N/A"}
+                SubRoleId: {SubRoleId?.ToString() ?? "N/A"}
+                """;
+    }
 }

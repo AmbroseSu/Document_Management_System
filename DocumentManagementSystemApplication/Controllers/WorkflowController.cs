@@ -25,7 +25,8 @@ namespace DocumentManagementSystemApplication.Controllers
         //[AuthorizeResource("[Workflow] Create Workflow")]
         public async Task<ResponseDto> CreateWorkflow([FromBody] CreateWorkFlowRequest workflowRequest)
         {
-            return await _workflowService.CreateWorkflowAsync(workflowRequest);    
+            var id = User.FindFirst("userid")?.Value;
+            return await _workflowService.CreateWorkflowAsync(workflowRequest,Guid.Parse(id));    
         }
         
         [HttpGet("view-all-workflow")]
@@ -39,7 +40,8 @@ namespace DocumentManagementSystemApplication.Controllers
         //[AuthorizeResource("[Workflow] Delete Workflow")]
         public async Task<ResponseDto> DeleteWorkflow([FromQuery] Guid workflowId)
         {
-            return await _workflowService.UpdateWorkflowActiveOrDeleteAsync(workflowId);
+            var id = User.FindFirst("userid")?.Value;
+            return await _workflowService.UpdateWorkflowActiveOrDeleteAsync(workflowId, Guid.Parse(id));
         }
         
         [HttpGet("view-workflow-details")]

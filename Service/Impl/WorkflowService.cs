@@ -16,11 +16,13 @@ public class WorkflowService : IWorkflowService
 {
     private readonly IMapper _mapper;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly ILoggingService _loggingService;
 
-    public WorkflowService(IMapper mapper, IUnitOfWork unitOfWork)
+    public WorkflowService(IMapper mapper, IUnitOfWork unitOfWork, ILoggingService loggingService)
     {
         _mapper = mapper;
         _unitOfWork = unitOfWork;
+        _loggingService = loggingService;
     }
     
     public async Task<ResponseDto> AddWorkflowAsync(WorkflowRequest workflowRequest)
@@ -287,9 +289,9 @@ public class WorkflowService : IWorkflowService
     }
     
     
-    public async Task<ResponseDto> CreateWorkflowAsync(CreateWorkFlowRequest workflowRequest)
+    public async Task<ResponseDto> CreateWorkflowAsync(CreateWorkFlowRequest workflowRequest, Guid userId)
     {
-        using var transaction = await _unitOfWork.BeginTransactionAsync();
+        await using var transaction = await _unitOfWork.BeginTransactionAsync();
         try
         {
             if (workflowRequest.WorkflowName == null)
@@ -314,32 +316,19 @@ public class WorkflowService : IWorkflowService
                 CreateAt = DateTime.Now,
                 CreateBy = workflowRequest.CreateBy,
             };
-            
-            if (workflowRequest.Scope.Equals(Scope.OutGoing))
-            {
-                workflow.RequiredRolesJson = JsonConvert.SerializeObject(new List<string> { "Leader", "Chief" });
-            }
-            else
-            {
-                if (workflowRequest.Scope.Equals(Scope.InComing))
-                {
-                    workflow.RequiredRolesJson = JsonConvert.SerializeObject(new List<string> { "Clerical Assistant", "Chief" });
-                }
-                else
-                {
-                    if (workflowRequest.Scope.Equals(Scope.School))
-                    {
-                        workflow.RequiredRolesJson = JsonConvert.SerializeObject(new List<string> { "Leader", "Chief" });
-                    }
-                }
 
-            }
-            
+            workflow.RequiredRolesJson = workflowRequest.Scope switch
+            {
+                Scope.OutGoing => JsonConvert.SerializeObject(new List<string> { "Leader", "Chief" }),
+                Scope.InComing => JsonConvert.SerializeObject(new List<string> { "Clerical Assistant", "Chief" }),
+                Scope.School => JsonConvert.SerializeObject(new List<string> { "Leader", "Chief" }),
+                _ => workflow.RequiredRolesJson
+            };
+
             await _unitOfWork.WorkflowUOW.AddAsync(workflow);
             await _unitOfWork.SaveChangesAsync();
 
             var workflowFlows = new List<WorkflowFlow>();
-            var documentTypeWorkflows = new List<DocumentTypeWorkflow>();
             var flowEntities = new List<Flow>();
             
             
@@ -363,57 +352,29 @@ public class WorkflowService : IWorkflowService
             await _unitOfWork.WorkflowFlowUOW.AddRangeAsync(workflowFlows);
             await _unitOfWork.SaveChangesAsync();
 
-            foreach (var documentTypeId in workflowRequest.DocumentTypeIds)
-            {
-                var documentTypeWorkflow = new DocumentTypeWorkflow
-                {
-                    DocumentTypeWorkflowId = Guid.NewGuid(),
-                    WorkflowId = workflow.WorkflowId,
-                    DocumentTypeId = documentTypeId
-                };
-                documentTypeWorkflows.Add(documentTypeWorkflow);
-                
-            }
+            var documentTypeWorkflows = workflowRequest.DocumentTypeIds.Select(documentTypeId => new DocumentTypeWorkflow { DocumentTypeWorkflowId = Guid.NewGuid(), WorkflowId = workflow.WorkflowId, DocumentTypeId = documentTypeId }).ToList();
 
             await _unitOfWork.DocumentTypeWorkflowUOW.AddRangeAsync(documentTypeWorkflows);
             await _unitOfWork.SaveChangesAsync();
 
-            for (int i = 0; i < flowEntities.Count - 1; i++)
+            for (var i = 0; i < flowEntities.Count - 1; i++)
             {
                 var lastStep = flowEntities[i].Steps.OrderByDescending(s => s.StepNumber).FirstOrDefault();
                 var nextFlow = flowEntities[i + 1];
                 var nextFirstStep = nextFlow.Steps.OrderBy(s => s.StepNumber).FirstOrDefault();
-                if (lastStep != null && nextFirstStep != null)
+                if (lastStep == null || nextFirstStep == null) continue;
+                // Kiểm tra RoleEnd của flow hiện tại và RoleStart của flow tiếp theo
+                if (lastStep.RoleId != nextFirstStep.RoleId)
                 {
-                    // Kiểm tra RoleEnd của flow hiện tại và RoleStart của flow tiếp theo
-                    if (lastStep.RoleId != nextFirstStep.RoleId)
-                    {
-                        // Nếu không khớp, trả về lỗi
-                        return ResponseUtil.Error(ResponseMessages.RoleEndCurrentFlowNotMatchRoleStartNextFlow, ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
-                    }
+                    // Nếu không khớp, trả về lỗi
+                    return ResponseUtil.Error(ResponseMessages.RoleEndCurrentFlowNotMatchRoleStartNextFlow, ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
                 }
-                
-                
+
+
             }
             
             var requiredRoles = JsonConvert.DeserializeObject<List<string>>(workflow.RequiredRolesJson);
-            bool hasValidFlow = false;
-
-            foreach (var flow in flowEntities)
-            {
-                // var steps = (await _unitOfWork.StepUOW.FindStepByFlowIdAsync(flow.FlowId)).ToList();
-                // if (steps.Count >= 2)
-                // {
-                    var startRole = flow.RoleStart;
-                    var endRole = flow.RoleEnd;
-
-                    if (requiredRoles.First().ToLower().Equals(startRole.ToLower()) && requiredRoles.Last().ToLower().Equals(endRole.ToLower()))
-                    {
-                        hasValidFlow = true;
-                        break;
-                    }
-                //}
-            }
+            var hasValidFlow = (from flow in flowEntities let startRole = flow.RoleStart let endRole = flow.RoleEnd where requiredRoles.First().ToLower().Equals(startRole.ToLower()) && requiredRoles.Last().ToLower().Equals(endRole.ToLower()) select startRole).Any();
 
             if (!hasValidFlow)
             {
@@ -422,7 +383,8 @@ public class WorkflowService : IWorkflowService
             
             await _unitOfWork.SaveChangesAsync();
             await transaction.CommitAsync();
-            
+
+            await _loggingService.WriteLogAsync(userId,$"Tạo mới workflow {workflow.WorkflowName} thành công");
             return ResponseUtil.GetObject(workflowRequest, ResponseMessages.CreatedSuccessfully, HttpStatusCode.Created, 1);
         }
         catch (Exception e)
@@ -436,7 +398,7 @@ public class WorkflowService : IWorkflowService
     
     
     
-    public async Task<ResponseDto> UpdateWorkflowActiveOrDeleteAsync(Guid workflowId)
+    public async Task<ResponseDto> UpdateWorkflowActiveOrDeleteAsync(Guid workflowId,Guid userId)
     {
         try
         {
@@ -462,6 +424,8 @@ public class WorkflowService : IWorkflowService
             workflow.IsDeleted = true;
             await _unitOfWork.WorkflowUOW.UpdateAsync(workflow);
             await _unitOfWork.SaveChangesAsync();
+            
+            await _loggingService.WriteLogAsync(userId,$"Xóa workflow {workflow.WorkflowName} thành công");
             return ResponseUtil.GetObject(ResponseMessages.WorkflowHasDeleted, ResponseMessages.DeleteSuccessfully,
                 HttpStatusCode.OK, 1);
         }
