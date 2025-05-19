@@ -1687,6 +1687,16 @@ public partial class DocumentService : IDocumentService
     public async Task<ResponseDto> CreateLogDownload(Guid documentId, Guid userId)
     {
         var document = await _unitOfWork.DocumentUOW.FindDocumentByIdAsync(documentId);
+        if (document == null)
+        {
+            var aDoc = await _unitOfWork.ArchivedDocumentUOW.FindArchivedDocumentByIdAsync(documentId);
+            if (aDoc == null)
+                return ResponseUtil.Error("Document not found", ResponseMessages.OperationFailed,
+                    HttpStatusCode.NotFound);
+            await _loggingService.WriteLogAsync(userId,
+                $"Tải xuống văn bản với Số hiệu Hệ thống là: {aDoc.SystemNumberOfDoc}");
+            return ResponseUtil.GetObject("oke", ResponseMessages.GetSuccessfully, HttpStatusCode.OK, 1);
+        }
         await _loggingService.WriteLogAsync(userId,$"Tải xuống văn bản với Số hiệu Hệ thống là: {document.SystemNumberOfDoc}");
         return ResponseUtil.GetObject("oke", ResponseMessages.GetSuccessfully, HttpStatusCode.OK, 1);
     }
