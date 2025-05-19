@@ -29,9 +29,11 @@ namespace DocumentManagementSystemApplication.Controllers
         
         [HttpGet("view-all-log")]
         //[AuthorizeResource("[Log] View All Log")]
-        public async Task<ResponseDto> ViewAllLog([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+        public async Task<ResponseDto> ViewAllLog([FromQuery] string? query,[FromQuery] DateTime? startTime = null,[FromQuery] DateTime? endTime = null, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
-            return await _logService.GetAllLogsAsync(page, pageSize);
+            startTime ??= DateTime.MinValue;
+            endTime ??= DateTime.MaxValue;
+            return await _logService.GetAllLogsAsync(startTime,endTime, page, pageSize,query);
         }
 
 
