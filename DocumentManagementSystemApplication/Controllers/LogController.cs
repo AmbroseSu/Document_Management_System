@@ -29,7 +29,7 @@ namespace DocumentManagementSystemApplication.Controllers
         
         [HttpGet("view-all-log")]
         //[AuthorizeResource("[Log] View All Log")]
-        public async Task<ResponseDto> ViewAllLog([FromQuery] string? query,[FromQuery] DateTime? startTime = null,[FromQuery] DateTime? endTime = null, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+        public async Task<ResponseDto> ViewAllLog([FromQuery] string? query,[FromQuery] DateTime? startTime,[FromQuery] DateTime? endTime, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
             startTime ??= DateTime.MinValue;
             endTime ??= DateTime.MaxValue;
