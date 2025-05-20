@@ -132,6 +132,7 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
             Name = x.ArchivedDocumentName,
             CreateDate = x.CreatedDate,
             Status = x.ArchivedDocumentStatus.ToString(),
+            SystemNumberDocument = x.SystemNumberOfDoc,
             Type = x.DocumentType?.DocumentTypeName ?? string.Empty,
             SignBy = ExtractSigners(x.ArchiveDocumentSignatures?.Select(c => c.DigitalCertificate).FirstOrDefault()?.Subject ?? string.Empty),
             CreateBy = x.CreatedBy,
@@ -159,6 +160,8 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
         if (!string.IsNullOrEmpty(request.Name))
             data = data.FindAll(x => x.Name.Contains(request.Name));
     
+        if (!string.IsNullOrEmpty(request.SystemNumber))
+                    data = data.FindAll(x => x.SystemNumberDocument.Contains(request.SystemNumber));
         if (request.Scope != null)
             data = data.FindAll(x => x.Scope == request.Scope.ToString());
     

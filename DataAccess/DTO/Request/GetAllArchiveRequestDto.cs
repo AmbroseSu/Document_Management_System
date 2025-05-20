@@ -6,6 +6,7 @@ public class GetAllArchiveRequestDto
 {
     public string? Name { get; set; }
     public Scope? Scope { get; set; }
+    public string? SystemNumber { get; set; }
     public DateTime? StartCreatedDate { get; set; }
     public DateTime? EndCreatedDate { get; set; }
 
