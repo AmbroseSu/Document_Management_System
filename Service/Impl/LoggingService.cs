@@ -50,10 +50,8 @@ public class LoggingService : ILoggingService
             logs = logs.Where(log => log.UserName.Contains(query, StringComparison.OrdinalIgnoreCase) || log.Action.Contains(query, StringComparison.OrdinalIgnoreCase)).ToList();
         }
 
-        if(startTime != null)
-            startTime = startTime.Value.AddHours(-7);
-        if (endTime != null)
-            endTime = endTime.Value.AddHours(16).AddMinutes(59).AddSeconds(59);
+        startTime = startTime?.AddHours(-7);
+        endTime = endTime?.AddHours(16).AddMinutes(59).AddSeconds(59);
         if (startTime != null)
         {
             logs = logs.Where(log => log.Timestamp.CompareTo(startTime) >=0 ).ToList();
