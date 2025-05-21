@@ -50,15 +50,17 @@ public class LoggingService : ILoggingService
             logs = logs.Where(log => log.UserName.Contains(query, StringComparison.OrdinalIgnoreCase) || log.Action.Contains(query, StringComparison.OrdinalIgnoreCase)).ToList();
         }
 
-        startTime = startTime?.AddHours(-7);
-        endTime = endTime?.AddHours(16).AddMinutes(59).AddSeconds(59);
+        // startTime = startTime?;
+        // endTime = endTime?.AddHours(23).AddMinutes(59).AddSeconds(59);
         if (startTime != null)
         {
-            logs = logs.Where(log => log.Timestamp.CompareTo(startTime) >=0 ).ToList();
+            var timeZone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Ho_Chi_Minh");
+            logs = logs.Where(log => TimeZoneInfo.ConvertTimeFromUtc(log.Timestamp, timeZone).CompareTo(startTime) >= 0).ToList();
         }
         if (endTime != null)
         {
-            logs = logs.Where(log => log.Timestamp.CompareTo(endTime) <=0 ).ToList();
+            var timeZone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Ho_Chi_Minh");
+            logs = logs.Where(log => TimeZoneInfo.ConvertTimeFromUtc(log.Timestamp, timeZone).CompareTo(endTime) <= 0).ToList();
         }
         var totalPage = logs.Count / pageSize + (logs.Count % pageSize > 0 ? 1 : 0);
         return ResponseUtil.GetCollection(logs.Skip((page - 1) * pageSize).Take(pageSize).ToList(), "Logs", HttpStatusCode.Accepted, logs.Count, page, pageSize, totalPage);
