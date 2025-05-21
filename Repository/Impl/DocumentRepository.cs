@@ -37,6 +37,7 @@ public class DocumentRepository : IDocumentRepository
                 .ThenInclude(s => s.DigitalCertificate)
                 .ThenInclude(s => s.User)
                 .ThenInclude(u => u.Division)
+                .ThenInclude(u => u.Users)
                 .Include(d => d.Tasks)
                 .ThenInclude(t => t.User)
                 .ThenInclude(u => u.Division)

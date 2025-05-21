@@ -2510,6 +2510,20 @@ public partial class TaskService : ITaskService
                     .Select(t => t.UserId)
                     .Distinct()
                     .ToList();
+
+                var workFlowO = await _unitOfWork.WorkflowUOW.FindWorkflowByIdAsync(workflowId);
+                if (workFlowO.Scope == Scope.School)
+                {
+                    var liU = await _unitOfWork.UserUOW.FindAllUserAsync();
+                    liU = liU.Where(x => x.IsDeleted == false && !x.Email.Contains("admin")).ToList();
+                    distinctUserIds = liU.Select(x => x.UserId).ToList();
+                }
+                else if (workFlowO.Scope == Scope.Division)
+                {
+                    var liU = orderedTasks.FirstOrDefault().User.Division.Users;
+                    liU = liU.Where(x => x.IsDeleted == false && !x.Email.Contains("admin")).ToList();
+                    distinctUserIds = liU.Select(x => x.UserId).ToList();
+                }
                 
                 var userPermissions = new List<UserDocumentPermission>();
 
@@ -3004,7 +3018,28 @@ public partial class TaskService : ITaskService
                         .Select(t => t.UserId)
                         .Distinct()
                         .ToList();
-                    
+
+                    switch (workflow.Scope)
+                    {
+                        case Scope.School:
+                        {
+                            var liU = await _unitOfWork.UserUOW.FindAllUserAsync();
+                            liU = liU.Where(x => x.IsDeleted == false && !x.Email.Contains("admin")).ToList();
+                            distinctUserIds = liU.Select(x => x.UserId).ToList();
+                            break;
+                        }
+                        case Scope.Division:
+                        {
+                            var listUser = orderedTasks.FirstOrDefault().User.Division.Users;
+                            distinctUserIds = listUser.Select(x => x.UserId).ToList();
+                            break;
+                        }
+                        case Scope.InComing:
+                        case Scope.OutGoing:
+                            break;
+                        default:
+                            throw new ArgumentOutOfRangeException();
+                    }
                     var userPermissions = new List<UserDocumentPermission>();
 
                     foreach (var userId in distinctUserIds)
@@ -3022,7 +3057,7 @@ public partial class TaskService : ITaskService
                             });
                         }
                     }
-
+                    
                     // Chỉ thêm những cái chưa có
                     if (userPermissions.Any())
                     {
