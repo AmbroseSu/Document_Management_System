@@ -2504,7 +2504,8 @@ public partial class TaskService : ITaskService
                 //     }
                 // ).ToList();
                 
-                
+                var userPermissions = new List<UserDocumentPermission>();
+
                 
                 var distinctUserIds = orderedTasks
                     .Select(t => t.UserId)
@@ -2512,20 +2513,8 @@ public partial class TaskService : ITaskService
                     .ToList();
 
                 var workFlowO = await _unitOfWork.WorkflowUOW.FindWorkflowByIdAsync(workflowId);
-                if (workFlowO.Scope == Scope.School)
-                {
-                    var liU = await _unitOfWork.UserUOW.FindAllUserAsync();
-                    liU = liU.Where(x => x.IsDeleted == false && !x.Email.Contains("admin")).ToList();
-                    distinctUserIds = liU.Select(x => x.UserId).ToList();
-                }
-                else if (workFlowO.Scope == Scope.Division)
-                {
-                    var liU = orderedTasks.FirstOrDefault().User.Division.Users;
-                    liU = liU.Where(x => x.IsDeleted == false && !x.Email.Contains("admin")).ToList();
-                    distinctUserIds = liU.Select(x => x.UserId).ToList();
-                }
                 
-                var userPermissions = new List<UserDocumentPermission>();
+                
 
                 foreach (var userId in distinctUserIds)
                 {
@@ -2543,6 +2532,46 @@ public partial class TaskService : ITaskService
                     }
                 }
 
+                if (workFlowO.Scope == Scope.School)
+                {
+                    var liU = await _unitOfWork.UserUOW.FindAllUserAsync();
+                    liU = liU.Where(x => x.IsDeleted == false && !x.Email.Contains("admin") && !distinctUserIds.Contains(x.UserId)).ToList();
+                    foreach (var userId in liU.Select(x => x.UserId).ToList())
+                    {
+                        var exists = await _unitOfWork.UserDocPermissionUOW.ExistsAsync(userId, archivedDocId);
+                        if (!exists)
+                        {
+                            userPermissions.Add(new UserDocumentPermission
+                            {
+                                UserId = userId,
+                                ArchivedDocumentId = archivedDocId,
+                                GrantPermission = GrantPermission.Download,
+                                CreatedDate = DateTime.UtcNow,
+                                IsDeleted = false
+                            });
+                        }
+                    }
+                }
+                else if (workFlowO.Scope == Scope.Division)
+                {
+                    var liU = orderedTasks.FirstOrDefault().User.Division.Users;
+                    liU = liU.Where(x => x.IsDeleted == false && !x.Email.Contains("admin") && !distinctUserIds.Contains(x.UserId)).ToList();
+                    foreach (var userId in liU.Select(x => x.UserId).ToList())
+                    {
+                        var exists = await _unitOfWork.UserDocPermissionUOW.ExistsAsync(userId, archivedDocId);
+                        if (!exists)
+                        {
+                            userPermissions.Add(new UserDocumentPermission
+                            {
+                                UserId = userId,
+                                ArchivedDocumentId = archivedDocId,
+                                GrantPermission = GrantPermission.Download,
+                                CreatedDate = DateTime.UtcNow,
+                                IsDeleted = false
+                            });
+                        }
+                    }
+                }
                 // Chỉ thêm những cái chưa có
                 if (userPermissions.Any())
                 {

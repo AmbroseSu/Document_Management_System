@@ -594,6 +594,7 @@ public class WorkflowService : IWorkflowService
             foreach (var workflow in workflows)
             {
                 var documentTypeWorkflows = await _unitOfWork.DocumentTypeWorkflowUOW.FindAllDocumentTypeNameByWorkflowIdAsync(workflow.WorkflowId);
+                var liTemplate = await _unitOfWork.ArchivedDocumentUOW.GetAllArchiveTemplates();
                 var documentTypeDtos = documentTypeWorkflows.Select(dt => _mapper.Map<DocumentTypeDto>(dt.DocumentType)).ToList();
                 var firstRole = workflow.WorkflowFlows.OrderBy(wf => wf.FlowNumber).FirstOrDefault()?.Flow?.RoleStart;
                 workflowResponses.Add(new WorkflowScopeResponse
