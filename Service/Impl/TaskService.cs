@@ -564,8 +564,25 @@ public partial class TaskService : ITaskService
             if (scope != Scope.InComing)
             {
                 // Lấy tất cả task trong tài liệu để xác định vị trí task mới
-                
-                var totalTasksInDocument = orderedTasks.Count();
+
+                if (scope == Scope.Division)
+                {
+                    var userOfFirstTask = await _unitOfWork.UserUOW.FindUserByIdAsync(orderedTasks[0].UserId);
+                    if (userOfFirstTask == null)
+                    {
+                        return ResponseUtil.Error(ResponseMessages.UserNotFound, ResponseMessages.OperationFailed,
+                            HttpStatusCode.NotFound);
+                    }
+                    if (userOfFirstTask.DivisionId != user.DivisionId)
+                    {
+                        return ResponseUtil.Error(
+                            "Người dùng không nằm trong cùng một phoòng ban.",
+                            ResponseMessages.OperationFailed,
+                            HttpStatusCode.BadRequest);
+                    }
+                }
+
+            var totalTasksInDocument = orderedTasks.Count();
                 var newTaskPosition = totalTasksInDocument + 1;
 
                 // Kiểm tra task thứ 2
@@ -991,6 +1008,23 @@ public partial class TaskService : ITaskService
             {
                 return ResponseUtil.Error(ResponseMessages.TaskFirstCanNotUpdate, ResponseMessages.OperationFailed,
                     HttpStatusCode.BadRequest);
+            }
+            var scope = document.DocumentWorkflowStatuses.FirstOrDefault()?.Workflow.Scope;
+            if (scope == Scope.Division)
+            {
+                var userOfFirstTask = await _unitOfWork.UserUOW.FindUserByIdAsync(orderedTasks[0].UserId);
+                if (userOfFirstTask == null)
+                {
+                    return ResponseUtil.Error(ResponseMessages.UserNotFound, ResponseMessages.OperationFailed,
+                        HttpStatusCode.NotFound);
+                }
+                if (userOfFirstTask.DivisionId != user.DivisionId)
+                {
+                    return ResponseUtil.Error(
+                        "Người dùng không nằm trong cùng một phòng ban.",
+                        ResponseMessages.OperationFailed,
+                        HttpStatusCode.BadRequest);
+                }
             }
             
             
