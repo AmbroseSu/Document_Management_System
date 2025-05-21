@@ -47,7 +47,7 @@ public class LoggingService : ILoggingService
             }).ToList();
         if (!string.IsNullOrEmpty(query))
         {
-            logs = logs.Where(log => log.UserName.Contains(query) || log.Action.Contains(query)).ToList();
+            logs = logs.Where(log => log.UserName.Contains(query, StringComparison.OrdinalIgnoreCase) || log.Action.Contains(query, StringComparison.OrdinalIgnoreCase)).ToList();
         }
 
         startTime ??= startTime?.AddHours(-7);
