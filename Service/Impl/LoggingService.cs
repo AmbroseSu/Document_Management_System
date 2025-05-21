@@ -54,11 +54,11 @@ public class LoggingService : ILoggingService
         // endTime ??= endTime?.AddHours(16).AddMinutes(59).AddSeconds(59);
         if (startTime != null)
         {
-            logs = logs.Where(log => log.Timestamp >= startTime).ToList();
+            logs = logs.Where(log => log.Timestamp.CompareTo(startTime) >=0 ).ToList();
         }
         if (endTime != null)
         {
-            logs = logs.Where(log => log.Timestamp <= endTime).ToList();
+            logs = logs.Where(log => log.Timestamp.CompareTo(endTime) <=0 ).ToList();
         }
         var totalPage = logs.Count / pageSize + (logs.Count % pageSize > 0 ? 1 : 0);
         return ResponseUtil.GetCollection(logs.Skip((page - 1) * pageSize).Take(pageSize).ToList(), "Logs", HttpStatusCode.Accepted, logs.Count, page, pageSize, totalPage);
