@@ -279,8 +279,8 @@ public class SignApiService : ISignApiService
             var filePath = Path.Combine(_storagePath, Path.Combine("document", document.DocumentId.ToString(),
                 version.DocumentVersionId.ToString(),
                 document.DocumentName + ".pdf"));
-            File.WriteAllBytesAsync(filePath, fileBytes);
-            Thread.Sleep(1000);
+            await File.WriteAllBytesAsync(filePath, fileBytes);
+            //Thread.Sleep(1000);
             //TODO: noi vào signature va certificate
             
             var documentSignature = new DocumentSignature
