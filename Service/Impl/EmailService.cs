@@ -260,6 +260,25 @@ public class EmailService : IEmailService
             memoryStream.Dispose();
         }*/
         await _loggingService.WriteLogAsync(userId,$"Đã gửi Email với thông tin: {emailRequest}, thành công.");
+        var allEmails = new List<string>();
+
+        if (emailRequest.ReceiverEmail != null && emailRequest.ReceiverEmail.Any())
+        {
+            allEmails.AddRange(emailRequest.ReceiverEmail);
+        }
+        if (emailRequest.CcEmails != null && emailRequest.CcEmails.Any())
+        {
+            allEmails.AddRange(emailRequest.CcEmails);
+        }
+        if (emailRequest.BccEmails != null && emailRequest.BccEmails.Any())
+        {
+            allEmails.AddRange(emailRequest.BccEmails);
+        }
+
+        string allEmailString = string.Join(",", allEmails);
+        document.ExternalPartner = allEmailString;
+        await _unitOfWork.ArchivedDocumentUOW.UpdateAsync(document);
+        await _unitOfWork.SaveChangesAsync();
         return ResponseUtil.GetObject(ResponseMessages.SendEmailSuccessfully, ResponseMessages.CreatedSuccessfully, HttpStatusCode.OK, 1);
     }
     
