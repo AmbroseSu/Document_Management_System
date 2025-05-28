@@ -64,26 +64,82 @@ public class UserDocPermissionService : IUserDocPermissionService
         var newPermissions = new List<UserDocumentPermission>();
         var affectedUserIds = new List<Guid>();
 
+        // foreach (var userGrant in grantDocumentRequest.UserGrantDocuments)
+        // {
+        //     if (userGrant.GrantPermission == GrantPermission.Grant)
+        //     {
+        //         return ResponseUtil.Error("Người dùng không được cấp quyền tổng cho người khác.", ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
+        //     }
+        //     var userId = userGrant.UserId;
+        //     var grantPermission = userGrant.GrantPermission;
+        //     var existing = existingPermissions.FirstOrDefault(p => p.UserId == userId);
+        //     if (existing != null)
+        //     {
+        //         if (existing.IsDeleted)
+        //         {
+        //             existing.IsDeleted = false;
+        //             existing.GrantPermission = grantPermission;
+        //             existing.CreatedDate = DateTime.UtcNow;
+        //             reactivatedPermissions.Add(existing);
+        //             affectedUserIds.Add(userId);
+        //         }
+        //         // Nếu đã tồn tại và không bị xóa thì bỏ qua
+        //     }
+        //     else
+        //     {
+        //         newPermissions.Add(new UserDocumentPermission
+        //         {
+        //             UserDocumentPermissionId = Guid.NewGuid(),
+        //             ArchivedDocumentId = grantDocumentRequest.DocumentId,
+        //             UserId = userId,
+        //             GrantPermission = grantPermission,
+        //             CreatedDate = DateTime.UtcNow,
+        //             IsDeleted = false
+        //         });
+        //         affectedUserIds.Add(userId);
+        //     }
+        // }
+        
         foreach (var userGrant in grantDocumentRequest.UserGrantDocuments)
         {
             if (userGrant.GrantPermission == GrantPermission.Grant)
             {
                 return ResponseUtil.Error("Người dùng không được cấp quyền tổng cho người khác.", ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
             }
+
             var userId = userGrant.UserId;
-            var grantPermission = userGrant.GrantPermission;
+            var incomingPermission = userGrant.GrantPermission;
             var existing = existingPermissions.FirstOrDefault(p => p.UserId == userId);
+
             if (existing != null)
             {
                 if (existing.IsDeleted)
                 {
                     existing.IsDeleted = false;
-                    existing.GrantPermission = grantPermission;
+                    existing.GrantPermission = incomingPermission;
                     existing.CreatedDate = DateTime.UtcNow;
                     reactivatedPermissions.Add(existing);
                     affectedUserIds.Add(userId);
                 }
-                // Nếu đã tồn tại và không bị xóa thì bỏ qua
+                else
+                {
+                    // Quyền đang có là View
+                    if (existing.GrantPermission == GrantPermission.View)
+                    {
+                        if (incomingPermission == GrantPermission.Download)
+                        {
+                            existing.GrantPermission = GrantPermission.Download;
+                            existing.CreatedDate = DateTime.UtcNow;
+                            reactivatedPermissions.Add(existing);
+                            affectedUserIds.Add(userId);
+                        }
+                        // Nếu quyền mới là View → giữ nguyên, không làm gì
+                    }
+                    else if (existing.GrantPermission == GrantPermission.Download)
+                    {
+                        // Đang là Update → giữ nguyên, không cần thay đổi gì
+                    }
+                }
             }
             else
             {
@@ -92,7 +148,7 @@ public class UserDocPermissionService : IUserDocPermissionService
                     UserDocumentPermissionId = Guid.NewGuid(),
                     ArchivedDocumentId = grantDocumentRequest.DocumentId,
                     UserId = userId,
-                    GrantPermission = grantPermission,
+                    GrantPermission = incomingPermission,
                     CreatedDate = DateTime.UtcNow,
                     IsDeleted = false
                 });
