@@ -111,7 +111,7 @@ public class EmailService : IEmailService
 
         var scope = doc.DocumentWorkflowStatuses?.FirstOrDefault(w => w.DocumentId == doc.DocumentId).Workflow.Scope;
 
-        string token = ExchangeCodeForAccessToken(emailRequest.AccessToken).Result;
+        string token = await ExchangeCodeForAccessToken(emailRequest.AccessToken);
         if (token.Equals("string"))
         {
             return ResponseUtil.Error("Please login google again", ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
