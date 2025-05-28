@@ -235,7 +235,8 @@ builder.Services.AddScoped<IDocumentElasticRepository, DocumentElasticRepository
 builder.Services.AddSingleton<ILoggerFactory, LoggerFactory>(); // Đảm bảo ILogger được inject
 builder.Services.AddSingleton<MongoDbService>();
 builder.Services.AddScoped<ILoggingService, LoggingService>();
-
+builder.Services.AddScoped<IAttachmentRepository, AttachmentRepository>();
+builder.Services.AddScoped<IAttachmentArchivedRepository,AttachmentArchivedRepository>();
 builder.Services.AddScoped<IExternalApiService, ExternalApiService>();
 builder.Services.AddScoped<IRedisCacheRepository, RedisCacheRepository>();
 builder.Services.AddHostedService<StartupTaskService>();

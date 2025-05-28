@@ -1112,13 +1112,14 @@ public partial class DocumentService : IDocumentService
 
         foreach (var attachment in attachments)
         {
-            var stream = new FileStream(Path.Combine(_storagePath,"attachdoc", $"{attachment.DocumentName}{Path.GetExtension(attachment.file.FileName)}"), FileMode.Create);
-            await attachment.file.CopyToAsync(stream);
-            // var at = new AttachmentDocument()
-            // {
-            //     AttachmentDocumentName = attachment.DocumentName,
-            //     AttachmentDocumentUrl = $"{_host+}"
-            // }
+
+            var at = new AttachmentDocument()
+            {
+                AttachmentDocumentName = attachment.DocumentName,
+                AttachmentDocumentUrl = attachment.urlfile,
+                DocumentId = document.DocumentId
+            };
+            await _unitOfWork.AttachmentUOW.AddAsync(at);
         }
         // document.DateIssued = DateTime.Today.ToString("yyyy-MM-dd");
         await _unitOfWork.DocumentUOW.UpdateAsync(document);
@@ -1233,6 +1234,17 @@ public partial class DocumentService : IDocumentService
                     SignedAt = signature.SignedAt, OrderIndex = signature.OrderIndex,
                     DigitalCertificate = signature.DigitalCertificate
                 }).ToList();
+
+                foreach (var attachment in document.AttachmentDocuments)
+                {
+                    var at = new AttachmentArchivedDocument()
+                    {
+                        AttachmentName = attachment.AttachmentDocumentName,
+                        AttachmentUrl = attachment.AttachmentDocumentUrl,
+                        ArchivedDocumentId = archiveId
+                    };
+                    await _unitOfWork.AttachmentArchivedUOW.AddAsync(at);
+                }
                 archiveDocument.ArchiveDocumentSignatures = listSignature;
                 document.ProcessingStatus = ProcessingStatus.Archived;
                 await _unitOfWork.DocumentUOW.UpdateAsync(document);
@@ -1790,12 +1802,13 @@ public partial class DocumentService : IDocumentService
 
     public async Task<ResponseDto> UploadAttachment(IFormFile attachmentDocumentRequest)
     {
-        var path = Path.Combine(_storagePath, "tmpA", attachmentDocumentRequest.FileName);
+        var id = Guid.NewGuid();
+        var path = Path.Combine(_storagePath, "tmpA", id+ Path.GetExtension(attachmentDocumentRequest.FileName));
         if(!Directory.Exists(Path.Combine(_storagePath, "tmpA")))
             Directory.CreateDirectory(Path.Combine(_storagePath, "tmpA"));
-        using (var stream = new FileStream(path, FileMode.Create))
+        await using (var stream = new FileStream(path, FileMode.Create))
         {
-            attachmentDocumentRequest.CopyTo(stream);
+            await attachmentDocumentRequest.CopyToAsync(stream);
         }
         return ResponseUtil.GetObject($"{_host}/api/Document/view-attach-file/{Guid.NewGuid()}",
             ResponseMessages.GetSuccessfully, HttpStatusCode.OK, 1);

@@ -14,7 +14,7 @@ public class UnitOfWork : IUnitOfWork
         IResourceRepository resourceUow, IPermissionRepository permissionUow, IRoleRepository roleUow,
         IRoleResourceRepository roleResourceUow, IUserRoleRepository userRoleUow,
         IVerificationOtpRepository verificationOtpUow, IDigitalCertificateRepository digitalCertificateUow,
-        IDivisionRepository divisionUow, IDocumentTypeRepository documentTypeUow, IWorkflowRepository workflowUow, IStepRepository stepUow, IFlowRepository flowUow, IWorkflowFlowTransitionRepository workflowFlowTransitionUow, IWorkflowFlowRepository workflowFlowUow, ITaskRepository taskUow, IArchivedDocumentRepository archivedDocumentUow, IArchiveDocumentSignatureRepository archiveDocumentSignatureUow, IDocumentRepository documentUow, IDocumentSignatureRepository documentSignatureUow, IDocumentWorkflowStatusRepository documentWorkflowStatusUow, IDocumentTypeWorkflowRepository documentTypeWorkflowUow, IRedisCacheRepository redisCacheUow, IDocumentVersionRepository documentVersionUow, ICommentRepository commentUow, IUserDocPermissionRepository userDocPermissionUow,IDocumentElasticRepository documentElasticUow)
+        IDivisionRepository divisionUow, IDocumentTypeRepository documentTypeUow, IWorkflowRepository workflowUow, IStepRepository stepUow, IFlowRepository flowUow, IWorkflowFlowTransitionRepository workflowFlowTransitionUow, IWorkflowFlowRepository workflowFlowUow, ITaskRepository taskUow, IArchivedDocumentRepository archivedDocumentUow, IArchiveDocumentSignatureRepository archiveDocumentSignatureUow, IDocumentRepository documentUow, IDocumentSignatureRepository documentSignatureUow, IDocumentWorkflowStatusRepository documentWorkflowStatusUow, IDocumentTypeWorkflowRepository documentTypeWorkflowUow, IRedisCacheRepository redisCacheUow, IDocumentVersionRepository documentVersionUow, ICommentRepository commentUow, IUserDocPermissionRepository userDocPermissionUow,IDocumentElasticRepository documentElasticUow, IAttachmentArchivedRepository attachmentArchivedRepository, IAttachmentRepository attachmentUow)
     {
         UserUOW = userUow ?? throw new ArgumentNullException(nameof(userUow));
         _disposed = false;
@@ -46,8 +46,11 @@ public class UnitOfWork : IUnitOfWork
         CommentUOW = commentUow;
         UserDocPermissionUOW = userDocPermissionUow;
         DocumentElasticUOW = documentElasticUow;
+        AttachmentArchivedUOW = attachmentArchivedRepository;
+        AttachmentUOW = attachmentUow;
     }
 
+    public IAttachmentArchivedRepository AttachmentArchivedUOW { get; }
     public IUserRepository UserUOW { get; }
     public IResourceRepository ResourceUOW { get; }
     public IPermissionRepository PermissionUOW { get; }
@@ -69,7 +72,7 @@ public class UnitOfWork : IUnitOfWork
     public IArchiveDocumentSignatureRepository ArchiveDocumentSignatureUOW { get; }
     public IDocumentSignatureRepository DocumentSignatureUOW { get; }
     public IDocumentWorkflowStatusRepository DocumentWorkflowStatusUOW { get; }
-    
+    public IAttachmentRepository AttachmentUOW { get; }
     public IDocumentTypeWorkflowRepository DocumentTypeWorkflowUOW { get; set; }
     public IRedisCacheRepository RedisCacheUOW { get; }
     

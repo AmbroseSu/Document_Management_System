@@ -32,6 +32,7 @@ public class DocumentRepository : IDocumentRepository
         if (id == null) throw new ArgumentNullException(nameof(id));
         return await _documentDao.FindByAsync(u => u.DocumentId == id,
             q => q
+                .Include(d => d.AttachmentDocuments)
                 .Include(d => d.DocumentVersions)
                 .ThenInclude(v => v.DocumentSignatures)
                 .ThenInclude(s => s.DigitalCertificate)

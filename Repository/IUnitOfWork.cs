@@ -32,6 +32,8 @@ public interface IUnitOfWork : IDisposable
     ICommentRepository CommentUOW { get; }
     IUserDocPermissionRepository UserDocPermissionUOW { get; }
     IDocumentElasticRepository DocumentElasticUOW { get; }
+    IAttachmentRepository AttachmentUOW { get; }
+    IAttachmentArchivedRepository AttachmentArchivedUOW { get; }
     Task<int> SaveChangesAsync();
     
     Task<IDbContextTransaction> BeginTransactionAsync();

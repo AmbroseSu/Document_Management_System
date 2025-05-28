@@ -609,9 +609,25 @@ public class FileService : IFileService
         return url;
     }
 
-    public Task<IActionResult> GetAttachFileById(Guid documentId)
+    public async Task<IActionResult> GetAttachFileById(Guid documentId)
     {
-        throw new NotImplementedException();
+        var path = Path.Combine(_storagePath, "tmpA");
+        string searchPattern = $"{documentId}.*";
+        var files = Directory.GetFiles(documentId.ToString(), searchPattern);
+        var filePath = files.FirstOrDefault();
+        if (filePath == null || !File.Exists(filePath))
+        {
+            throw new FileNotFoundException("File not found", filePath);
+        }
+        if (!File.Exists(filePath))
+        {
+            throw new FileNotFoundException("File not found", filePath);
+        }
+        
+        var contentType = GetContentType(filePath);
+        var bytes = await File.ReadAllBytesAsync(filePath);
+        
+        return new FileContentResult(bytes, contentType);
     }
 
 

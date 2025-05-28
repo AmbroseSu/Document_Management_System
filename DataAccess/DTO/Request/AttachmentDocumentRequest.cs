@@ -5,5 +5,5 @@ namespace DataAccess.DTO.Request;
 public class AttachmentDocumentRequest
 {
     public string DocumentName { get; set; }
-    public IFormFile file { get; set; } 
+    public string urlfile { get; set; } 
 }
