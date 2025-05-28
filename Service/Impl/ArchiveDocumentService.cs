@@ -294,8 +294,9 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
                 canRevoke = false;
 
         }
-        var timeZone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Ho_Chi_Minh");
-        var dateNow = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, timeZone);
+        // var timeZone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Ho_Chi_Minh");
+        // var dateNow = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, timeZone);
+        var dateNow = DateTime.UtcNow;
         var isExpire = dateNow > docA.ExpirationDate;
         var createDate = dateNow;
         var issueDate = dateNow;
@@ -364,7 +365,8 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
             NumberOfDocument = docA.NumberOfDocument,
             SystemNumberOfDocument = docA.SystemNumberOfDoc,
             Sender = sender,
-            ExternalPartner = docA.ExternalPartner,
+            // ExternalPartner = docA.ExternalPartner,
+            // ReceivedBy = receiver,
             CanGrant = canGrant,
             CanDownLoad = canDownLoad,
             ReceivedBy = receiver,

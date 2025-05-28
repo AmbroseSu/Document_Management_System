@@ -830,13 +830,28 @@ public partial class DocumentService : IDocumentService
                 Avatar = x.Avatar,
                 UserName = x.UserName
             }).ToList();
+            var receiver = string.Empty;
+            string sender = string.Empty;
+
+            if(document.DocumentWorkflowStatuses.FirstOrDefault().Workflow.Scope == Scope.InComing)
+            {
+                receiver = document.User.FullName;
+                sender = document.Sender;
+            }
+            else
+            {
+                receiver = null;
+                sender = null;
+            }
+            
+            
             var result = new DocumentDetailResponse()
             {
                 Sizes = sizes,
                 DateExpired = document.ExpirationDate,
                 Deadline = document.Deadline,
-                Receiver = document.User.FullName,
-                Sender = document.Sender,
+                Receiver = receiver,
+                Sender = sender,
                 WorkFlowName = document.DocumentWorkflowStatuses.FirstOrDefault().Workflow.WorkflowName,
                 Scope = document.DocumentWorkflowStatuses.FirstOrDefault().Workflow.Scope.ToString(),
                 SystemNumberDocument = document.SystemNumberOfDoc,
@@ -883,6 +898,13 @@ public partial class DocumentService : IDocumentService
             Avatar = x.Avatar,
             UserName = x.UserName
         }).ToList();
+        string senderA;
+        string receiverA;
+        if (documentA.Scope == Scope.InComing)
+        {
+            receiverA = documentA.FinalDocument.User.UserName;
+            senderA = documentA.Sender;
+        }
         var resultA = new DocumentDetailResponse()
         {
             Sizes = await GetDocumentSize(Path.Combine(Directory.GetCurrentDirectory(), "data", "storage",
@@ -1046,7 +1068,7 @@ public partial class DocumentService : IDocumentService
             // var at = new AttachmentDocument()
             // {
             //     AttachmentDocumentName = attachment.DocumentName,
-            //     
+            //     AttachmentDocumentUrl = $"{_host+}"
             // }
         }
         // document.DateIssued = DateTime.Today.ToString("yyyy-MM-dd");
