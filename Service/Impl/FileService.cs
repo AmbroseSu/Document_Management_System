@@ -613,7 +613,7 @@ public class FileService : IFileService
     {
         var path = Path.Combine(_storagePath, "tmpA");
         string searchPattern = $"{documentId}.*";
-        var files = Directory.GetFiles(documentId.ToString(), searchPattern);
+        var files = Directory.GetFiles(path, searchPattern);
         var filePath = files.FirstOrDefault();
         if (filePath == null || !File.Exists(filePath))
         {
