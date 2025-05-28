@@ -105,7 +105,7 @@ public class FileService : IFileService
         {
             // Đường dẫn tệp cá nhân hóa, ví dụ: "C:\Users\YourName\Documents\myfile.yourname"
             string fileExtension = ".conf-dms"; // Phần mở rộng tùy chỉnh
-            string filePath = Path.Combine(targetPath, $"config{fileExtension}");
+            string filePath = Path.Combine(targetDirectory, $"config{fileExtension}");
 
             // Đảm bảo thư mục tồn tại
             string directory = Path.GetDirectoryName(filePath);
