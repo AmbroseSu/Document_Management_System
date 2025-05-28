@@ -244,6 +244,13 @@ namespace DocumentManagementSystemApplication.Controllers
             var result = await _documentService.UpdateDocumentFromUsb(documentForSignByUsb,documentId, Guid.Parse(id));
             return result;
         }
+
+        [HttpPost("create-upload-attachment")]
+        public async Task<ResponseDto> UploadAttachment(IFormFile attachmentDocumentRequest)
+        {
+            var result = await _documentService.UploadAttachment(attachmentDocumentRequest);
+            return result;
+        }
     
 }
 }

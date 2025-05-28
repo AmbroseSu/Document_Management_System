@@ -35,4 +35,5 @@ public interface IDocumentService
     Task<ResponseDto> UpdateDocumentFromUsb(DocumentForSignByUsb documentForSignByUsb,Guid documentId, Guid userId);
     Task<ResponseDto> GetAllDocumentElastic(string query);
     Task<ResponseDto> CreateLogDownload(Guid documentId, Guid userId);
+    Task<ResponseDto> UploadAttachment(IFormFile attachmentDocumentRequest);
 }

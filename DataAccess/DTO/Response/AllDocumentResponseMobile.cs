@@ -54,8 +54,8 @@ public class DocumentDetailResponse
     public ProcessingStatus ProcessingStatus { get; set; }
     public DateTime? DateExpired { get; set; }
     public DateTime? Deadline { get; set; }
-    public string? Receiver { get; set; } 
-    public string? Sender { get; set; } 
+    public string[]? Receiver { get; set; } 
+    public string[]? Sender { get; set; } 
     public List<Viewer> ViewerList { get; set; }
     public List<Viewer> GranterList { get; set; }
     public List<Viewer> ApproveByList { get; set; } = [];

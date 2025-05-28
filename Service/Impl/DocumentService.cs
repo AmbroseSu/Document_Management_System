@@ -844,14 +844,15 @@ public partial class DocumentService : IDocumentService
                 sender = null;
             }
             
-            
+            string[] senderO = sender.Split(',');
+            string[] receiverO = receiver.Split(',');
             var result = new DocumentDetailResponse()
             {
                 Sizes = sizes,
                 DateExpired = document.ExpirationDate,
                 Deadline = document.Deadline,
-                Receiver = receiver,
-                Sender = sender,
+                Receiver = receiverO,
+                Sender = senderO,
                 WorkFlowName = document.DocumentWorkflowStatuses.FirstOrDefault().Workflow.WorkflowName,
                 Scope = document.DocumentWorkflowStatuses.FirstOrDefault().Workflow.Scope.ToString(),
                 SystemNumberDocument = document.SystemNumberOfDoc,
@@ -900,10 +901,23 @@ public partial class DocumentService : IDocumentService
         }).ToList();
         string senderA;
         string receiverA;
+        string[] senderAO = [];
+        string[] receiverAO = [];
+
         if (documentA.Scope == Scope.InComing)
         {
             receiverA = documentA.FinalDocument.User.UserName;
             senderA = documentA.Sender;
+            receiverAO = receiverA.Split(',');
+            senderAO = senderA.Split(',');
+        }
+        else
+        {
+            receiverA = documentA.ExternalPartner;
+            
+            senderA = documentA.Sender;
+            receiverAO = receiverA.Split(',');
+            senderAO = senderA.Split(',');
         }
         var resultA = new DocumentDetailResponse()
         {
@@ -922,7 +936,8 @@ public partial class DocumentService : IDocumentService
             CreatedDate = documentA.CreatedDate,
             SystemNumberDocument = documentA.SystemNumberOfDoc,
             DateExpired = documentA.ExpirationDate,
-            Sender = documentA.Sender,
+            Sender = senderAO,
+            Receiver = receiverAO,
             Scope = documentA.Scope.ToString(),
             GranterList = granter.Select(x => new Viewer()
             {
@@ -1737,6 +1752,19 @@ public partial class DocumentService : IDocumentService
         }
         await _loggingService.WriteLogAsync(userId,$"Tải xuống văn bản với Số hiệu Hệ thống là: {document.SystemNumberOfDoc}");
         return ResponseUtil.GetObject("oke", ResponseMessages.GetSuccessfully, HttpStatusCode.OK, 1);
+    }
+
+    public async Task<ResponseDto> UploadAttachment(IFormFile attachmentDocumentRequest)
+    {
+        var path = Path.Combine(_storagePath, "tmpA", attachmentDocumentRequest.FileName);
+        if(!Directory.Exists(Path.Combine(_storagePath, "tmpA")))
+            Directory.CreateDirectory(Path.Combine(_storagePath, "tmpA"));
+        using (var stream = new FileStream(path, FileMode.Create))
+        {
+            attachmentDocumentRequest.CopyTo(stream);
+        }
+        return ResponseUtil.GetObject($"{_host}/api/Document/view-attach-file/{Guid.NewGuid()}",
+            ResponseMessages.GetSuccessfully, HttpStatusCode.OK, 1);
     }
 
     private static DateTime ParsePdfDate(string pdfDate)
