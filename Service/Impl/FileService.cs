@@ -30,6 +30,7 @@ using DocumentFormat.OpenXml.Packaging;
 using iText.Kernel.Colors;
 using iText.Kernel.Pdf;
 using iText.Layout.Element;
+using Repository.Impl;
 using Color = SixLabors.ImageSharp.Color;
 using DocumentVersion = BusinessObject.DocumentVersion;
 using Font = SixLabors.Fonts.Font;
@@ -48,9 +49,11 @@ public class FileService : IFileService
 {
     private readonly string _storagePath = Path.Combine(Directory.GetCurrentDirectory(), "data", "storage");
     private readonly string _host;
+    private readonly UnitOfWork _unitOfWork;
 
-    public FileService(IOptions<AppsetingOptions> options)
+    public FileService(IOptions<AppsetingOptions> options, UnitOfWork unitOfWork)
     {
+        _unitOfWork = unitOfWork;
         _host = options.Value.Host;
     }
 
@@ -611,6 +614,7 @@ public class FileService : IFileService
 
     public async Task<IActionResult> GetAttachFileById(Guid documentId)
     {
+        var doc = await _unitOfWork.AttachmentUOW.FindAttachmentDocumentByIdAsync(documentId);
         var path = Path.Combine(_storagePath, "tmpA");
         string searchPattern = $"{documentId}.*";
         var files = Directory.GetFiles(path, searchPattern);
@@ -626,8 +630,10 @@ public class FileService : IFileService
         
         var contentType = GetContentType(filePath);
         var bytes = await File.ReadAllBytesAsync(filePath);
-        
-        return new FileContentResult(bytes, contentType);
+        return new FileContentResult(bytes, contentType)
+        {
+            FileDownloadName = doc.AttachmentDocumentName+ Path.GetExtension(filePath)
+        };
     }
 
 

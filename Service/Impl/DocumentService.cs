@@ -1112,11 +1112,15 @@ public partial class DocumentService : IDocumentService
 
         foreach (var attachment in attachments)
         {
+            Uri uri = new Uri(attachment.url);
 
+            // Lấy phần cuối của đường dẫn (segment cuối)
+            string guidString = uri.Segments[^1];
             var at = new AttachmentDocument()
             {
-                AttachmentDocumentName = attachment.Name,
-                AttachmentDocumentUrl = attachment.Url,
+                AttachmentDocumentId = Guid.Parse(guidString),
+                AttachmentDocumentName = attachment.name,
+                AttachmentDocumentUrl = attachment.url,
                 DocumentId = document.DocumentId
             };
             await _unitOfWork.AttachmentUOW.AddAsync(at);
