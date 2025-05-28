@@ -220,13 +220,35 @@ public class EmailService : IEmailService
 
             await client.SendAsync(message);
             await client.DisconnectAsync(true);
-
-
+            
+            string newSender = email.Trim().ToLower();
             if (document.ArchivedDocumentStatus == ArchivedDocumentStatus.Archived && document.DocumentRevokeId == null)
             {
                 document.ArchivedDocumentStatus = ArchivedDocumentStatus.Sent;
                 document.DateSented = DateTime.UtcNow;
-                document.Sender = email;
+                
+
+                if (!string.IsNullOrWhiteSpace(document.Sender))
+                {
+                    // Tách các email đã lưu trước đó
+                    var existingSenders = document.Sender
+                        .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                        .Select(e => e.Trim().ToLower())
+                        .ToList();
+
+                    // Nếu chưa tồn tại email mới thì thêm vào
+                    if (!existingSenders.Contains(newSender))
+                    {
+                        existingSenders.Add(newSender);
+                        document.Sender = string.Join(",", existingSenders);
+                    }
+                    // Ngược lại, không làm gì
+                }
+                else
+                {
+                    document.Sender = newSender;
+                }
+
                 await _unitOfWork.ArchivedDocumentUOW.UpdateAsync(document);
             }
 
@@ -243,7 +265,26 @@ public class EmailService : IEmailService
                     await _unitOfWork.ArchivedDocumentUOW.UpdateAsync(documentRevoke);
                     document.ArchivedDocumentStatus = ArchivedDocumentStatus.Sent;
                     document.DateSented = DateTime.UtcNow;
-                    document.Sender = email;
+                    if (!string.IsNullOrWhiteSpace(document.Sender))
+                    {
+                        // Tách các email đã lưu trước đó
+                        var existingSenders = document.Sender
+                            .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                            .Select(e => e.Trim().ToLower())
+                            .ToList();
+
+                        // Nếu chưa tồn tại email mới thì thêm vào
+                        if (!existingSenders.Contains(newSender))
+                        {
+                            existingSenders.Add(newSender);
+                            document.Sender = string.Join(",", existingSenders);
+                        }
+                        // Ngược lại, không làm gì
+                    }
+                    else
+                    {
+                        document.Sender = newSender;
+                    }
                     await _unitOfWork.ArchivedDocumentUOW.UpdateAsync(document);
                 }
             }
@@ -275,8 +316,25 @@ public class EmailService : IEmailService
             allEmails.AddRange(emailRequest.BccEmails);
         }
 
-        string allEmailString = string.Join(",", allEmails);
-        document.ExternalPartner = allEmailString;
+// Tách các email đã có nếu document.ExternalPartner không null hoặc rỗng
+        if (!string.IsNullOrWhiteSpace(document.ExternalPartner))
+        {
+            var existingEmails = document.ExternalPartner
+                .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                .Select(e => e.Trim())
+                .Where(e => !string.IsNullOrWhiteSpace(e));
+
+            allEmails.AddRange(existingEmails);
+        }
+
+// Loại bỏ trùng lặp và nối lại thành chuỗi
+        var distinctEmails = allEmails
+            .Select(e => e.Trim().ToLower()) // chuẩn hóa để so trùng hợp lý hơn
+            .Distinct()
+            .ToList();
+
+        document.ExternalPartner = string.Join(",", distinctEmails);
+
         await _unitOfWork.ArchivedDocumentUOW.UpdateAsync(document);
         await _unitOfWork.SaveChangesAsync();
         return ResponseUtil.GetObject(ResponseMessages.SendEmailSuccessfully, ResponseMessages.CreatedSuccessfully, HttpStatusCode.OK, 1);
