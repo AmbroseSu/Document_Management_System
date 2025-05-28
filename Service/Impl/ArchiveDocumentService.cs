@@ -364,6 +364,7 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
             NumberOfDocument = docA.NumberOfDocument,
             SystemNumberOfDocument = docA.SystemNumberOfDoc,
             Sender = sender,
+            ExternalPartner = docA.ExternalPartner,
             CanGrant = canGrant,
             CanDownLoad = canDownLoad,
             ReceivedBy = receiver,
