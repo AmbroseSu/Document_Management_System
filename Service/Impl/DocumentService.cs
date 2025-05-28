@@ -950,7 +950,7 @@ public partial class DocumentService : IDocumentService
         var validTo = GetDateTime(documentUploadDto.CanChange.GetValueOrDefault("validTo"));
         var validFromsCannot = GetList<DateTime>(documentUploadDto.CannotChange.GetValueOrDefault("ValidFrom"));
         var expirationDates = GetList<DateTime>(documentUploadDto.CannotChange.GetValueOrDefault("ExpirationDate"));
-        var attachments = GetList<IFormFile>(documentUploadDto.CanChange.GetValueOrDefault("attachments"));
+        var attachments = GetList<AttachmentDocumentRequest>(documentUploadDto.CanChange.GetValueOrDefault("attachments") ?? new AttachmentDocumentRequest());
         var dateReceived = GetDateTime(documentUploadDto.CanChange.GetValueOrDefault("DateReceived"));
         var documentTypeId = GetGuid(documentUploadDto.CanChange.GetValueOrDefault("DocumentTypeId"));
         var workflowId = GetGuid(documentUploadDto.CanChange.GetValueOrDefault("WorkflowId"));
@@ -1039,6 +1039,16 @@ public partial class DocumentService : IDocumentService
             version.DocumentVersionId, document.DocumentId, name,validFroms);
         version.DocumentVersionUrl = url;
 
+        foreach (var attachment in attachments)
+        {
+            var stream = new FileStream(Path.Combine(_storagePath,"attachdoc", $"{attachment.DocumentName}{Path.GetExtension(attachment.file.FileName)}"), FileMode.Create);
+            await attachment.file.CopyToAsync(stream);
+            // var at = new AttachmentDocument()
+            // {
+            //     AttachmentDocumentName = attachment.DocumentName,
+            //     
+            // }
+        }
         // document.DateIssued = DateTime.Today.ToString("yyyy-MM-dd");
         await _unitOfWork.DocumentUOW.UpdateAsync(document);
         await _unitOfWork.SaveChangesAsync();
@@ -1130,6 +1140,7 @@ public partial class DocumentService : IDocumentService
                     ArchivedDocumentContent = document.DocumentContent,
                     NumberOfDocument = document.NumberOfDocument,
                     CreatedDate = DateTime.Now,
+                    ExpirationDate = document.ExpirationDate,
                     Sender = document.Sender,
                     CreatedBy = document.User.UserName,
                     ExternalPartner = document.Sender,
