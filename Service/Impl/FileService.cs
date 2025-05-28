@@ -100,6 +100,7 @@ public class FileService : IFileService
 
         // Di chuyển file
         File.Move(path, targetPath);
+        Thread.Sleep(1000);
         try
         {
             // Đường dẫn tệp cá nhân hóa, ví dụ: "C:\Users\YourName\Documents\myfile.yourname"
