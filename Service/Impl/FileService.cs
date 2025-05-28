@@ -30,6 +30,7 @@ using DocumentFormat.OpenXml.Packaging;
 using iText.Kernel.Colors;
 using iText.Kernel.Pdf;
 using iText.Layout.Element;
+using Repository;
 using Repository.Impl;
 using Color = SixLabors.ImageSharp.Color;
 using DocumentVersion = BusinessObject.DocumentVersion;
@@ -49,9 +50,9 @@ public class FileService : IFileService
 {
     private readonly string _storagePath = Path.Combine(Directory.GetCurrentDirectory(), "data", "storage");
     private readonly string _host;
-    private readonly UnitOfWork _unitOfWork;
+    private readonly IUnitOfWork _unitOfWork;
 
-    public FileService(IOptions<AppsetingOptions> options, UnitOfWork unitOfWork)
+    public FileService(IOptions<AppsetingOptions> options, IUnitOfWork unitOfWork)
     {
         _unitOfWork = unitOfWork;
         _host = options.Value.Host;
