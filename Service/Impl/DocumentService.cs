@@ -1516,7 +1516,12 @@ public partial class DocumentService : IDocumentService
             return ResponseUtil.Error("Document not found", ResponseMessages.OperationFailed,
                 HttpStatusCode.NotFound);
         }
-        
+        if(documentUpload.ValidFrom == null)
+            doc.DateIssued = null;
+        else
+        {
+            doc.DateIssued = documentUpload.ValidFrom.Value;
+        }
         // var taskList = doc.Tasks;
         // if (taskList != null)
         // {

@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace BusinessObject;
 
@@ -15,6 +16,7 @@ public class AttachmentDocument
 
     public Guid DocumentId { get; set; }
 
+    [JsonIgnore]
     public Document? Document { get; set; }
     /*public AttachmentDocument()
     {
