@@ -67,10 +67,12 @@ public class DocumentDetailResponse
     public DateTime? CreatedDate { get; set; }
     public string? CreatedBy { get; set; } 
     public List<string>? DivisionList { get; set; } 
+    public DateTime ValidFrom { get; set; }
     public List<Viewer>? UserList { get; set; }
     public List<string>? SignBys { get; set; }
     public string? DocumentUrl { get; set; } 
     public List<SizeDocumentResponse>? Sizes { get; set; }
+    public bool IsExpire { get; set; }
 }
 
 public class UserResponseMobile

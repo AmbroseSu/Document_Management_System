@@ -875,7 +875,7 @@ public partial class DocumentService : IDocumentService
             };
             return ResponseUtil.GetObject(result, ResponseMessages.GetSuccessfully, HttpStatusCode.OK, 1);
         }
-
+        
         var documentA = await _unitOfWork.ArchivedDocumentUOW.FindArchivedDocumentByIdAsync(documentId);
         var usersA = documentA.UserDocumentPermissions.Select(x => x.User).Distinct().ToList();
 
@@ -903,7 +903,7 @@ public partial class DocumentService : IDocumentService
         string receiverA;
         string[] senderAO = [];
         string[] receiverAO = [];
-
+        
         if (documentA.Scope == Scope.InComing)
         {
             receiverA = documentA.FinalDocument.User.UserName;
@@ -918,6 +918,38 @@ public partial class DocumentService : IDocumentService
             senderA = documentA.Sender;
             receiverAO = receiverA.Split(',');
             senderAO = senderA.Split(',');
+        }
+        DateTime validFrom;
+        try
+        {
+            string fileExtension = ".conf-dms"; // Phần mở rộng tùy chỉnh
+            string filePath = Path.Combine(_storagePath,"archive_document",documentA.ArchivedDocumentId.ToString(), $"config{fileExtension}");
+
+            // Kiểm tra xem tệp có tồn tại không
+            if (!File.Exists(filePath))
+            {
+                throw new FileNotFoundException("Không tìm thấy tệp cấu hình.", filePath);
+            }
+
+            // Đọc nội dung từ tệp
+            string content = await File.ReadAllTextAsync(filePath);
+
+            // Chuyển chuỗi thành DateTime
+            if (DateTime.TryParseExact(content, "yyyy-MM-dd HH:mm:ss", 
+                    System.Globalization.CultureInfo.InvariantCulture, 
+                    System.Globalization.DateTimeStyles.None, 
+                    out DateTime dateTime))
+            {
+                validFrom = dateTime;
+            }
+            else
+            {
+                throw new FormatException("Nội dung tệp không đúng định dạng DateTime (yyyy-MM-dd HH:mm:ss).");
+            }
+        }
+        catch (Exception ex)
+        {
+            throw new Exception("Lỗi khi đọc tệp.", ex);
         }
         var resultA = new DocumentDetailResponse()
         {
@@ -937,6 +969,8 @@ public partial class DocumentService : IDocumentService
             SystemNumberDocument = documentA.SystemNumberOfDoc,
             DateExpired = documentA.ExpirationDate,
             Sender = senderAO,
+            IsExpire = documentA.ExpirationDate <= DateTime.Now,
+            ValidFrom = validFrom,
             Receiver = receiverAO,
             Scope = documentA.Scope.ToString(),
             GranterList = granter.Select(x => new Viewer()

@@ -609,9 +609,10 @@ public class FileService : IFileService
         return url;
     }
 
-
-    
-
+    public Task<IActionResult> GetAttachFileById(Guid documentId)
+    {
+        throw new NotImplementedException();
+    }
 
 
     private static string GetContentType(string path)
@@ -622,6 +623,12 @@ public class FileService : IFileService
             ".jpg" or ".jpeg" => "image/jpeg",
             ".png" => "image/png",
             ".gif" => "image/gif",
+            ".doc" => "application/msword",
+            ".docx" => "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            ".pdf" => "application/pdf",
+            ".xlsx" => "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            ".ppt" => "application/vnd.ms-powerpoint",
+            ".pptx" => "application/vnd.openxmlformats-officedocument.presentationml.presentation",
             _ => "application/octet-stream",
         };
     }

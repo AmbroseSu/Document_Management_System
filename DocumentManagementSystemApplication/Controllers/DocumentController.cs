@@ -251,6 +251,13 @@ namespace DocumentManagementSystemApplication.Controllers
             var result = await _documentService.UploadAttachment(attachmentDocumentRequest);
             return result;
         }
-    
-}
+
+        [HttpGet("api/Document/view-attach-file/{documentId}")]
+        [AllowAnonymous]
+        public async Task<IActionResult> ViewAttachFile([FromRoute] Guid documentId)
+        {
+            return await _fileService.GetAttachFileById(documentId);
+        }
+
+    }
 }

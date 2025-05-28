@@ -34,4 +34,5 @@ public interface IFileService
         int urx, int ury);
 
     Task<string> SaveNewVersionDocFromBase64(DocumentCompareDto docCompareDto,DocumentVersion documentVersion);
+    Task<IActionResult> GetAttachFileById(Guid documentId);
 }
