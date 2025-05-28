@@ -155,6 +155,8 @@ public class UserDocPermissionService : IUserDocPermissionService
                 affectedUserIds.Add(userId);
             }
         }
+        
+        
 
         if (!newPermissions.Any() && !reactivatedPermissions.Any())
         {
