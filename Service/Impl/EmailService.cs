@@ -122,8 +122,8 @@ public class EmailService : IEmailService
             return ResponseUtil.GetObject(ResponseMessages.EmailNotMatch, ResponseMessages.OperationFailed, HttpStatusCode.BadRequest, 1);
         }*/
         
-        var user = await _unitOfWork.UserUOW.FindUserByEmailAsync(email);
-        var userRole = await _unitOfWork.UserRoleUOW.FindRolesByUserIdAsync(user.UserId);
+        //var user = await _unitOfWork.UserUOW.FindUserByEmailAsync(email);
+        var userRole = await _unitOfWork.UserRoleUOW.FindRolesByUserIdAsync(userId);
         var roleName = userRole.Where(r => r.IsPrimary == true).FirstOrDefault().Role.RoleName;
         if (scope != Scope.OutGoing && !roleName.ToLower().Equals("chief"))
         {
@@ -290,9 +290,9 @@ public class EmailService : IEmailService
             { "code", code },
             { "client_id", Environment.GetEnvironmentVariable("CLIENT_ID")! },
             { "client_secret", Environment.GetEnvironmentVariable("CLIENT_SECRET")! },
-            { "redirect_uri", "https://www.signdoc-core.io.vn/send-email" },
+            //{ "redirect_uri", "https://www.signdoc-core.io.vn/send-email" },
             //{ "redirect_uri", "http://localhost:3000/send-email" },
-            //{ "redirect_uri", "http://127.0.0.1:5500/test.html" },
+            { "redirect_uri", "http://127.0.0.1:5500/test.html" },
             { "grant_type", "authorization_code" }
         };
 
