@@ -1115,8 +1115,8 @@ public partial class DocumentService : IDocumentService
 
             var at = new AttachmentDocument()
             {
-                AttachmentDocumentName = attachment.DocumentName,
-                AttachmentDocumentUrl = attachment.urlfile,
+                AttachmentDocumentName = attachment.Name,
+                AttachmentDocumentUrl = attachment.Url,
                 DocumentId = document.DocumentId
             };
             await _unitOfWork.AttachmentUOW.AddAsync(at);

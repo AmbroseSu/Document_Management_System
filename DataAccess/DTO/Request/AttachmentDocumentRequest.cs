@@ -4,6 +4,6 @@ namespace DataAccess.DTO.Request;
 
 public class AttachmentDocumentRequest
 {
-    public string DocumentName { get; set; }
-    public string urlfile { get; set; } 
+    public string Name { get; set; }
+    public string Url { get; set; } 
 }
