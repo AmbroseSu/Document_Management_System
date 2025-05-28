@@ -221,14 +221,20 @@ public class EmailService : IEmailService
             await client.SendAsync(message);
             await client.DisconnectAsync(true);
 
-            string newSender = email.Trim().ToLower();
+
             if (document.ArchivedDocumentStatus == ArchivedDocumentStatus.Archived && document.DocumentRevokeId == null)
             {
                 document.ArchivedDocumentStatus = ArchivedDocumentStatus.Sent;
                 document.DateSented = DateTime.UtcNow;
-                
+                document.Sender = email;
+                await _unitOfWork.ArchivedDocumentUOW.UpdateAsync(document);
+            }
 
-                if (document.Sender != null || !string.IsNullOrWhiteSpace(document.Sender))
+            if (document.ArchivedDocumentStatus == ArchivedDocumentStatus.Sent)
+            {
+                string newSender = email.Trim().ToLower();
+
+                if (!string.IsNullOrWhiteSpace(document.Sender))
                 {
                     // Tách các email đã lưu trước đó
                     var existingSenders = document.Sender
@@ -248,8 +254,6 @@ public class EmailService : IEmailService
                 {
                     document.Sender = newSender;
                 }
-
-                await _unitOfWork.ArchivedDocumentUOW.UpdateAsync(document);
             }
 
             if (document.DocumentRevokeId != null && document.ArchivedDocumentStatus == ArchivedDocumentStatus.Archived)
@@ -265,26 +269,7 @@ public class EmailService : IEmailService
                     await _unitOfWork.ArchivedDocumentUOW.UpdateAsync(documentRevoke);
                     document.ArchivedDocumentStatus = ArchivedDocumentStatus.Sent;
                     document.DateSented = DateTime.UtcNow;
-                    if (document.Sender != null || !string.IsNullOrWhiteSpace(document.Sender))
-                    {
-                        // Tách các email đã lưu trước đó
-                        var existingSenders = document.Sender
-                            .Split(',', StringSplitOptions.RemoveEmptyEntries)
-                            .Select(e => e.Trim().ToLower())
-                            .ToList();
-
-                        // Nếu chưa tồn tại email mới thì thêm vào
-                        if (!existingSenders.Contains(newSender))
-                        {
-                            existingSenders.Add(newSender);
-                            document.Sender = string.Join(",", existingSenders);
-                        }
-                        // Ngược lại, không làm gì
-                    }
-                    else
-                    {
-                        document.Sender = newSender;
-                    }
+                    document.Sender = email;
                     await _unitOfWork.ArchivedDocumentUOW.UpdateAsync(document);
                 }
             }
