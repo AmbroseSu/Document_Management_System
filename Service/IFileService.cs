@@ -17,7 +17,7 @@ public interface IFileService
     Task<(byte[] FileBytes, string FileName, string ContentType)> GetFileBytes(string filePath);
     Task<IActionResult> GetAvatar(string fileName);
     string CreateFirstVersion(Guid documentId, string documentName, Guid versionId, Guid templateId);
-    string CreateAVersionFromUpload(string fileName, Guid versionId, Guid documentId,string versionName);
+    string CreateAVersionFromUpload(string fileName, Guid versionId, Guid documentId,string versionName,DateTime? validFroms);
     string ArchiveDocument(string fileName, Guid documentId, Guid versionId, Guid archiveId);
 
     string? GetFileSize(Guid documentId, Guid versionId, string fileName);

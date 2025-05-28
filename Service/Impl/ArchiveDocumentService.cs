@@ -27,6 +27,7 @@ using Service.Utilities;
 using Syncfusion.Pdf.Parsing;
 using PdfDocument = iText.Kernel.Pdf.PdfDocument;
 using PdfReader = iText.Kernel.Pdf.PdfReader;
+using Scope = BusinessObject.Enums.Scope;
 
 namespace Service.Impl;
 
@@ -292,7 +293,21 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
                 canRevoke = false;
 
         }
-       
+        var timeZone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Ho_Chi_Minh");
+        var dateNow = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, timeZone);
+        var isExpire = TimeZoneInfo.ConvertTimeFromUtc(docA.ExpirationDate, timeZone) <= dateNow;
+        var sender = string.Empty;
+        var receiver = string.Empty;
+        if (docA.Scope == Scope.InComing)
+        {
+            sender = docA.Sender;
+            receiver = docA.FinalDocument.User.UserName;
+        }
+        else
+        {
+            sender = docA.Sender;
+            receiver = docA.ExternalPartner;
+        }
         var result = new ArchiveDocumentResponse()
         {
             Granters = GranterList,
@@ -301,9 +316,10 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
             DocumentContent = docA.ArchivedDocumentContent,
             NumberOfDocument = docA.NumberOfDocument,
             SystemNumberOfDocument = docA.SystemNumberOfDoc,
-            Sender = docA.Sender,
+            Sender = sender,
             CanGrant = canGrant,
             CanDownLoad = canDownLoad,
+            ReceivedBy = receiver,
             CanRevoke = canRevoke,
             Viewers = ViewerList,
             DateExpires = docA.ExpirationDate,
@@ -314,6 +330,7 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
             Scope = docA.Scope.ToString(),
             DocumentTypeName = docA.DocumentType?.DocumentTypeName,
             WorkflowName = string.Empty,
+            IsExpire = isExpire,
             RevokeDocument = new SimpleDocumentResponse()
             {
                 documentId = docA.DocumentRevokeId,

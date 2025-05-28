@@ -946,9 +946,11 @@ public partial class DocumentService : IDocumentService
         var singingDates = GetList<DateTime>(documentUploadDto.CannotChange.GetValueOrDefault("SingingDate"));
         var serialNumbers = GetList<string>(documentUploadDto.CannotChange.GetValueOrDefault("SerialNumber"));
         var validFroms = GetDateTime(documentUploadDto.CanChange.GetValueOrDefault("validFrom"));
+        var dateIssue = GetDateTime(documentUploadDto.CanChange.GetValueOrDefault("dateIssued"));
         var validTo = GetDateTime(documentUploadDto.CanChange.GetValueOrDefault("validTo"));
         var validFromsCannot = GetList<DateTime>(documentUploadDto.CannotChange.GetValueOrDefault("ValidFrom"));
         var expirationDates = GetList<DateTime>(documentUploadDto.CannotChange.GetValueOrDefault("ExpirationDate"));
+        var attachments = GetList<IFormFile>(documentUploadDto.CanChange.GetValueOrDefault("attachments"));
         var dateReceived = GetDateTime(documentUploadDto.CanChange.GetValueOrDefault("DateReceived"));
         var documentTypeId = GetGuid(documentUploadDto.CanChange.GetValueOrDefault("DocumentTypeId"));
         var workflowId = GetGuid(documentUploadDto.CanChange.GetValueOrDefault("WorkflowId"));
@@ -963,7 +965,8 @@ public partial class DocumentService : IDocumentService
         var verId = Guid.NewGuid();
         var update = Builders<Count>.Update.Set(x => x.Value, count.Value);
         await _mongoDbService.Counts.UpdateOneAsync(filter, update);
-        
+        if (validFroms == null || validFroms == DateTime.MaxValue || validFroms == DateTime.MinValue)
+            validFroms = DateTime.MinValue;
         var document = new Document
         {
             DocumentName = name,
@@ -977,7 +980,7 @@ public partial class DocumentService : IDocumentService
             ProcessingStatus = ProcessingStatus.InProgress,
             IsDeleted = false,
             Sender = sender,
-            DateIssued = validFroms,
+            DateIssued = dateIssue,
             DateReceived = dateReceived,
             Deadline = deadline,
             UserId = userId,
@@ -1033,7 +1036,7 @@ public partial class DocumentService : IDocumentService
         }
         
         var url = _fileService.CreateAVersionFromUpload(documentUploadDto.CannotChange["fileName"]?.ToString(),
-            version.DocumentVersionId, document.DocumentId, name);
+            version.DocumentVersionId, document.DocumentId, name,validFroms);
         version.DocumentVersionUrl = url;
 
         // document.DateIssued = DateTime.Today.ToString("yyyy-MM-dd");
@@ -1197,7 +1200,8 @@ public partial class DocumentService : IDocumentService
             { "validTo", metaData?.MaxBy(x => x.ExpirationDate).ExpirationDate },
             { "validFrom", metaData?.MinBy(x => x.ValidFrom).ValidFrom },
             { "signerName", metaData?.Select(x => ExtractSigners(x.SignerName)).ToList() },
-            { "url", _host + "/api/document/view-file-by-name?documentName=" + fileName }
+            { "url", _host + "/api/document/view-file-by-name?documentName=" + fileName },
+            {"DateIssue", null}
         };
 
         var cannotChange = new Dictionary<string, object?>
@@ -1326,6 +1330,7 @@ public partial class DocumentService : IDocumentService
             ExpirationDate = documentPreInfo.ExpireDate,
             Deadline = documentPreInfo.Deadline,
             ProcessingStatus = ProcessingStatus.InProgress,
+            DateIssued = documentPreInfo.IssueDate??DateTime.MinValue,
             DocumentPriority = DocumentPriority.High,
             IsDeleted = false,
             UserId = userId,

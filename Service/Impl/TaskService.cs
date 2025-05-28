@@ -2545,7 +2545,7 @@ public partial class TaskService : ITaskService
                             {
                                 UserId = userId,
                                 ArchivedDocumentId = archivedDocId,
-                                GrantPermission = GrantPermission.Download,
+                                GrantPermission = GrantPermission.View,
                                 CreatedDate = DateTime.UtcNow,
                                 IsDeleted = false
                             });
@@ -2615,7 +2615,7 @@ public partial class TaskService : ITaskService
                     CreatedBy = doc.User.FullName,
                     ExternalPartner = null,
                     ArchivedDocumentStatus = ArchivedDocumentStatus.Archived,
-                    DateIssued = doc.DateIssued?? DateTime.Now,
+                    DateIssued = doc.DateIssued.Equals(DateTime.MaxValue) || doc.DateIssued.Equals(DateTime.MinValue) || doc.DateIssued == null ? DateTime.Now : doc.DateIssued,
                     DateReceived = null,
                     DateSented = null,
                     DocumentRevokes = null,
@@ -2645,7 +2645,12 @@ public partial class TaskService : ITaskService
                 archivedDoc.CreatedBy = doc.User.UserName;
                 archivedDoc.ArchivedDocumentStatus = ArchivedDocumentStatus.Archived;
                 archivedDoc.Scope = (await _unitOfWork.WorkflowUOW.FindWorkflowByIdAsync(workflowId)).Scope;
-                archivedDoc.DateIssued = DateTime.Now;
+                archivedDoc.DateIssued =
+                    doc.DateIssued.Equals(DateTime.MaxValue) || doc.DateIssued.Equals(DateTime.MinValue) ||
+                    doc.DateIssued == null
+                        ? DateTime.Now
+                        : doc.DateIssued;
+                ;
                 archivedDoc.DocumentType = doc.DocumentType;
                 archivedDoc.FinalDocumentId = doc.DocumentId;
                         
@@ -2983,7 +2988,7 @@ public partial class TaskService : ITaskService
                             ExpirationDate = doc.ExpirationDate,
                             CreatedBy = currentTask.User.UserName,
                             ArchivedDocumentStatus = ArchivedDocumentStatus.Archived,
-                            DateIssued = doc.DateIssued??DateTime.Now,
+                            DateIssued = doc.DateIssued.Equals(DateTime.MaxValue) || doc.DateIssued.Equals(DateTime.MinValue) || doc.DateIssued == null ? DateTime.Now : doc.DateIssued,
                             Scope = (await _unitOfWork.WorkflowUOW.FindWorkflowByIdAsync(workflowId)).Scope,
                             IsTemplate = false,
                             DocumentType = doc.DocumentType,
@@ -3019,7 +3024,7 @@ public partial class TaskService : ITaskService
                         archiveDoc.CreatedBy = doc.User.UserName;
                         archiveDoc.ArchivedDocumentStatus = ArchivedDocumentStatus.Archived;
                         archiveDoc.Scope = (await _unitOfWork.WorkflowUOW.FindWorkflowByIdAsync(workflowId)).Scope;
-                        archiveDoc.DateIssued = DateTime.Now;
+                        archiveDoc.DateIssued = doc.DateIssued.Equals(DateTime.MaxValue) || doc.DateIssued.Equals(DateTime.MinValue) || doc.DateIssued == null ? DateTime.Now : doc.DateIssued;
                         archiveDoc.DocumentType = doc.DocumentType;
                         archiveDoc.FinalDocumentId = doc.DocumentId;
                         

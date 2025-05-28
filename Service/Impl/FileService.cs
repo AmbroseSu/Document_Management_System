@@ -84,10 +84,9 @@ public class FileService : IFileService
         return fileName;
     }
 
-    public string CreateAVersionFromUpload(string fileName, Guid versionId, Guid documentId, string versionName)
+    public string CreateAVersionFromUpload(string fileName, Guid versionId, Guid documentId, string versionName,DateTime? validFroms)
     {
         var path = Path.Combine(_storagePath, "document", "UploadedFiles", fileName);
-
         var targetDirectory = Path.Combine(_storagePath, "document", documentId.ToString(), versionId.ToString());
 
         // Tạo thư mục nếu chưa tồn tại
@@ -95,12 +94,17 @@ public class FileService : IFileService
         {
             Directory.CreateDirectory(targetDirectory);
         }
-
+        
         // Tạo đường dẫn đích
         var targetPath = Path.Combine(targetDirectory, versionName + ".pdf");
 
         // Di chuyển file
         File.Move(path, targetPath);
+        using (var wordDoc = WordprocessingDocument.Open(targetPath, true))
+        {
+            var packageProperties = wordDoc.PackageProperties;
+            packageProperties.Created = validFroms;
+        }
         var url = _host + "/api/Document/view-file/" + documentId + "?version=0&isArchive=false";
         // Trả về đường dẫn mới của file (hoặc bạn có thể trả về tên file tùy mục đích)
         return url;
