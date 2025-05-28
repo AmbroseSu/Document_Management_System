@@ -220,7 +220,7 @@ public class EmailService : IEmailService
 
             await client.SendAsync(message);
             await client.DisconnectAsync(true);
-            
+
             string newSender = email.Trim().ToLower();
             if (document.ArchivedDocumentStatus == ArchivedDocumentStatus.Archived && document.DocumentRevokeId == null)
             {
@@ -228,7 +228,7 @@ public class EmailService : IEmailService
                 document.DateSented = DateTime.UtcNow;
                 
 
-                if (!string.IsNullOrWhiteSpace(document.Sender))
+                if (document.Sender != null || !string.IsNullOrWhiteSpace(document.Sender))
                 {
                     // Tách các email đã lưu trước đó
                     var existingSenders = document.Sender
@@ -265,7 +265,7 @@ public class EmailService : IEmailService
                     await _unitOfWork.ArchivedDocumentUOW.UpdateAsync(documentRevoke);
                     document.ArchivedDocumentStatus = ArchivedDocumentStatus.Sent;
                     document.DateSented = DateTime.UtcNow;
-                    if (!string.IsNullOrWhiteSpace(document.Sender))
+                    if (document.Sender != null || !string.IsNullOrWhiteSpace(document.Sender))
                     {
                         // Tách các email đã lưu trước đó
                         var existingSenders = document.Sender
