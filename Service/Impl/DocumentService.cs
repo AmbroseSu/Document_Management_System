@@ -928,7 +928,7 @@ public partial class DocumentService : IDocumentService
             // Kiểm tra xem tệp có tồn tại không
             if (!File.Exists(filePath))
             {
-                throw new FileNotFoundException("Không tìm thấy tệp cấu hình.", filePath);
+                // throw new FileNotFoundException("Không tìm thấy tệp cấu hình.", filePath);
             }
 
             // Đọc nội dung từ tệp
@@ -944,7 +944,7 @@ public partial class DocumentService : IDocumentService
             }
             else
             {
-                throw new FormatException("Nội dung tệp không đúng định dạng DateTime (yyyy-MM-dd HH:mm:ss).");
+                // throw new FormatException("Nội dung tệp không đúng định dạng DateTime (yyyy-MM-dd HH:mm:ss).");
             }
         }
         catch (Exception ex)
