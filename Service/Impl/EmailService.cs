@@ -111,7 +111,7 @@ public class EmailService : IEmailService
 
         var scope = doc.DocumentWorkflowStatuses?.FirstOrDefault(w => w.DocumentId == doc.DocumentId).Workflow.Scope;
 
-        string token = ExchangeCodeForAccessToken(emailRequest.AccessToken).Result;
+        string token = await ExchangeCodeForAccessToken(emailRequest.AccessToken);
         if (token.Equals("string"))
         {
             return ResponseUtil.Error("Please login google again", ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
@@ -122,8 +122,8 @@ public class EmailService : IEmailService
             return ResponseUtil.GetObject(ResponseMessages.EmailNotMatch, ResponseMessages.OperationFailed, HttpStatusCode.BadRequest, 1);
         }*/
         
-        var user = await _unitOfWork.UserUOW.FindUserByEmailAsync(email);
-        var userRole = await _unitOfWork.UserRoleUOW.FindRolesByUserIdAsync(user.UserId);
+        //var user = await _unitOfWork.UserUOW.FindUserByEmailAsync(email);
+        var userRole = await _unitOfWork.UserRoleUOW.FindRolesByUserIdAsync(userId);
         var roleName = userRole.Where(r => r.IsPrimary == true).FirstOrDefault().Role.RoleName;
         if (scope != Scope.OutGoing && !roleName.ToLower().Equals("chief"))
         {
@@ -230,6 +230,32 @@ public class EmailService : IEmailService
                 await _unitOfWork.ArchivedDocumentUOW.UpdateAsync(document);
             }
 
+            if (document.ArchivedDocumentStatus == ArchivedDocumentStatus.Sent)
+            {
+                string newSender = email.Trim().ToLower();
+
+                if (!string.IsNullOrWhiteSpace(document.Sender))
+                {
+                    // Tách các email đã lưu trước đó
+                    var existingSenders = document.Sender
+                        .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                        .Select(e => e.Trim().ToLower())
+                        .ToList();
+
+                    // Nếu chưa tồn tại email mới thì thêm vào
+                    if (!existingSenders.Contains(newSender))
+                    {
+                        existingSenders.Add(newSender);
+                        document.Sender = string.Join(",", existingSenders);
+                    }
+                    // Ngược lại, không làm gì
+                }
+                else
+                {
+                    document.Sender = newSender;
+                }
+            }
+
             if (document.DocumentRevokeId != null && document.ArchivedDocumentStatus == ArchivedDocumentStatus.Archived)
             {
                 
@@ -260,6 +286,42 @@ public class EmailService : IEmailService
             memoryStream.Dispose();
         }*/
         await _loggingService.WriteLogAsync(userId,$"Đã gửi Email với thông tin: {emailRequest}, thành công.");
+        var allEmails = new List<string>();
+
+        if (emailRequest.ReceiverEmail != null && emailRequest.ReceiverEmail.Any())
+        {
+            allEmails.AddRange(emailRequest.ReceiverEmail);
+        }
+        if (emailRequest.CcEmails != null && emailRequest.CcEmails.Any())
+        {
+            allEmails.AddRange(emailRequest.CcEmails);
+        }
+        if (emailRequest.BccEmails != null && emailRequest.BccEmails.Any())
+        {
+            allEmails.AddRange(emailRequest.BccEmails);
+        }
+
+// Tách các email đã có nếu document.ExternalPartner không null hoặc rỗng
+        if (!string.IsNullOrWhiteSpace(document.ExternalPartner))
+        {
+            var existingEmails = document.ExternalPartner
+                .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                .Select(e => e.Trim())
+                .Where(e => !string.IsNullOrWhiteSpace(e));
+
+            allEmails.AddRange(existingEmails);
+        }
+
+// Loại bỏ trùng lặp và nối lại thành chuỗi
+        var distinctEmails = allEmails
+            .Select(e => e.Trim().ToLower()) // chuẩn hóa để so trùng hợp lý hơn
+            .Distinct()
+            .ToList();
+
+        document.ExternalPartner = string.Join(",", distinctEmails);
+
+        await _unitOfWork.ArchivedDocumentUOW.UpdateAsync(document);
+        await _unitOfWork.SaveChangesAsync();
         return ResponseUtil.GetObject(ResponseMessages.SendEmailSuccessfully, ResponseMessages.CreatedSuccessfully, HttpStatusCode.OK, 1);
     }
     
