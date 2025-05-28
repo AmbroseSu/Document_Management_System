@@ -22,9 +22,10 @@ public class DocumentResponse
     public DateTime? DateExpires { get; set; }
     public string? ReceivedBy { get; set; }
     public string? Scope { get; set; }
+    public DateTime? ValidFrom { get; set; }
     public List<SignatureResponse>? DigitalSignatures { get; set; } = [];
     public List<SignatureResponse>? ApprovalSignatures { get; set; } = [];
-
+    
     public List<VersionDetailRespone>? Versions { get; set; } = [];  
     public List<TasksResponse>? Tasks { get; set; } = [];
 }

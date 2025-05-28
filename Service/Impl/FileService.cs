@@ -100,10 +100,28 @@ public class FileService : IFileService
 
         // Di chuyển file
         File.Move(path, targetPath);
-        using (var wordDoc = WordprocessingDocument.Open(targetPath, true))
+        try
         {
-            var packageProperties = wordDoc.PackageProperties;
-            packageProperties.Created = validFroms;
+            // Đường dẫn tệp cá nhân hóa, ví dụ: "C:\Users\YourName\Documents\myfile.yourname"
+            string fileExtension = ".conf-dms"; // Phần mở rộng tùy chỉnh
+            string filePath = Path.Combine(targetPath, $"config{fileExtension}");
+
+            // Đảm bảo thư mục tồn tại
+            string directory = Path.GetDirectoryName(filePath);
+            if (!Directory.Exists(directory))
+            {
+                Directory.CreateDirectory(directory);
+            }
+
+            // Chuyển DateTime thành chuỗi với định dạng cụ thể
+           string content = validFroms.HasValue ? validFroms.Value.ToString("yyyy-MM-dd HH:mm:ss") : DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+
+            // Ghi nội dung vào tệp
+            File.WriteAllText(filePath, content);
+        }
+        catch (Exception ex)
+        {
+            throw new Exception("Lỗi khi tạo tệp.", ex);
         }
         var url = _host + "/api/Document/view-file/" + documentId + "?version=0&isArchive=false";
         // Trả về đường dẫn mới của file (hoặc bạn có thể trả về tên file tùy mục đích)
@@ -123,8 +141,10 @@ public class FileService : IFileService
         }
 
         var targetPath = Path.Combine(targetDirectory, fileName);
-
         File.Copy(path, targetPath);
+        var configPath = Path.Combine(_storagePath, "document", documentId.ToString(), versionId.ToString(), "config.conf-dms");
+        if (File.Exists(configPath))
+            File.Copy(configPath, Path.Combine(targetDirectory, "config.conf-dms"));
         var url = _host + "/api/Document/view-file/" + archiveId + "?version=1&isArchive=true";
         return url;
     }

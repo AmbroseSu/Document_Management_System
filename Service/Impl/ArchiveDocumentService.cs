@@ -33,6 +33,7 @@ namespace Service.Impl;
 
 public partial class ArchiveDocumentService : IArchiveDocumentService
 {
+    private readonly string _storagePath = Path.Combine(Directory.GetCurrentDirectory(), "data", "storage");
     private readonly IMapper _mapper;
     private readonly IUnitOfWork _unitOfWork;
     private readonly string _host;
@@ -296,6 +297,52 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
         var timeZone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Ho_Chi_Minh");
         var dateNow = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, timeZone);
         var isExpire = dateNow > docA.ExpirationDate;
+        var createDate = dateNow;
+        var issueDate = dateNow;
+        var validFrom = dateNow;
+        
+        if (docA.Scope == Scope.InComing)
+        {
+            createDate = docA.CreatedDate;
+            issueDate = docA.DateIssued ?? docA.CreatedDate;
+            try
+            {
+                string fileExtension = ".conf-dms"; // Phần mở rộng tùy chỉnh
+                string filePath = Path.Combine(_storagePath,"archive_document",docA.ArchivedDocumentId.ToString(), $"config{fileExtension}");
+
+                // Kiểm tra xem tệp có tồn tại không
+                if (!File.Exists(filePath))
+                {
+                    throw new FileNotFoundException("Không tìm thấy tệp cấu hình.", filePath);
+                }
+
+                // Đọc nội dung từ tệp
+                string content = await File.ReadAllTextAsync(filePath);
+
+                // Chuyển chuỗi thành DateTime
+                if (DateTime.TryParseExact(content, "yyyy-MM-dd HH:mm:ss", 
+                        System.Globalization.CultureInfo.InvariantCulture, 
+                        System.Globalization.DateTimeStyles.None, 
+                        out DateTime dateTime))
+                {
+                    validFrom = dateTime;
+                }
+                else
+                {
+                    throw new FormatException("Nội dung tệp không đúng định dạng DateTime (yyyy-MM-dd HH:mm:ss).");
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Lỗi khi đọc tệp.", ex);
+            }
+        }
+        else
+        {
+            createDate = docA.CreatedDate;
+            issueDate = docA.CreatedDate;
+            validFrom = docA.DateIssued ?? docA.CreatedDate;
+        }
         var sender = string.Empty;
         var receiver = string.Empty;
         if (docA.Scope == Scope.InComing)
@@ -324,7 +371,7 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
             Viewers = ViewerList,
             DateExpires = docA.ExpirationDate,
             DateReceived = docA.DateReceived,
-            CreateDate = docA.FinalDocument.CreatedDate,
+            CreateDate = createDate,
             ArchivedBy = docA.CreatedBy,
             ArchivedDate = docA.CreatedDate,
             Scope = docA.Scope.ToString(),
@@ -344,7 +391,8 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
             Deadline = null,
             Status = docA.ArchivedDocumentStatus.ToString(),
             CreatedBy = docA.FinalDocument.User.UserName,
-            DateIssued = docA.DateIssued,
+            DateIssued = issueDate,
+            ValidFrom = validFrom,
             DigitalSignatures = docA.ArchiveDocumentSignatures?.Where(x => x.DigitalCertificate!=null).Where(x =>x.DigitalCertificate.IsUsb!=null).Select(x => new SignatureResponse()
             {
                 SignerName = ExtractSigners(x.DigitalCertificate.Subject),
