@@ -295,7 +295,7 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
         }
         var timeZone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Ho_Chi_Minh");
         var dateNow = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, timeZone);
-        var isExpire = TimeZoneInfo.ConvertTimeFromUtc(docA.ExpirationDate, timeZone) <= dateNow;
+        var isExpire = dateNow > docA.ExpirationDate;
         var sender = string.Empty;
         var receiver = string.Empty;
         if (docA.Scope == Scope.InComing)
