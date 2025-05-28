@@ -9,6 +9,8 @@ public class ArchiveResponseDto
 
     [JsonPropertyName("name")]
     public string Name { get; set; }
+    [JsonPropertyName("systemNumberDocument")]
+    public string SystemNumberDocument { get; set; }
 
     [JsonPropertyName("createDate")]
     public DateTime CreateDate { get; set; }

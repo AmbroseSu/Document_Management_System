@@ -27,5 +27,6 @@ jobs:
             docker compose down
             docker compose up -d
             docker image prune -f
+            docker exec dmsfe nginx -s reload
             docker builder prune --filter "until=1h" --force
           EOF

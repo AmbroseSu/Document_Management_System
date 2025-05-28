@@ -28,6 +28,23 @@ public class User
         return UserId.GetHashCode();
     }
 
+    public override string ToString()
+    {
+        return $"""
+                UserId: {UserId}
+                FullName: {FullName ?? "N/A"}
+                UserName: {UserName ?? "N/A"}
+                Email: {Email ?? "N/A"}
+                PhoneNumber: {PhoneNumber ?? "N/A"}
+                Address: {Address ?? "N/A"}
+                Avatar: {Avatar ?? "N/A"}
+                Gender: {Gender}
+                IdentityCard: {IdentityCard ?? "N/A"}
+                Position: {Position ?? "N/A"}
+                DateOfBirth: {(DateOfBirth.HasValue ? DateOfBirth.Value.ToString("yyyy-MM-dd") : "N/A")}
+                """;
+    }
+
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
     [Key]
     public Guid UserId { get; set; }

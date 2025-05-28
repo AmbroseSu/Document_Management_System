@@ -24,7 +24,8 @@ public class RoleResourceController : ControllerBase
     //[AuthorizeResource("[Roleresource] Create Role With Resources")]
     public async Task<ResponseDto> CreateRoleWithResource([FromBody] List<RoleResourceRequest> roleResourceRequests)
     {
-        return await _roleResourceService.UpdateRoleResourceAsync(roleResourceRequests);
+        var id = User.FindFirst("userid")?.Value;
+        return await _roleResourceService.UpdateRoleResourceAsync(roleResourceRequests,Guid.Parse(id));
     }
     
     [HttpGet("view-role-resources")]

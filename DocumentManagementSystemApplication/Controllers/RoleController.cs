@@ -23,7 +23,8 @@ public class RoleController : ControllerBase
     //[AuthorizeResource("[Role] Create Role")]
     public async Task<ResponseDto> CreateRole([FromBody] RoleDto roleDto)
     {
-        return await _roleService.CreateRole(roleDto);
+        var id = User.FindFirst("userid")?.Value;
+        return await _roleService.CreateRole(roleDto,Guid.Parse(id));
     }
     [HttpGet("view-all-roles")]
     //[AuthorizeResource("[Role] View All Roles")]

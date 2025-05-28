@@ -27,6 +27,7 @@ using Service.Utilities;
 using Syncfusion.Pdf.Parsing;
 using PdfDocument = iText.Kernel.Pdf.PdfDocument;
 using PdfReader = iText.Kernel.Pdf.PdfReader;
+using Scope = BusinessObject.Enums.Scope;
 
 namespace Service.Impl;
 
@@ -132,6 +133,7 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
             Name = x.ArchivedDocumentName,
             CreateDate = x.CreatedDate,
             Status = x.ArchivedDocumentStatus.ToString(),
+            SystemNumberDocument = x.SystemNumberOfDoc,
             Type = x.DocumentType?.DocumentTypeName ?? string.Empty,
             SignBy = ExtractSigners(x.ArchiveDocumentSignatures?.Select(c => c.DigitalCertificate).FirstOrDefault()?.Subject ?? string.Empty),
             CreateBy = x.CreatedBy,
@@ -159,6 +161,8 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
         if (!string.IsNullOrEmpty(request.Name))
             data = data.FindAll(x => x.Name.Contains(request.Name));
     
+        if (!string.IsNullOrEmpty(request.SystemNumber))
+                    data = data.FindAll(x => x.SystemNumberDocument.Contains(request.SystemNumber));
         if (request.Scope != null)
             data = data.FindAll(x => x.Scope == request.Scope.ToString());
     
@@ -266,25 +270,44 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
         var canGrant = permissions.Any(x => x.UserId == userId && x is { GrantPermission: GrantPermission.Grant, IsDeleted: false });
         var canDownLoad = permissions.Any(x => x.UserId == userId && x is { GrantPermission: GrantPermission.Download, IsDeleted: false });
         bool? canRevoke = null;
-        if (docA.FinalDocument.UserId != userId)
-        {
-            canRevoke = null;
-        }
-        else
+        
         if (docA.ArchivedDocumentStatus is not  (ArchivedDocumentStatus.Sent or ArchivedDocumentStatus.Withdrawn ) || docA is { DocumentReplaceId: not null, DocumentRevokeId: null })
         {
             canRevoke = null;
         }
         else if (docA is { ArchivedDocumentStatus: ArchivedDocumentStatus.Sent, DocumentRevokeId: null } )
         {
-            canRevoke = true;
+            if (docA.FinalDocument.Tasks.Any(x =>
+                    x.UserId == userId && x.User.UserRoles.FirstOrDefault(x => x.IsPrimary).Role.RoleName != "Chief"))
+                canRevoke = null;
+            else
+                canRevoke = true;
         }
-        else if (docA.ArchivedDocumentStatus == ArchivedDocumentStatus.Withdrawn && docA.DocumentRevokeId != null && docA.DocumentReplaceId == null)
+        else if (docA is { ArchivedDocumentStatus: ArchivedDocumentStatus.Withdrawn, DocumentRevokeId: not null, DocumentReplaceId: null })
         {
-            canRevoke = false;
+            if (docA.FinalDocument.UserId != userId)
+            {
+                canRevoke = null;
+            }
+            else
+                canRevoke = false;
 
         }
-       
+        var timeZone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Ho_Chi_Minh");
+        var dateNow = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, timeZone);
+        var isExpire = dateNow > docA.ExpirationDate;
+        var sender = string.Empty;
+        var receiver = string.Empty;
+        if (docA.Scope == Scope.InComing)
+        {
+            sender = docA.Sender;
+            receiver = docA.FinalDocument.User.UserName;
+        }
+        else
+        {
+            sender = docA.Sender;
+            receiver = docA.ExternalPartner;
+        }
         var result = new ArchiveDocumentResponse()
         {
             Granters = GranterList,
@@ -293,9 +316,10 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
             DocumentContent = docA.ArchivedDocumentContent,
             NumberOfDocument = docA.NumberOfDocument,
             SystemNumberOfDocument = docA.SystemNumberOfDoc,
-            Sender = docA.Sender,
+            Sender = sender,
             CanGrant = canGrant,
             CanDownLoad = canDownLoad,
+            ReceivedBy = receiver,
             CanRevoke = canRevoke,
             Viewers = ViewerList,
             DateExpires = docA.ExpirationDate,
@@ -306,6 +330,7 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
             Scope = docA.Scope.ToString(),
             DocumentTypeName = docA.DocumentType?.DocumentTypeName,
             WorkflowName = string.Empty,
+            IsExpire = isExpire,
             RevokeDocument = new SimpleDocumentResponse()
             {
                 documentId = docA.DocumentRevokeId,
@@ -416,13 +441,17 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
         return ResponseUtil.GetObject("hehe", ResponseMessages.CreatedSuccessfully, HttpStatusCode.OK, 1);
     }
 
-    public Task<IActionResult> DownloadTemplate(string templateId, Guid userId,bool? isPdf)
+    public async Task<IActionResult> DownloadTemplate(string templateId, Guid userId,bool? isPdf)
     {
 
         var filePath = Path.Combine(Directory.GetCurrentDirectory(), "data", "storage","template", $"{templateId}");
         if (isPdf.HasValue && isPdf.Value)
-            return _fileService.ConvertDocToPdf(filePath);
-        return _fileService.GetPdfFile(filePath);
+        {
+            await _loggingService.WriteLogAsync(userId, $"Tải mẫu tài liệu {templateId} thành công.");
+            return await _fileService.ConvertDocToPdf(filePath);
+        }
+        await _loggingService.WriteLogAsync(userId, $"Tải mẫu tài liệu {templateId} thành công.");
+        return await _fileService.GetPdfFile(filePath);
     }
 
     public async Task<ResponseDto> WithdrawArchiveDocument(Guid archiveDocumentId,DocumentPreInfo documentPreInfo, Guid userId)
@@ -458,6 +487,7 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
         await _unitOfWork.DocumentUOW.UpdateAsync(newDoc);
         await _unitOfWork.ArchivedDocumentUOW.AddAsync(newArchiveDoc);
         await _unitOfWork.SaveChangesAsync();
+        await _loggingService.WriteLogAsync(userId,$"Thu hồi tài liệu {archiveDoc.SystemNumberOfDoc} thành công.");
         return ResponseUtil.GetObject(newDocId, ResponseMessages.CreatedSuccessfully, HttpStatusCode.OK, 1);
     }
 
@@ -494,6 +524,7 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
         await _unitOfWork.DocumentUOW.UpdateAsync(newDoc);
         await _unitOfWork.ArchivedDocumentUOW.AddAsync(newArchiveDoc);
         await _unitOfWork.SaveChangesAsync();
+        await _loggingService.WriteLogAsync(userId,$"Tạo văn bản thay thế {archiveDoc.SystemNumberOfDoc} thành công.");
         return ResponseUtil.GetObject(newDocId, ResponseMessages.CreatedSuccessfully, HttpStatusCode.OK, 1);
     }
 
@@ -503,6 +534,7 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
         archiveDoc.Page = -99;
         await _unitOfWork.ArchivedDocumentUOW.UpdateAsync(archiveDoc);
         await _unitOfWork.SaveChangesAsync();
+        await _loggingService.WriteLogAsync(userId, $"Xóa mẫu tài liệu {archiveDoc.ArchivedDocumentName} thành công.");
         return ResponseUtil.GetObject("Delete success", ResponseMessages.DeleteSuccessfully, HttpStatusCode.OK, 1);
     }
 

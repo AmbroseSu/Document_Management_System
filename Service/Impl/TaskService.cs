@@ -2504,14 +2504,17 @@ public partial class TaskService : ITaskService
                 //     }
                 // ).ToList();
                 
-                
+                var userPermissions = new List<UserDocumentPermission>();
+
                 
                 var distinctUserIds = orderedTasks
                     .Select(t => t.UserId)
                     .Distinct()
                     .ToList();
+
+                var workFlowO = await _unitOfWork.WorkflowUOW.FindWorkflowByIdAsync(workflowId);
                 
-                var userPermissions = new List<UserDocumentPermission>();
+                
 
                 foreach (var userId in distinctUserIds)
                 {
@@ -2529,6 +2532,46 @@ public partial class TaskService : ITaskService
                     }
                 }
 
+                if (workFlowO.Scope == Scope.School)
+                {
+                    var liU = await _unitOfWork.UserUOW.FindAllUserAsync();
+                    liU = liU.Where(x => x.IsDeleted == false && !x.Email.Contains("admin") && !distinctUserIds.Contains(x.UserId)).ToList();
+                    foreach (var userId in liU.Select(x => x.UserId).ToList())
+                    {
+                        var exists = await _unitOfWork.UserDocPermissionUOW.ExistsAsync(userId, archivedDocId);
+                        if (!exists)
+                        {
+                            userPermissions.Add(new UserDocumentPermission
+                            {
+                                UserId = userId,
+                                ArchivedDocumentId = archivedDocId,
+                                GrantPermission = GrantPermission.View,
+                                CreatedDate = DateTime.UtcNow,
+                                IsDeleted = false
+                            });
+                        }
+                    }
+                }
+                else if (workFlowO.Scope == Scope.Division)
+                {
+                    var liU = orderedTasks.FirstOrDefault().User.Division.Users;
+                    liU = liU.Where(x => x.IsDeleted == false && !x.Email.Contains("admin") && !distinctUserIds.Contains(x.UserId)).ToList();
+                    foreach (var userId in liU.Select(x => x.UserId).ToList())
+                    {
+                        var exists = await _unitOfWork.UserDocPermissionUOW.ExistsAsync(userId, archivedDocId);
+                        if (!exists)
+                        {
+                            userPermissions.Add(new UserDocumentPermission
+                            {
+                                UserId = userId,
+                                ArchivedDocumentId = archivedDocId,
+                                GrantPermission = GrantPermission.Download,
+                                CreatedDate = DateTime.UtcNow,
+                                IsDeleted = false
+                            });
+                        }
+                    }
+                }
                 // Chỉ thêm những cái chưa có
                 if (userPermissions.Any())
                 {
@@ -2567,11 +2610,12 @@ public partial class TaskService : ITaskService
                     SignedBy = signBy,
                     ArchivedDocumentUrl = url,
                     CreatedDate = DateTime.Now,
+                    ExpirationDate = doc.ExpirationDate,
                     Sender = null,
                     CreatedBy = doc.User.FullName,
                     ExternalPartner = null,
                     ArchivedDocumentStatus = ArchivedDocumentStatus.Archived,
-                    DateIssued = doc.DateIssued?? DateTime.Now,
+                    DateIssued = doc.DateIssued.Equals(DateTime.MaxValue) || doc.DateIssued.Equals(DateTime.MinValue) || doc.DateIssued == null ? DateTime.Now : doc.DateIssued,
                     DateReceived = null,
                     DateSented = null,
                     DocumentRevokes = null,
@@ -2597,10 +2641,16 @@ public partial class TaskService : ITaskService
                 archivedDoc.SignedBy = signBy;
                 archivedDoc.ArchivedDocumentUrl =
                     $"{_host}/api/Document/view-file/{archivedDoc.ArchivedDocumentId}?version=1&isArchive=true";
+                archivedDoc.ExpirationDate = doc.ExpirationDate;
                 archivedDoc.CreatedBy = doc.User.UserName;
                 archivedDoc.ArchivedDocumentStatus = ArchivedDocumentStatus.Archived;
                 archivedDoc.Scope = (await _unitOfWork.WorkflowUOW.FindWorkflowByIdAsync(workflowId)).Scope;
-                archivedDoc.DateIssued = DateTime.Now;
+                archivedDoc.DateIssued =
+                    doc.DateIssued.Equals(DateTime.MaxValue) || doc.DateIssued.Equals(DateTime.MinValue) ||
+                    doc.DateIssued == null
+                        ? DateTime.Now
+                        : doc.DateIssued;
+                ;
                 archivedDoc.DocumentType = doc.DocumentType;
                 archivedDoc.FinalDocumentId = doc.DocumentId;
                         
@@ -2935,9 +2985,10 @@ public partial class TaskService : ITaskService
                             NumberOfDocument = doc.NumberOfDocument,
                             SignedBy = signByString,
                             CreatedDate = DateTime.Now,
+                            ExpirationDate = doc.ExpirationDate,
                             CreatedBy = currentTask.User.UserName,
                             ArchivedDocumentStatus = ArchivedDocumentStatus.Archived,
-                            DateIssued = doc.DateIssued??DateTime.Now,
+                            DateIssued = doc.DateIssued.Equals(DateTime.MaxValue) || doc.DateIssued.Equals(DateTime.MinValue) || doc.DateIssued == null ? DateTime.Now : doc.DateIssued,
                             Scope = (await _unitOfWork.WorkflowUOW.FindWorkflowByIdAsync(workflowId)).Scope,
                             IsTemplate = false,
                             DocumentType = doc.DocumentType,
@@ -2967,12 +3018,13 @@ public partial class TaskService : ITaskService
                         archiveDoc.ArchivedDocumentContent = doc.DocumentContent;
                         archiveDoc.NumberOfDocument = doc.NumberOfDocument;
                         archiveDoc.SignedBy = signByString;
+                        archiveDoc.ExpirationDate = doc.ExpirationDate;
                         archiveDoc.ArchivedDocumentUrl =
                             $"{_host}/api/Document/view-file/{archiveId}?version=1&isArchive=true";
                         archiveDoc.CreatedBy = doc.User.UserName;
                         archiveDoc.ArchivedDocumentStatus = ArchivedDocumentStatus.Archived;
                         archiveDoc.Scope = (await _unitOfWork.WorkflowUOW.FindWorkflowByIdAsync(workflowId)).Scope;
-                        archiveDoc.DateIssued = DateTime.Now;
+                        archiveDoc.DateIssued = doc.DateIssued.Equals(DateTime.MaxValue) || doc.DateIssued.Equals(DateTime.MinValue) || doc.DateIssued == null ? DateTime.Now : doc.DateIssued;
                         archiveDoc.DocumentType = doc.DocumentType;
                         archiveDoc.FinalDocumentId = doc.DocumentId;
                         
@@ -3000,7 +3052,28 @@ public partial class TaskService : ITaskService
                         .Select(t => t.UserId)
                         .Distinct()
                         .ToList();
-                    
+
+                    switch (workflow.Scope)
+                    {
+                        case Scope.School:
+                        {
+                            var liU = await _unitOfWork.UserUOW.FindAllUserAsync();
+                            liU = liU.Where(x => x.IsDeleted == false && !x.Email.Contains("admin")).ToList();
+                            distinctUserIds = liU.Select(x => x.UserId).ToList();
+                            break;
+                        }
+                        case Scope.Division:
+                        {
+                            var listUser = orderedTasks.FirstOrDefault().User.Division.Users;
+                            distinctUserIds = listUser.Select(x => x.UserId).ToList();
+                            break;
+                        }
+                        case Scope.InComing:
+                        case Scope.OutGoing:
+                            break;
+                        default:
+                            throw new ArgumentOutOfRangeException();
+                    }
                     var userPermissions = new List<UserDocumentPermission>();
 
                     foreach (var userId in distinctUserIds)
@@ -3018,7 +3091,7 @@ public partial class TaskService : ITaskService
                             });
                         }
                     }
-
+                    
                     // Chỉ thêm những cái chưa có
                     if (userPermissions.Any())
                     {

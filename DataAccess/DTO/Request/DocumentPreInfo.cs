@@ -8,4 +8,6 @@ public class DocumentPreInfo
     public string DocumentName { get; set; } = string.Empty;
     public DateTime Deadline { get; set; }
     public DateTime ExpireDate { get; set; }
+    
+    public DateTime? IssueDate { get; set; }
 }

@@ -22,6 +22,7 @@ public class PermissionController : ControllerBase
     //[AuthorizeResource("[Permission] Create Permission")]
     public async Task<ResponseDto> CreatePermission([FromBody] PermissionDto permissionDto)
     {
-        return await _permissionService.CreatePermission(permissionDto);
+        var id = User.FindFirst("userid")?.Value;
+        return await _permissionService.CreatePermission(permissionDto,Guid.Parse(id));
     }
 }

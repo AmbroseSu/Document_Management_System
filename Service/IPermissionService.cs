@@ -5,5 +5,5 @@ namespace Service;
 public interface IPermissionService
 {
     Task SeedPermissionsAsync();
-    Task<ResponseDto> CreatePermission(PermissionDto permissionDto);
+    Task<ResponseDto> CreatePermission(PermissionDto permissionDto, Guid userId);
 }

@@ -6,10 +6,13 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: dms
+#    environment:
+#      - TZ=Asia/Ho_Chi_Minh        
     ports:
       - "5290:5290"  # Chỉ giữ cổng 5290
     volumes:
       - ./DocumentManagementSystemApplication/data:/app/data
+#      - /etc/localtime:/etc/localtime:ro
     env_file:
       - ./.env
     networks:

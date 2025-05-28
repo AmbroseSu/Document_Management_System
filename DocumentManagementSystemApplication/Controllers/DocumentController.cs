@@ -39,6 +39,15 @@ namespace DocumentManagementSystemApplication.Controllers
         {
             return await _fileService.ConvertDocToPdf(file);
         }
+        
+        [AllowAnonymous]
+        [HttpGet("view-document-elasticsearch")]
+        public async Task<ResponseDto> ViewDocumentElasticsearch([FromQuery]string query)
+        {
+            var id = User.FindFirst("userid")?.Value;
+            var result = await _documentService.GetAllDocumentElastic(query);
+            return result;
+        }
 
 
         [HttpPost("create-upload-document")]
@@ -67,8 +76,16 @@ namespace DocumentManagementSystemApplication.Controllers
         {
             if (!isArchive)
                 return await _documentService.GetDocumentById(documentId, version,isDoc);
-            else
-                return await _documentService.GetArchiveDocumentById(documentId, version);
+          
+            return await _documentService.GetArchiveDocumentById(documentId, version);
+        }
+        
+        [HttpGet("create-log-download")]
+        public async Task<ResponseDto> CreateLogDownload([FromQuery] Guid documentId)
+        {
+            var id = User.FindFirst("userid")?.Value;
+            var result = await _documentService.CreateLogDownload(documentId, Guid.Parse(id));
+            return result;
         }
 
         [HttpGet("view-file-by-name")]

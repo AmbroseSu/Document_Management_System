@@ -276,11 +276,15 @@ public partial class DocumentService : IDocumentService
                 .SelectMany(wf => wf.DocumentTypes ?? [])
                 .Sum(dt => dt.DocumentResponseMobiles?.Count ?? 0);
 
+            
             foreach (var wf in result)
             {
                 foreach (var dt in wf.DocumentTypes ?? [])
                 {
+                    
                     var count = dt.DocumentResponseMobiles?.Count ?? 0;
+                    dt.SumDoc = count;
+
                     dt.Percent = totalDocuments > 0
                         ? (float)Math.Round((count * 1f) / totalDocuments, 2)
                         : 0;
@@ -319,6 +323,7 @@ public partial class DocumentService : IDocumentService
             .GroupBy(dt => dt.DocumentTypeId)
             .Select(g => new DocumentTypeResponseMobile
             {   
+                SumDoc = g.Sum(x => x.SumDoc),
                 DocumentTypeId = g.Key,
                 DocumentTypeName = g.FirstOrDefault()?.DocumentTypeName,
                 Percent = g.Sum(x => x.Percent ?? 0),
@@ -941,9 +946,11 @@ public partial class DocumentService : IDocumentService
         var singingDates = GetList<DateTime>(documentUploadDto.CannotChange.GetValueOrDefault("SingingDate"));
         var serialNumbers = GetList<string>(documentUploadDto.CannotChange.GetValueOrDefault("SerialNumber"));
         var validFroms = GetDateTime(documentUploadDto.CanChange.GetValueOrDefault("validFrom"));
+        var dateIssue = GetDateTime(documentUploadDto.CanChange.GetValueOrDefault("dateIssued"));
         var validTo = GetDateTime(documentUploadDto.CanChange.GetValueOrDefault("validTo"));
         var validFromsCannot = GetList<DateTime>(documentUploadDto.CannotChange.GetValueOrDefault("ValidFrom"));
         var expirationDates = GetList<DateTime>(documentUploadDto.CannotChange.GetValueOrDefault("ExpirationDate"));
+        var attachments = GetList<IFormFile>(documentUploadDto.CanChange.GetValueOrDefault("attachments"));
         var dateReceived = GetDateTime(documentUploadDto.CanChange.GetValueOrDefault("DateReceived"));
         var documentTypeId = GetGuid(documentUploadDto.CanChange.GetValueOrDefault("DocumentTypeId"));
         var workflowId = GetGuid(documentUploadDto.CanChange.GetValueOrDefault("WorkflowId"));
@@ -958,7 +965,8 @@ public partial class DocumentService : IDocumentService
         var verId = Guid.NewGuid();
         var update = Builders<Count>.Update.Set(x => x.Value, count.Value);
         await _mongoDbService.Counts.UpdateOneAsync(filter, update);
-        
+        if (validFroms == null || validFroms == DateTime.MaxValue || validFroms == DateTime.MinValue)
+            validFroms = DateTime.MinValue;
         var document = new Document
         {
             DocumentName = name,
@@ -972,7 +980,7 @@ public partial class DocumentService : IDocumentService
             ProcessingStatus = ProcessingStatus.InProgress,
             IsDeleted = false,
             Sender = sender,
-            DateIssued = validFroms,
+            DateIssued = dateIssue,
             DateReceived = dateReceived,
             Deadline = deadline,
             UserId = userId,
@@ -1028,7 +1036,7 @@ public partial class DocumentService : IDocumentService
         }
         
         var url = _fileService.CreateAVersionFromUpload(documentUploadDto.CannotChange["fileName"]?.ToString(),
-            version.DocumentVersionId, document.DocumentId, name);
+            version.DocumentVersionId, document.DocumentId, name,validFroms);
         version.DocumentVersionUrl = url;
 
         // document.DateIssued = DateTime.Today.ToString("yyyy-MM-dd");
@@ -1153,7 +1161,6 @@ public partial class DocumentService : IDocumentService
             default:
                 return ResponseUtil.Error("Invalid Workflow Scope", "Operation Failed", HttpStatusCode.BadRequest);
         }
-
         return ResponseUtil.GetObject("oke", "Success", HttpStatusCode.OK, 1);
     }
 
@@ -1193,7 +1200,8 @@ public partial class DocumentService : IDocumentService
             { "validTo", metaData?.MaxBy(x => x.ExpirationDate).ExpirationDate },
             { "validFrom", metaData?.MinBy(x => x.ValidFrom).ValidFrom },
             { "signerName", metaData?.Select(x => ExtractSigners(x.SignerName)).ToList() },
-            { "url", _host + "/api/document/view-file-by-name?documentName=" + fileName }
+            { "url", _host + "/api/document/view-file-by-name?documentName=" + fileName },
+            {"DateIssue", null}
         };
 
         var cannotChange = new Dictionary<string, object?>
@@ -1319,8 +1327,10 @@ public partial class DocumentService : IDocumentService
                                "/" + documentType.Acronym + "-TNABC",
             CreatedDate = DateTime.Now,
             UpdatedDate = DateTime.Now,
+            ExpirationDate = documentPreInfo.ExpireDate,
             Deadline = documentPreInfo.Deadline,
             ProcessingStatus = ProcessingStatus.InProgress,
+            DateIssued = documentPreInfo.IssueDate??DateTime.MinValue,
             DocumentPriority = DocumentPriority.High,
             IsDeleted = false,
             UserId = userId,
@@ -1353,7 +1363,7 @@ public partial class DocumentService : IDocumentService
         await _unitOfWork.DocumentWorkflowStatusUOW.AddAsync(workflowStatus);
         await _unitOfWork.DocumentUOW.AddAsync(doc);
         await _unitOfWork.SaveChangesAsync();
-        await _loggingService.WriteLogAsync(userId,$"Tạo văn bản từ mẫu với tên là: {documentPreInfo.DocumentName}");
+        await _loggingService.WriteLogAsync(userId,$"Tạo văn bản từ mẫu với số hiệu hệ thống là: {doc.SystemNumberOfDoc}");
         return ResponseUtil.GetObject(docId, ResponseMessages.CreatedSuccessfully, HttpStatusCode.OK, 1);
         // throw new NotImplementedException();
     }
@@ -1629,7 +1639,7 @@ public partial class DocumentService : IDocumentService
                                     Path.Combine(_storagePath, "document", documentId.ToString(),
                                         version.DocumentVersionId.ToString(), document.DocumentName + ".pdf"), null);
                                 Console.WriteLine("Cer != null");
-                                await _loggingService.WriteLogAsync(userId,$"Ký văn bản với tên là {document.DocumentName} bằng USB thành công");
+                                await _loggingService.WriteLogAsync(userId,$"Ký văn bản với số hiệu hệ thống là {document.SystemNumberOfDoc} bằng USB thành công");
                                 return ResponseUtil.GetObject("Sign success",
                                     ResponseMessages.GetSuccessfully, HttpStatusCode.OK, 1);
                             }
@@ -1670,6 +1680,30 @@ public partial class DocumentService : IDocumentService
         }
         
         // throw new NotImplementedException();
+    }
+
+    public async Task<ResponseDto> GetAllDocumentElastic(string query)
+    {
+        var documents = await _unitOfWork.DocumentElasticUOW.SearchAsync(query);
+        return ResponseUtil.GetObject(documents,
+            ResponseMessages.GetSuccessfully, HttpStatusCode.OK, 1);
+    }
+
+    public async Task<ResponseDto> CreateLogDownload(Guid documentId, Guid userId)
+    {
+        var document = await _unitOfWork.DocumentUOW.FindDocumentByIdAsync(documentId);
+        if (document == null)
+        {
+            var aDoc = await _unitOfWork.ArchivedDocumentUOW.FindArchivedDocumentByIdAsync(documentId);
+            if (aDoc == null)
+                return ResponseUtil.Error("Document not found", ResponseMessages.OperationFailed,
+                    HttpStatusCode.NotFound);
+            await _loggingService.WriteLogAsync(userId,
+                $"Tải xuống văn bản với Số hiệu Hệ thống là: {aDoc.SystemNumberOfDoc}");
+            return ResponseUtil.GetObject("oke", ResponseMessages.GetSuccessfully, HttpStatusCode.OK, 1);
+        }
+        await _loggingService.WriteLogAsync(userId,$"Tải xuống văn bản với Số hiệu Hệ thống là: {document.SystemNumberOfDoc}");
+        return ResponseUtil.GetObject("oke", ResponseMessages.GetSuccessfully, HttpStatusCode.OK, 1);
     }
 
     private static DateTime ParsePdfDate(string pdfDate)

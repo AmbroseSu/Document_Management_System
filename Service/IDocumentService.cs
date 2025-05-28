@@ -25,7 +25,7 @@ public interface IDocumentService
     Task<ResponseDto> GetMySelfDocument(Guid userId, GetAllMySelfRequestDto getAllMySelfRequestDto, int page, int pageSize);
     Task<IActionResult> GetDocumentByFileName(string documentName, Guid userId);
     Task<ResponseDto> ShowProcessDocumentDetail(Guid? documentId);
-    void AddFooterToPdf(string inputFilePath, string outputFilePath);
+    // void AddFooterToPdf(string inputFilePath, string outputFilePath);
     List<MetaDataDocument>? CheckMetaDataFile(string url);
 
     Task<ResponseDto> CreateDocumentByTemplate(DocumentPreInfo documentPreInfo, Guid userId);
@@ -33,4 +33,6 @@ public interface IDocumentService
     Task<ResponseDto> UpdateConfirmDocumentBySubmit(DocumentCompareDto documentUpload, Guid userId);
     Task<ResponseDto> GetDocumentForUsb(Guid documentId, Guid userId);
     Task<ResponseDto> UpdateDocumentFromUsb(DocumentForSignByUsb documentForSignByUsb,Guid documentId, Guid userId);
+    Task<ResponseDto> GetAllDocumentElastic(string query);
+    Task<ResponseDto> CreateLogDownload(Guid documentId, Guid userId);
 }

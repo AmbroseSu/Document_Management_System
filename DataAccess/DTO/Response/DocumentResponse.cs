@@ -20,6 +20,7 @@ public class DocumentResponse
     public DateTime CreateDate { get; set; }
     public DateTime? DateIssued { get; set; }
     public DateTime? DateExpires { get; set; }
+    public string? ReceivedBy { get; set; }
     public string? Scope { get; set; }
     public List<SignatureResponse>? DigitalSignatures { get; set; } = [];
     public List<SignatureResponse>? ApprovalSignatures { get; set; } = [];
@@ -41,6 +42,7 @@ public class ArchiveDocumentResponse : DocumentResponse
     
     public SimpleDocumentResponse? RevokeDocument { get; set; }
     public SimpleDocumentResponse? ReplacedDocument { get; set; }
+    public bool IsExpire { get; set; } = false;
 }
 public class SimpleDocumentResponse 
 {

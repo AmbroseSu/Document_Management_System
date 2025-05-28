@@ -32,19 +32,21 @@ public class UserService : IUserService
     private readonly IUnitOfWork _unitOfWork;
     private readonly IUserRepository _userRepository;
     private readonly string _host;
+    private readonly ILoggingService _loggingService;
     public UserService(IUserRepository userRepository, IMapper mapper, IUnitOfWork unitOfWork,
         IEmailService emailService, IFileService fileService,
-        IOptions<AppsetingOptions> options)
+        IOptions<AppsetingOptions> options, ILoggingService loggingService)
     {
         _userRepository = userRepository;
         _mapper = mapper;
         _unitOfWork = unitOfWork;
         _emailService = emailService;
         _fileService = fileService;
+        _loggingService = loggingService;
         _host = options.Value.Host;
     }
 
-    public async Task<ResponseDto> CreateUserByForm(UserRequest userRequest)
+    public async Task<ResponseDto> CreateUserByForm(UserRequest userRequest,Guid creatorId)
     {
         try
         {
@@ -139,6 +141,8 @@ public class UserService : IUserService
                             HttpStatusCode.InternalServerError);
 
                     var result = _mapper.Map<UserDto>(user);
+                    await _loggingService.WriteLogAsync(creatorId,
+                        $"Tạo tài khoản thành công cho {userRequest.FullName} ({userRequest.Email})");
                     return ResponseUtil.GetObject(result, ResponseMessages.CreatedSuccessfully, HttpStatusCode.Created,
                         1);
                 }
@@ -347,6 +351,7 @@ public class UserService : IUserService
             user.IsDeleted = true;
             await _unitOfWork.UserUOW.UpdateAsync(user);
             await _unitOfWork.SaveChangesAsync();
+            await _loggingService.WriteLogAsync(userId,$"Xóa tài khoản {user.FullName} ({user.Email})");
             return ResponseUtil.GetObject(ResponseMessages.UserHasDeleted, ResponseMessages.DeleteSuccessfully,
                 HttpStatusCode.OK, 1);
         }
@@ -367,6 +372,7 @@ public class UserService : IUserService
                     HttpStatusCode.BadRequest);
 
             var user = await _unitOfWork.UserUOW.FindUserByIdAsync(userUpdateRequest.UserId);
+            var rawUser = user;
             if (user == null)
                 return ResponseUtil.Error(ResponseMessages.UserNotFound, ResponseMessages.OperationFailed,
                     HttpStatusCode.NotFound);
@@ -408,6 +414,8 @@ public class UserService : IUserService
 
             await _unitOfWork.UserUOW.UpdateAsync(user);
             await _unitOfWork.SaveChangesAsync();
+            await _loggingService.WriteLogAsync(user.UserId,
+                $"Cập nhật thông tin tài khoản {user.FullName} với thông tin gốc là:{rawUser}. Thông tin mới là: {user})");
             return ResponseUtil.GetObject(ResponseMessages.UserHasUpdatedInformation,
                 ResponseMessages.UpdateSuccessfully, HttpStatusCode.OK, 1);
         }
@@ -427,6 +435,7 @@ public class UserService : IUserService
                     HttpStatusCode.BadRequest);
 
             var user = await _unitOfWork.UserUOW.FindUserByIdAsync(adminUpdateUserRequest.UserId);
+            var rawUser = user;
             if (user == null)
                 return ResponseUtil.Error(ResponseMessages.UserNotFound, ResponseMessages.OperationFailed,
                     HttpStatusCode.NotFound);
@@ -536,7 +545,8 @@ public class UserService : IUserService
 
             await _unitOfWork.UserUOW.UpdateAsync(user);
             await _unitOfWork.SaveChangesAsync();
-
+            await _loggingService.WriteLogAsync(user.UserId,
+                $"Cập nhật thông tin tài khoản {user.FullName} với thông tin gốc là:{rawUser}. Thông tin mới là: {user})");
             return ResponseUtil.GetObject(ResponseMessages.UserHasUpdatedInformation,
                 ResponseMessages.UpdateSuccessfully, HttpStatusCode.OK, 1);
         }
@@ -547,47 +557,47 @@ public class UserService : IUserService
     }
     
     
-    public async Task<ResponseDto> ImportUsersFromFileAsync(List<FileImportData> fileImportDatas, Guid divisionId)
+    public async Task<ResponseDto> ImportUsersFromFileAsync(List<FileImportData> fileImportDatas, Guid divisionId,Guid creatorId)
     {
-        using var transaction = await _unitOfWork.BeginTransactionAsync();
+        await using var transaction = await _unitOfWork.BeginTransactionAsync();
         try
         {
             
 
-        //OfficeOpenXml.ExcelPackage.LicenseContext = OfficeOpenXml.LicenseContext.NonCommercial;
+            //OfficeOpenXml.ExcelPackage.LicenseContext = OfficeOpenXml.LicenseContext.NonCommercial;
 
         
 
-        foreach (var row in fileImportDatas)
-        {
-            Guid roleId = await GetRoleIdByName(row.RoleName!); // Bạn có thể dùng repo lấy role theo tên
+            foreach (var row in fileImportDatas)
+            {
+                Guid roleId = await GetRoleIdByName(row.RoleName!); // Bạn có thể dùng repo lấy role theo tên
 
-            var userRequest = new UserRequest
-            {
-                FullName = row.FullName!,
-                UserName = row.UserName!,
-                Email = row.Email!,
-                PhoneNumber = row.PhoneNumber!,
-                IdentityCard = row.IdentityCard!,
-                //DateOfBirth = dob,
-                Address = row.Address!,
-                Gender = row.Gender,
-                Position = row.Position!,
-                RoleId = roleId,
-                DivisionId = divisionId
-            };
-            var result = await CreateUserByForm(userRequest);
-            if (result.StatusCode != (int)HttpStatusCode.Created)
-            {
-                await transaction.RollbackAsync();
-                return ResponseUtil.Error($"Dòng {row}: {result.Message}", ResponseMessages.OperationFailed,
-                    HttpStatusCode.BadRequest);
+                var userRequest = new UserRequest
+                {
+                    FullName = row.FullName!,
+                    UserName = row.UserName!,
+                    Email = row.Email!,
+                    PhoneNumber = row.PhoneNumber!,
+                    IdentityCard = row.IdentityCard!,
+                    //DateOfBirth = dob,
+                    Address = row.Address!,
+                    Gender = row.Gender,
+                    Position = row.Position!,
+                    RoleId = roleId,
+                    DivisionId = divisionId
+                };
+                var result = await CreateUserByForm(userRequest,creatorId);
+                if (result.StatusCode != (int)HttpStatusCode.Created)
+                {
+                    await transaction.RollbackAsync();
+                    return ResponseUtil.Error($"Dòng {row}: {result.Message}", ResponseMessages.OperationFailed,
+                        HttpStatusCode.BadRequest);
+                }
             }
-        }
         
-        await transaction.CommitAsync();
-        return ResponseUtil.GetObject(ResponseMessages.ImportSuccessfully, ResponseMessages.CreatedSuccessfully,
-            HttpStatusCode.Created, 1);
+            await transaction.CommitAsync();
+            return ResponseUtil.GetObject(ResponseMessages.ImportSuccessfully, ResponseMessages.CreatedSuccessfully,
+                HttpStatusCode.Created, 1);
         }
         catch (Exception e)
         {

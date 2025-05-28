@@ -21,12 +21,16 @@ public class SignApiService : ISignApiService
     private readonly IUnitOfWork _unitOfWork;
     private readonly IEmailService _emailService;
     private readonly string _storagePath = Path.Combine(Directory.GetCurrentDirectory(), "data", "storage");
-
-    public SignApiService(IFileService fileService, IUnitOfWork unitOfWork, IEmailService emailService)
+    private readonly IDocumentService _documentService;
+    private readonly ILoggingService _loggingService;
+    
+    public SignApiService(IFileService fileService, IUnitOfWork unitOfWork, IEmailService emailService, IDocumentService documentService, ILoggingService loggingService)
     {
         _fileService = fileService;
         _unitOfWork = unitOfWork;
         _emailService = emailService;
+        _documentService = documentService;
+        _loggingService = loggingService;
     }
 
 
@@ -109,7 +113,9 @@ public class SignApiService : ISignApiService
             if (!emailSent)
                 return ResponseUtil.Error(ResponseMessages.FailedToSendEmail, ResponseMessages.OperationFailed,
                     HttpStatusCode.InternalServerError);
-            
+
+            await _loggingService.WriteLogAsync(userId,
+                $"Gửi mã OTP thành công cho người dùng {user.UserName} ({user.Email})");
             return ResponseUtil.GetObject(token, ResponseMessages.GetSuccessfully, HttpStatusCode.OK, 1);
         }
         catch (Exception e)
@@ -290,9 +296,20 @@ public class SignApiService : ISignApiService
                 OrderIndex = version?.DocumentSignatures?.Count + 1 ?? 0,
                 SignedAt = DateTime.UtcNow
             };
+            var listMeta = _documentService.CheckMetaDataFile(filePath);
+            var latestMeta = listMeta
+                .Where(x => x.SingingDate != null)
+                .OrderByDescending(x => x.SingingDate)
+                .FirstOrDefault();
+            digitalCertificate.SerialNumber = latestMeta?.SerialNumber;
+            digitalCertificate.Issuer = latestMeta?.Issuer;
+            digitalCertificate.Subject = latestMeta.SignerName;
+            await _unitOfWork.DigitalCertificateUOW.UpdateAsync(digitalCertificate);
             await _unitOfWork.DocumentSignatureUOW.AddAsync(documentSignature);
             await _unitOfWork.SaveChangesAsync();
             
+            await _loggingService.WriteLogAsync(userId,
+                $"Người dùng {user.UserName} ({user.Email}) đã ký tài liệu {document.DocumentName} ({document.DocumentId}) thành công");
             return ResponseUtil.GetObject(ResponseMessages.SignatureSuccessfully, ResponseMessages.CreatedSuccessfully, HttpStatusCode.Created,1);
             //return ResponseUtil.GetObject(fileDataBase64, ResponseMessages.CreatedSuccessfully, HttpStatusCode.Created,1);
         }

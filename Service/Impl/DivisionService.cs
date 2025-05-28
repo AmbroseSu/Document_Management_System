@@ -12,14 +12,16 @@ public class DivisionService : IDivisionService
 {
     private readonly IMapper _mapper;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly ILoggingService _loggingService;
 
-    public DivisionService(IMapper mapper, IUnitOfWork unitOfWork)
+    public DivisionService(IMapper mapper, IUnitOfWork unitOfWork, ILoggingService loggingService)
     {
         _mapper = mapper;
         _unitOfWork = unitOfWork;
+        _loggingService = loggingService;
     }
     
-    public async Task<ResponseDto> AddDivisionAsync(string? divisionName)
+    public async Task<ResponseDto> AddDivisionAsync(string? divisionName,Guid userId)
     {
         try
         {
@@ -43,6 +45,7 @@ public class DivisionService : IDivisionService
             await _unitOfWork.DivisionUOW.AddAsync(division);
             await _unitOfWork.SaveChangesAsync();
             var result = _mapper.Map<DivisionDto>(division);
+            await _loggingService.WriteLogAsync(userId,$"Đã thêm mới phòng ban {divisionName}");
             return ResponseUtil.GetObject(result, ResponseMessages.CreatedSuccessfully, HttpStatusCode.Created, 1);
         }
         catch (Exception e)
@@ -51,7 +54,7 @@ public class DivisionService : IDivisionService
         }
     }
     
-    public async Task<ResponseDto> UpdateDivisionAsync(DivisionDto divisionDto)
+    public async Task<ResponseDto> UpdateDivisionAsync(DivisionDto divisionDto,Guid userId)
     {
         try
         {
@@ -79,6 +82,7 @@ public class DivisionService : IDivisionService
             await _unitOfWork.DivisionUOW.UpdateAsync(division);
             await _unitOfWork.SaveChangesAsync();
             var result = _mapper.Map<DivisionDto>(division);
+            await _loggingService.WriteLogAsync(userId,$"Đã cập nhật phòng ban {divisionDto.DivisionName}");
             return ResponseUtil.GetObject(result, ResponseMessages.UpdateSuccessfully, HttpStatusCode.OK, 1);
         }
         catch (Exception e)
@@ -116,7 +120,7 @@ public class DivisionService : IDivisionService
     }
     
     
-    public async Task<ResponseDto> UpdateDivisionActiveOrDeleteAsync(Guid divisionId)
+    public async Task<ResponseDto> UpdateDivisionActiveOrDeleteAsync(Guid divisionId,Guid userId)
     {
         try
         {
@@ -142,6 +146,7 @@ public class DivisionService : IDivisionService
             division.IsDeleted = true;
             await _unitOfWork.DivisionUOW.UpdateAsync(division);
             await _unitOfWork.SaveChangesAsync();
+            await _loggingService.WriteLogAsync(userId,$"Đã xóa phòng ban {division.DivisionName}");
             return ResponseUtil.GetObject(ResponseMessages.DivisionHasDeleted, ResponseMessages.DeleteSuccessfully,
                 HttpStatusCode.OK, 1);
         }

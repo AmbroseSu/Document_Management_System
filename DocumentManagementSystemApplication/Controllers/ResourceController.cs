@@ -22,6 +22,7 @@ public class ResourceController : ControllerBase
     //AuthorizeResource("[Resource] Create Resource")]
     public async Task<ResponseDto> CreateResource([FromBody] ResourceDto resourceDto)
     {
-        return await _resourceService.CreateResource(resourceDto);
+        var id = User.FindFirst("userid")?.Value;
+        return await _resourceService.CreateResource(resourceDto,Guid.Parse(id));
     }
 }

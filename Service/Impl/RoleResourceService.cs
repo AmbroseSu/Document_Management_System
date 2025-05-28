@@ -15,11 +15,13 @@ public class RoleResourceService : IRoleResourceService
 {
     private readonly IMapper _mapper;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly ILoggingService _logger;
 
-    public RoleResourceService(IUnitOfWork unitOfWork, IMapper mapper)
+    public RoleResourceService(IUnitOfWork unitOfWork, IMapper mapper, ILoggingService logger)
     {
         _unitOfWork = unitOfWork;
         _mapper = mapper;
+        _logger = logger;
     }
 
     public async Task ScanAndSaveRoleResourcesAsync()
@@ -105,7 +107,7 @@ public class RoleResourceService : IRoleResourceService
         }
     }
 
-    public async Task<ResponseDto> UpdateRoleResourceAsync(List<RoleResourceRequest>? roleResourceRequests)
+    public async Task<ResponseDto> UpdateRoleResourceAsync(List<RoleResourceRequest>? roleResourceRequests,Guid userId)
     {
         try
         {
@@ -159,8 +161,11 @@ public class RoleResourceService : IRoleResourceService
 
             var saveChange = await _unitOfWork.SaveChangesAsync();
             if (saveChange > 0)
+            {
+                await _logger.WriteLogAsync(userId, $"Phân quyền các role và resource: {string.Join(", ", roleResourceRequests)} thành công");
                 return ResponseUtil.GetObject(roleResourceRequests, ResponseMessages.CreatedSuccessfully,
                     HttpStatusCode.Created, 1);
+            }
             return ResponseUtil.Error(ResponseMessages.FailedToSaveData, ResponseMessages.OperationFailed,
                 HttpStatusCode.InternalServerError);
         }

@@ -14,12 +14,14 @@ public class RoleService : IRoleService
     private readonly IMapper _mapper;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IRoleResourceService _roleResourceService;
+    private readonly ILoggingService _loggingService;
 
-    public RoleService(IUnitOfWork unitOfWork, IMapper mapper, IRoleResourceService roleResourceService)
+    public RoleService(IUnitOfWork unitOfWork, IMapper mapper, IRoleResourceService roleResourceService, ILoggingService loggingService)
     {
         _unitOfWork = unitOfWork;
         _mapper = mapper;
         _roleResourceService = roleResourceService;
+        _loggingService = loggingService;
     }
 
 
@@ -51,7 +53,7 @@ public class RoleService : IRoleService
         }
     }
 
-    public async Task<ResponseDto> CreateRole(RoleDto roleDto)
+    public async Task<ResponseDto> CreateRole(RoleDto roleDto,Guid userId)
     {
         try
         {
@@ -71,6 +73,7 @@ public class RoleService : IRoleService
             await _unitOfWork.SaveChangesAsync();
             await _roleResourceService.ScanAndSaveRoleResourcesForOneRoleAsync(roleNew);
             var result = _mapper.Map<RoleDto>(roleNew);
+            await _loggingService.WriteLogAsync(userId,$"Tạo mới quyền {roleNew.RoleName}Thành công");
             return ResponseUtil.GetObject(result, ResponseMessages.CreatedSuccessfully, HttpStatusCode.Created, 1);
         }
         catch (Exception e)
