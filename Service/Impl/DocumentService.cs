@@ -919,7 +919,7 @@ public partial class DocumentService : IDocumentService
             receiverAO = receiverA.Split(',');
             senderAO = senderA.Split(',');
         }
-        DateTime validFrom;
+        DateTime validFrom = DateTime.Now;
         try
         {
             string fileExtension = ".conf-dms"; // Phần mở rộng tùy chỉnh
@@ -949,7 +949,6 @@ public partial class DocumentService : IDocumentService
         }
         catch (Exception ex)
         {
-            throw new Exception("Lỗi khi đọc tệp.", ex);
         }
         var resultA = new DocumentDetailResponse()
         {
