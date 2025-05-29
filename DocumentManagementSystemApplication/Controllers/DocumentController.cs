@@ -253,7 +253,6 @@ namespace DocumentManagementSystemApplication.Controllers
         }
 
         [HttpGet("view-attach-file/{documentId}")]
-        [AllowAnonymous]
         public async Task<IActionResult> ViewAttachFile([FromRoute] Guid documentId)
         {
             return await _fileService.GetAttachFileById(documentId);
