@@ -1827,7 +1827,7 @@ public partial class DocumentService : IDocumentService
         {
             await attachmentDocumentRequest.CopyToAsync(stream);
         }
-        return ResponseUtil.GetObject($"{_host}/api/Document/view-attach-file/{Guid.NewGuid()}",
+        return ResponseUtil.GetObject($"{_host}/api/Document/view-attach-file/{id}",
             ResponseMessages.GetSuccessfully, HttpStatusCode.OK, 1);
     }
 
