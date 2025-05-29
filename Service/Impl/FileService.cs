@@ -241,7 +241,8 @@ public class FileService : IFileService
         {
             case ".pdf":
                 extension = "pdf";
-                AddFooterToPdf(path, footerPath);
+                if (!isLegal)
+                    AddFooterToPdf(path, footerPath);
                 break;
             case ".docx":
                 extension = "openxmlformats-officedocument.wordprocessingml.document";
@@ -257,7 +258,7 @@ public class FileService : IFileService
         
         var contentType = $"application/{extension}";
         var bytes = await File.ReadAllBytesAsync(footerPath);
-        if (extension == "pdf")
+        if (extension == "pdf" &&  (!isLegal))
         {
             // Xóa file tạm sau khi đọc
             File.Delete(footerPath);
