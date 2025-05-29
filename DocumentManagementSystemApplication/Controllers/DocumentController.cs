@@ -74,10 +74,12 @@ namespace DocumentManagementSystemApplication.Controllers
         public async Task<IActionResult> DownloadDocumentByName([FromRoute] Guid documentId,
             [FromQuery] string? version, [FromQuery] bool isArchive,[FromQuery]bool isDoc=false)
         {
+            var id = User.FindFirst("userid")?.Value;
+
             if (!isArchive)
                 return await _documentService.GetDocumentById(documentId, version,isDoc);
           
-            return await _documentService.GetArchiveDocumentById(documentId, version);
+            return await _documentService.GetArchiveDocumentById(documentId, version,Guid.Parse(id));
         }
         
         [HttpGet("create-log-download")]

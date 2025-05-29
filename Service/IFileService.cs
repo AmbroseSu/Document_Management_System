@@ -12,7 +12,7 @@ public interface IFileService
     Task<string> SaveUploadFile(IFormFile file);
     Task<string> SaveAvatar(IFormFile file,string id);
     // Task<IActionResult> GetPdfFile(Guid id);
-    Task<IActionResult> GetPdfFile(string path);
+    Task<IActionResult> GetPdfFile(string path,bool isLegal = false);
     Task<string> ConvertDocToPdfPhysic(string path);
     Task<(byte[] FileBytes, string FileName, string ContentType)> GetFileBytes(string filePath);
     Task<IActionResult> GetAvatar(string fileName);

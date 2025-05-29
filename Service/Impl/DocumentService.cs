@@ -1270,11 +1270,20 @@ public partial class DocumentService : IDocumentService
         return ResponseUtil.GetObject("oke", "Success", HttpStatusCode.OK, 1);
     }
 
-    public async Task<IActionResult> GetArchiveDocumentById(Guid documentId, string? version)
+    public async Task<IActionResult> GetArchiveDocumentById(Guid documentId, string? version,Guid userId)
     {
+        
         var document = await _unitOfWork.ArchivedDocumentUOW.FindArchivedDocumentByIdAsync(documentId);
+        var permission = document.UserDocumentPermissions.FirstOrDefault(x => x.UserId == userId);
+        if (permission == null)
+            return new ObjectResult(ResponseUtil.Error("Permission Denied", "You do not have permission to access this document", HttpStatusCode.Forbidden))
+            {
+                StatusCode = (int)HttpStatusCode.Forbidden
+            };
+        var isLegal = permission.GrantPermission is GrantPermission.Download or GrantPermission.Grant;
+        
         var result = await _fileService.GetPdfFile(Path.Combine("archive_document", documentId.ToString(),
-            document.ArchivedDocumentName + ".pdf"));
+            document.ArchivedDocumentName + ".pdf"),isLegal);
         return result;
     }
 

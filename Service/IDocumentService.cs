@@ -13,7 +13,7 @@ public interface IDocumentService
     Task<IActionResult> GetDocumentById(Guid documentId,string version,bool isDoc);
     // Task<IActionResult> GetDocumentByName(string documentName);
     Task<ResponseDto> UpdateConfirmTaskWithDocument(Guid documentId);
-    Task<IActionResult> GetArchiveDocumentById(Guid documentId, string? version);
+    Task<IActionResult> GetArchiveDocumentById(Guid documentId, string? version,Guid userId);
     Task<ResponseDto> GetAllTypeDocumentsMobile(Guid userId);
     Task<ResponseDto> GetAllDocumentsMobile(Guid? workFlowId, Guid documentTypeId, Guid userId);
     Task<ResponseDto> GetDocumentDetailByIdMobile(Guid? documentId, Guid userId,Guid workFlowId);

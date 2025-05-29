@@ -231,15 +231,17 @@ public class FileService : IFileService
     //     return new FileContentResult(bytes, contentType);
     // }
 
-    public async Task<IActionResult> GetPdfFile(string filePath)
+    public async Task<IActionResult> GetPdfFile(string filePath,bool isLegal = false)
     {
         var path = Path.Combine(_storagePath, filePath);
         var extension = Path.GetExtension(path);
         var tmp = extension;
+        var footerPath = Path.Combine(_storagePath, "tmp", Path.GetFileNameWithoutExtension(path) + "_footer.pdf");
         switch (extension)
         {
             case ".pdf":
                 extension = "pdf";
+                AddFooterToPdf(path, footerPath);
                 break;
             case ".docx":
                 extension = "openxmlformats-officedocument.wordprocessingml.document";
@@ -252,9 +254,14 @@ public class FileService : IFileService
         {
             throw new FileNotFoundException("File not found", path);
         }
-
+        
         var contentType = $"application/{extension}";
-        var bytes = await File.ReadAllBytesAsync(path);
+        var bytes = await File.ReadAllBytesAsync(footerPath);
+        if (extension == "pdf")
+        {
+            // Xóa file tạm sau khi đọc
+            File.Delete(footerPath);
+        }
 
         return new FileContentResult(bytes, contentType)
             {
@@ -277,7 +284,7 @@ public class FileService : IFileService
             var document = new iText.Layout.Document(pdfDocument);
 
             // Define the footer text
-            var footerText = new Paragraph("Copyright by DMS")
+            var footerText = new Paragraph("This is a copy without legal value, created by the DMS system")
                 .SetFontSize(6)
                 .SetFontColor(new DeviceRgb(0xb4, 0xb6, 0xb8))
                 .SetTextAlignment(TextAlignment.CENTER);
