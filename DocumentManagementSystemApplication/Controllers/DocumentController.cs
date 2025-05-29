@@ -252,7 +252,7 @@ namespace DocumentManagementSystemApplication.Controllers
             return result;
         }
 
-        [HttpGet("api/Document/view-attach-file/{documentId}")]
+        [HttpGet("/view-attach-file/{documentId}")]
         [AllowAnonymous]
         public async Task<IActionResult> ViewAttachFile([FromRoute] Guid documentId)
         {
