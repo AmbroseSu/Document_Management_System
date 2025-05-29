@@ -257,7 +257,8 @@ public class FileService : IFileService
         }
         
         var contentType = $"application/{extension}";
-        var bytes = await File.ReadAllBytesAsync(footerPath);
+        
+        var bytes = await File.ReadAllBytesAsync(isLegal ? path : footerPath);
         if (extension == "pdf" &&  (!isLegal))
         {
             // Xóa file tạm sau khi đọc
