@@ -356,6 +356,14 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
             sender = docA.Sender;
             receiver = docA.ExternalPartner;
         }
+        
+        var AttachmentList = await _unitOfWork.AttachmentArchivedUOW.GetAttachmentArchivedDocumentByDocumentId(docA.ArchivedDocumentId);
+        var attachments = AttachmentList.Select(x => new AttachmentArchivedDocumentDto()
+        {
+            AttachmentArchivedDocumentId = x.AttachmentArchivedDocumentId,
+            AttachmentName = x.AttachmentName,
+            AttachmentUrl = x.AttachmentUrl
+        }).ToList();
         var result = new ArchiveDocumentResponse()
         {
             Granters = GranterList,
@@ -377,6 +385,7 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
             CreateDate = createDate,
             ArchivedBy = docA.CreatedBy,
             ArchivedDate = docA.CreatedDate,
+            Attachments = attachments,
             Scope = docA.Scope.ToString(),
             DocumentTypeName = docA.DocumentType?.DocumentTypeName,
             WorkflowName = string.Empty,

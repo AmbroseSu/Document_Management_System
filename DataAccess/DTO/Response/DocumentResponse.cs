@@ -37,6 +37,7 @@ public class ArchiveDocumentResponse : DocumentResponse
     public bool CanDownLoad { get; set; }
     public List<Viewer> Viewers { get; set; } = [];
     public List<Viewer> Granters { get; set; } = [];
+    public List<AttachmentArchivedDocumentDto> Attachments { get; set; } = [];
     public bool? CanRevoke { get; set; }
     
     public string? ArchivedBy { get; set; }
