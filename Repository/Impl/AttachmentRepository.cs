@@ -56,7 +56,7 @@ public class AttachmentRepository : IAttachmentRepository
     public async Task<IEnumerable<AttachmentDocument>> GetAttachmentDocumentByDocumentId(Guid documentId)
     {
         return await _AttachmentDocumentDao.FindAsync(
-            d => true
+            d => d.DocumentId == documentId && d.IsDeleted == false
         );
     }
 }

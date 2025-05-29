@@ -25,6 +25,7 @@ public class DocumentResponse
     public DateTime? ValidFrom { get; set; }
     public List<SignatureResponse>? DigitalSignatures { get; set; } = [];
     public List<SignatureResponse>? ApprovalSignatures { get; set; } = [];
+    public List<AttachmentDocumentDto>? Attachments { get; set; } = [];
     public string ExternalPartner { get; set; }
     
     public List<VersionDetailRespone>? Versions { get; set; } = [];  

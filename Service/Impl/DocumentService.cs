@@ -503,7 +503,15 @@ public partial class DocumentService : IDocumentService
         
 
         signature ??= [];
-
+        
+        var attachmentList = await _unitOfWork.AttachmentUOW.GetAttachmentDocumentByDocumentId(documentId);
+        var attachments = attachmentList.Select(a => new AttachmentDocumentDto()
+        {
+            AttachmentDocumentId = a.AttachmentDocumentId,
+            AttachmentDocumentName = a.AttachmentDocumentName ?? String.Empty,
+            AttachmentDocumentUrl = a.AttachmentDocumentUrl ?? String.Empty,
+        }).ToList();
+        
         var result = new DocumentResponse()
         {
             DocumentId = document.DocumentId,
@@ -522,6 +530,7 @@ public partial class DocumentService : IDocumentService
             DocumentTypeName = document.DocumentType.DocumentTypeName ?? String.Empty,
             DateIssued = document.DateIssued,
             DateExpires = dateExpires,
+            Attachments = attachments,
             Versions = versions.Select(v => new VersionDetailRespone()
             {
                 VersionNumber = v.VersionNumber,
