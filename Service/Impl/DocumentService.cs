@@ -514,7 +514,7 @@ public partial class DocumentService : IDocumentService
 
 
         DateTime? validFrom;
-        DateTime issueDate;
+        DateTime? issueDate;
         DateTime createdDate;
 
         if (document.DocumentWorkflowStatuses.FirstOrDefault().Workflow.Scope == Scope.InComing)
@@ -557,7 +557,7 @@ public partial class DocumentService : IDocumentService
         {
             validFrom = document.DateIssued;
             createdDate = document.CreatedDate;
-            issueDate =  document.CreatedDate;
+            issueDate =  null;
         }
         
         var result = new DocumentResponse()
