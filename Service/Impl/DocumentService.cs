@@ -511,6 +511,54 @@ public partial class DocumentService : IDocumentService
             AttachmentDocumentName = a.AttachmentDocumentName ?? String.Empty,
             AttachmentDocumentUrl = a.AttachmentDocumentUrl ?? String.Empty,
         }).ToList();
+
+
+        DateTime? validFrom;
+        DateTime issueDate;
+        DateTime createdDate;
+
+        if (document.DocumentWorkflowStatuses.FirstOrDefault().Workflow.Scope == Scope.InComing)
+        {
+            createdDate = document.CreatedDate;
+            issueDate = document.DateIssued ?? document.CreatedDate;
+            try
+            {
+                string fileExtension = ".conf-dms"; // Phần mở rộng tùy chỉnh
+                string filePath = Path.Combine(_storagePath,"document",document.DocumentId.ToString(), $"config{fileExtension}");
+
+                // Kiểm tra xem tệp có tồn tại không
+                if (!File.Exists(filePath))
+                {
+                    throw new FileNotFoundException("Không tìm thấy tệp cấu hình.", filePath);
+                }
+
+                // Đọc nội dung từ tệp
+                string content = await File.ReadAllTextAsync(filePath);
+
+                // Chuyển chuỗi thành DateTime
+                if (DateTime.TryParseExact(content, "yyyy-MM-dd HH:mm:ss", 
+                        System.Globalization.CultureInfo.InvariantCulture, 
+                        System.Globalization.DateTimeStyles.None, 
+                        out DateTime dateTime))
+                {
+                    validFrom = dateTime;
+                }
+                else
+                {
+                    throw new FormatException("Nội dung tệp không đúng định dạng DateTime (yyyy-MM-dd HH:mm:ss).");
+                }
+            }
+            catch (Exception ex)
+            {
+                return ResponseUtil.Error("Lỗi khi đọc tệp cấu hình: " + ex.Message,"erro", HttpStatusCode.InternalServerError);
+            }
+        }
+        else
+        {
+            validFrom = document.DateIssued;
+            createdDate = document.CreatedDate;
+            issueDate =  document.CreatedDate;
+        }
         
         var result = new DocumentResponse()
         {
@@ -519,7 +567,7 @@ public partial class DocumentService : IDocumentService
             DocumentContent = document.DocumentContent ?? String.Empty,
             NumberOfDocument = document.NumberOfDocument ?? String.Empty,
             Sender = document.Sender ?? String.Empty,
-            CreateDate = document.CreatedDate ,
+            CreateDate = createdDate ,
             SystemNumberOfDocument = document.SystemNumberOfDoc,
             CreatedBy = document.User.FullName ?? String.Empty,
             DateReceived = document.DateReceived,
@@ -528,7 +576,8 @@ public partial class DocumentService : IDocumentService
             Deadline = document.Deadline ,
             Status = document.ProcessingStatus.ToString() ,
             DocumentTypeName = document.DocumentType.DocumentTypeName ?? String.Empty,
-            DateIssued = document.DateIssued,
+            DateIssued = issueDate,
+            ValidFrom = validFrom,
             DateExpires = dateExpires,
             Attachments = attachments,
             Versions = versions.Select(v => new VersionDetailRespone()
