@@ -1583,7 +1583,15 @@ public partial class DocumentService : IDocumentService
     public async Task<ResponseDto> UpdateConfirmDocumentBySubmit(DocumentCompareDto documentUpload, Guid userId)
     {
         var doc = await _unitOfWork.DocumentUOW.FindDocumentByIdAsync(documentUpload.DocumentId);
-        
+        var atto = doc.AttachmentDocuments;
+        if (atto != null && atto.Count > 0)
+        {
+            foreach (var attachment in atto)
+            {
+                attachment.DocumentId = Guid.Parse("00000000-0000-0000-0000-000000000000");
+                await _unitOfWork.AttachmentUOW.UpdateAsync(attachment);
+            }
+        }
         foreach (var docUp in documentUpload.Attachments)
         {
             Uri uri = new Uri(docUp.url);
