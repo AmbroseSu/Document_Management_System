@@ -1531,6 +1531,17 @@ public partial class DocumentService : IDocumentService
     public async Task<ResponseDto> UpdateConfirmDocumentBySubmit(DocumentCompareDto documentUpload, Guid userId)
     {
         var doc = await _unitOfWork.DocumentUOW.FindDocumentByIdAsync(documentUpload.DocumentId);
+        foreach (var docUp in documentUpload.Attachments)
+        {
+            var atUp = new AttachmentDocument()
+            {
+                DocumentId = doc.DocumentId,
+                AttachmentDocumentId = Guid.NewGuid(),
+                AttachmentDocumentName = docUp.name,
+                AttachmentDocumentUrl = docUp.url
+            };
+            await _unitOfWork.AttachmentUOW.AddAsync(atUp);
+        }
         // var user = await _unitOfWork.UserUOW.FindUserByIdAsync(userId);
         if (doc == null)
         {
