@@ -1,4 +1,5 @@
 using System.Net;
+using BusinessObject.Enums;
 using DataAccess.DTO;
 using Repository;
 using Service.Response;
@@ -15,11 +16,11 @@ public class FlowService : IFlowService
         _unitOfWork = unitOfWork;
     }
 
-    public async Task<ResponseDto> FindAllFlowAsync()
+    public async Task<ResponseDto> FindAllFlowAsync(Scope scope)
     {
         try
         {
-            var flows = await _unitOfWork.FlowUOW.FindAllFlowAsync();
+            var flows = await _unitOfWork.FlowUOW.FindAllFlowAsync(scope);
             
             return ResponseUtil.GetObject(flows, ResponseMessages.GetSuccessfully, HttpStatusCode.OK, flows.Count());
         }

@@ -1,4 +1,5 @@
 using BusinessObject;
+using BusinessObject.Enums;
 using Task = System.Threading.Tasks.Task;
 
 namespace Repository;
@@ -11,5 +12,5 @@ public interface IFlowRepository
     Task UpdateRangeAsync(List<Flow> flows);
     Task<Flow?> FindFlowByIdAsync(Guid? id);
     Task<IEnumerable<Flow>> FindByIdsAsync(List<Guid> flowIds);
-    Task<IEnumerable<Flow>> FindAllFlowAsync();
+    Task<IEnumerable<Flow>> FindAllFlowAsync(Scope scope);
 }
