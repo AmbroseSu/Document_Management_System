@@ -198,7 +198,8 @@ public class EmailService : IEmailService
         {
             foreach (var attachmentDoc in attachmentArchiveDocument)
             {
-                var (attachmentBytes, attachmentFileName, attachmentContentType) = await _fileService.GetFileBytes(Path.Combine("tmpA", attachmentDoc.AttachmentArchivedDocumentId.ToString(),
+                string lastSegment = attachmentDoc.AttachmentUrl.Split('/').Last();
+                var (attachmentBytes, attachmentFileName, attachmentContentType) = await _fileService.GetFileBytes(Path.Combine("tmpA", lastSegment,
                     attachmentDoc.AttachmentName!));
                 
                 var attachmentPart = new MimePart()
