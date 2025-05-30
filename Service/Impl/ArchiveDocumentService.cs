@@ -297,7 +297,16 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
         // var timeZone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Ho_Chi_Minh");
         // var dateNow = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, timeZone);
         var dateNow = DateTime.UtcNow;
-        var isExpire = dateNow > docA.ExpirationDate;
+        bool isExpire;
+        if (docA.ArchivedDocumentStatus == ArchivedDocumentStatus.Withdrawn)
+        {
+            isExpire = true;
+        }
+        else
+        {
+            isExpire = dateNow > docA.ExpirationDate;
+        }
+        
         var createDate = dateNow;
         var issueDate = dateNow;
         var validFrom = dateNow;
