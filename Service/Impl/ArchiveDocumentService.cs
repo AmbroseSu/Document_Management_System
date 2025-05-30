@@ -587,6 +587,57 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
         await _loggingService.WriteLogAsync(userId,$"Tạo văn bản thay thế {archiveDoc.SystemNumberOfDoc} thành công.");
         return ResponseUtil.GetObject(newDocId, ResponseMessages.CreatedSuccessfully, HttpStatusCode.OK, 1);
     }
+    
+    
+    public async Task<ResponseDto> WithdrawArchiveDocument(Guid userId, Guid archiveDocumentId)
+    {
+        try
+        {
+            var archiveDoc = await _unitOfWork.ArchivedDocumentUOW.FindArchivedDocumentByIdAsync(archiveDocumentId);
+            if (archiveDoc == null)
+            {
+                return ResponseUtil.Error("Archive document not found", ResponseMessages.FailedToSaveData, HttpStatusCode.NotFound);
+            }
+            var document = await _unitOfWork.DocumentUOW.FindDocumentByIdAsync(archiveDoc.FinalDocumentId);
+            if (document == null)
+            {
+                return ResponseUtil.Error("Document not found", ResponseMessages.FailedToSaveData, HttpStatusCode.NotFound);
+            }
+            var user = await _unitOfWork.UserUOW.FindUserByIdAsync(userId);
+            if (user == null)
+            {
+                return ResponseUtil.Error("User not found", ResponseMessages.FailedToSaveData, HttpStatusCode.NotFound);
+            }
+            var userDocPermission = await _unitOfWork.UserDocPermissionUOW.FindByUserIdAndArchiveDocAsync(userId, archiveDoc.ArchivedDocumentId);
+            
+            if (userDocPermission == null || userDocPermission.GrantPermission != GrantPermission.Grant)
+            {
+                return ResponseUtil.Error("You do not have permission to withdraw this document", 
+                    ResponseMessages.OperationFailed, HttpStatusCode.Forbidden);
+            }
+            
+            var scope = document.DocumentWorkflowStatuses.FirstOrDefault()?.Workflow.Scope;
+            if (scope != Scope.OutGoing)
+            {
+                archiveDoc.ArchivedDocumentStatus = ArchivedDocumentStatus.Withdrawn;
+                await _unitOfWork.ArchivedDocumentUOW.UpdateAsync(archiveDoc);
+                await _unitOfWork.SaveChangesAsync();
+                await _loggingService.WriteLogAsync(user.UserId, $"Thu hồi tài liệu {archiveDoc.SystemNumberOfDoc} thành công bởi {user.FullName}.");
+                return ResponseUtil.GetObject("Withdraw success", ResponseMessages.UpdateSuccessfully, HttpStatusCode.OK, 1);
+            }
+            else
+            {
+                return ResponseUtil.Error("Cannot use function for withdraw archive document in OutGoing scope", 
+                    ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
+            }
+            
+        }
+        catch (Exception e)
+        {
+            return ResponseUtil.Error(e.Message, ResponseMessages.OperationFailed,
+                HttpStatusCode.BadRequest);
+        }
+    }
 
     public async Task<ResponseDto> DeleteArchiveTemplate(Guid templateId, Guid userId)
     {
