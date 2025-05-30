@@ -102,6 +102,7 @@ public class EmailService : IEmailService
                 HttpStatusCode.BadRequest);
         }
         
+        var attachmentArchiveDocument = await _unitOfWork.AttachmentArchivedUOW.GetAttachmentArchivedDocumentByDocumentId(document.ArchivedDocumentId);
         var doc = await _unitOfWork.DocumentUOW.FindDocumentByIdAsync(document.FinalDocumentId);
         if (doc == null)
         {
@@ -192,6 +193,26 @@ public class EmailService : IEmailService
         };
 
         multipart.Add(attachment);
+        
+        if(attachmentArchiveDocument.Count() > 0)
+        {
+            foreach (var attachmentDoc in attachmentArchiveDocument)
+            {
+                var (attachmentBytes, attachmentFileName, attachmentContentType) = await _fileService.GetFileBytes(Path.Combine("tmpA", attachmentDoc.AttachmentArchivedDocumentId.ToString(),
+                    attachmentDoc.AttachmentName!));
+                
+                var attachmentPart = new MimePart()
+                {
+                    Content = new MimeContent(new MemoryStream(attachmentBytes)),
+                    ContentDisposition = new ContentDisposition(ContentDisposition.Attachment),
+                    ContentTransferEncoding = ContentEncoding.Base64,
+                    FileName = attachmentFileName
+                };
+                multipart.Add(attachmentPart);
+            }
+        }
+        
+        
         //var memoryStream = new MemoryStream();
         // Nếu có file đính kèm thì thêm vào
         /*if (emailRequest.FilePath != null && emailRequest.FilePath.Length > 0)
