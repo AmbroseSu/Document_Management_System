@@ -1592,21 +1592,22 @@ public partial class DocumentService : IDocumentService
                 await _unitOfWork.AttachmentUOW.UpdateAsync(attachment);
             }
         }
-        foreach (var docUp in documentUpload.Attachments)
-        {
-            Uri uri = new Uri(docUp.url);
-
-            // Lấy phần cuối của đường dẫn (segment cuối)
-            string guidString = uri.Segments[^1];
-            var atUp = new AttachmentDocument()
+        if(documentUpload.Attachments != null)
+            foreach (var docUp in documentUpload.Attachments)
             {
-                DocumentId = doc.DocumentId,
-                AttachmentDocumentId = Guid.Parse(guidString),
-                AttachmentDocumentName = docUp.name,
-                AttachmentDocumentUrl = docUp.url
-            };
-            await _unitOfWork.AttachmentUOW.AddAsync(atUp);
-        }
+                Uri uri = new Uri(docUp.url);
+
+                // Lấy phần cuối của đường dẫn (segment cuối)
+                string guidString = uri.Segments[^1];
+                var atUp = new AttachmentDocument()
+                {
+                    DocumentId = doc.DocumentId,
+                    AttachmentDocumentId = Guid.Parse(guidString),
+                    AttachmentDocumentName = docUp.name,
+                    AttachmentDocumentUrl = docUp.url
+                };
+                await _unitOfWork.AttachmentUOW.AddAsync(atUp);
+            }
         // var user = await _unitOfWork.UserUOW.FindUserByIdAsync(userId);
         if (doc == null)
         {
