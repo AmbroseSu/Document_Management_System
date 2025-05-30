@@ -2607,10 +2607,10 @@ public partial class TaskService : ITaskService
                 {
                     var att = new AttachmentArchivedDocument()
                     {
-                        AttachmentArchivedDocumentId = archivedDocId,
+                        //AttachmentArchivedDocumentId = archivedDocId,
                         AttachmentName = attachmentDocument.AttachmentDocumentName,
                         AttachmentUrl = attachmentDocument.AttachmentDocumentUrl,
-                        //ArchivedDocumentId = archivedDocId,
+                        ArchivedDocumentId = archivedDocId,
                     };
                     await _unitOfWork.AttachmentArchivedUOW.AddAsync(att);
                 }
@@ -2654,10 +2654,10 @@ public partial class TaskService : ITaskService
                 {
                     var att = new AttachmentArchivedDocument()
                     {
-                        AttachmentArchivedDocumentId = archivedDoc.ArchivedDocumentId,
+                        //AttachmentArchivedDocumentId = archivedDoc.ArchivedDocumentId,
                         AttachmentName = attachmentDocument.AttachmentDocumentName,
                         AttachmentUrl = attachmentDocument.AttachmentDocumentUrl,
-                        //ArchivedDocumentId = archivedDoc.ArchivedDocumentId,
+                        ArchivedDocumentId = archivedDoc.ArchivedDocumentId,
                     };
                     await _unitOfWork.AttachmentArchivedUOW.AddAsync(att);
                 }
@@ -3009,7 +3009,7 @@ public partial class TaskService : ITaskService
                         {
                             var att = new AttachmentArchivedDocument()
                             {
-                                AttachmentArchivedDocumentId = archiveId,
+                                //AttachmentArchivedDocumentId = archiveId,
                                 AttachmentName = attachmentDocument.AttachmentDocumentName,
                                 AttachmentUrl = attachmentDocument.AttachmentDocumentUrl,
                                 ArchivedDocumentId = archiveId,
@@ -3050,7 +3050,7 @@ public partial class TaskService : ITaskService
                         {
                             var att = new AttachmentArchivedDocument()
                             {
-                                AttachmentArchivedDocumentId = archiveId,
+                                //AttachmentArchivedDocumentId = archiveId,
                                 AttachmentName = attachmentDocument.AttachmentDocumentName,
                                 AttachmentUrl = attachmentDocument.AttachmentDocumentUrl,
                                 ArchivedDocumentId = archiveId,
@@ -3236,6 +3236,7 @@ public partial class TaskService : ITaskService
         using var transaction = await _unitOfWork.BeginTransactionAsync();
         try
         {
+            var user = await _unitOfWork.UserUOW.FindUserByIdAsync(rejectDocumentRequest.UserId);
             var task = await _unitOfWork.TaskUOW.FindTaskByIdAsync(rejectDocumentRequest.TaskId);
 
             if (task == null || task.UserId != rejectDocumentRequest.UserId)
@@ -3331,6 +3332,7 @@ public partial class TaskService : ITaskService
             // 4. Gửi thông báo
             // TODO: Gửi thông báo cho người tạo tài liệu + người liên quan: "Tài liệu đã bị từ chối ở bước XYZ bởi User A"
             await transaction.CommitAsync();
+            await _loggingService.WriteLogAsync(user.UserId,$"Văn bản bị từ chối bởi: {user.FullName}");
             return ResponseUtil.GetObject(ResponseMessages.DocumentRejected, ResponseMessages.CreatedSuccessfully,
                 HttpStatusCode.Created, 1);
         }
