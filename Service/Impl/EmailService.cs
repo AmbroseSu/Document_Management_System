@@ -25,6 +25,7 @@ public class EmailService : IEmailService
     private readonly IFileService _fileService;
     private readonly string _host;
     private readonly ILoggingService _loggingService;
+    private readonly string _storagePath = Path.Combine(Directory.GetCurrentDirectory(), "data", "storage");
 
 
     public EmailService(IConfiguration config, IUnitOfWork unitOfWork, IFileService fileService, IOptions<AppsetingOptions> options, ILoggingService loggingService)
@@ -199,8 +200,19 @@ public class EmailService : IEmailService
             foreach (var attachmentDoc in attachmentArchiveDocument)
             {
                 string lastSegment = attachmentDoc.AttachmentUrl.Split('/').Last();
-                var (attachmentBytes, attachmentFileName, attachmentContentType) = await _fileService.GetFileBytes(Path.Combine("tmpA", lastSegment,
-                    attachmentDoc.AttachmentName!));
+                var path = Path.Combine(_storagePath, "tmpA");
+                string searchPattern = $"{lastSegment}.*";
+                var files = Directory.GetFiles(path, searchPattern);
+                var filePath = files.FirstOrDefault();
+                if (filePath == null || !File.Exists(filePath))
+                {
+                    throw new FileNotFoundException("File not found", filePath);
+                }
+                if (!File.Exists(filePath))
+                {
+                    throw new FileNotFoundException("File not found", filePath);
+                }
+                var (attachmentBytes, attachmentFileName, attachmentContentType) = await _fileService.GetFileBytes(filePath);
                 
                 var attachmentPart = new MimePart()
                 {

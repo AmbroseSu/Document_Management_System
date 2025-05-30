@@ -316,6 +316,8 @@ public class FileService : IFileService
         {
             ".pdf" => "application/pdf",
             ".png" => "image/png",
+            ".jpg" or ".jpeg" => "image/jpeg",
+            ".docx" => "application/msword",
             _ => "application/octet-stream"
         };
 
