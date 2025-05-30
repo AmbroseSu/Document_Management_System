@@ -298,6 +298,28 @@ public partial class TaskService : ITaskService
                 }
             }
             
+            
+            // Kiểm tra khi tạo task Sign, phải có Browse trước đó trong cùng Step
+            if (taskDto.TaskType == TaskType.Sign)
+            {
+                var hasBrowseOrSubmitBefore = false;
+                foreach (var t in existingTasks)
+                {
+                    if (t.TaskNumber < nextTaskNumber && t.TaskType == TaskType.Browse && !t.IsDeleted)
+                    {
+                        hasBrowseOrSubmitBefore = true;
+                        break;
+                    }
+                }
+                if (!hasBrowseOrSubmitBefore)
+                {
+                    return ResponseUtil.Error(
+                        $"Không thể tạo task Sign vì không có task Browse trước đó trong Step này.",
+                        ResponseMessages.OperationFailed,
+                        HttpStatusCode.BadRequest);
+                }
+            }
+            
 
 
             var currentStep = await _unitOfWork.StepUOW.FindStepByIdAsync(taskDto.StepId);
@@ -420,6 +442,26 @@ public partial class TaskService : ITaskService
                             {
                                 return ResponseUtil.Error(
                                     $"Step cuối của Flow trước đó đã có task với loại {taskDto.TaskType}. Mỗi loại TaskType chỉ được phép xuất hiện một lần.",
+                                    ResponseMessages.OperationFailed,
+                                    HttpStatusCode.BadRequest);
+                            }
+                        }
+                        // Kiểm tra khi tạo task Sign, Step cuối của Flow trước đó phải có Browse hoặc Submit
+                        if (taskDto.TaskType == TaskType.Sign)
+                        {
+                            var hasBrowseOrSubmit = false;
+                            foreach (var t in tasksInLastStep)
+                            {
+                                if (t.TaskType == TaskType.Browse && !t.IsDeleted)
+                                {
+                                    hasBrowseOrSubmit = true;
+                                    break;
+                                }
+                            }
+                            if (!hasBrowseOrSubmit)
+                            {
+                                return ResponseUtil.Error(
+                                    $"Không thể tạo task Sign vì Step cuối của Flow trước đó không có task Browse",
                                     ResponseMessages.OperationFailed,
                                     HttpStatusCode.BadRequest);
                             }
