@@ -1,3 +1,4 @@
+using BusinessObject.Enums;
 using DataAccess.DTO;
 using DocumentManagementSystemApplication.Middleware;
 using Microsoft.AspNetCore.Authorization;
@@ -20,9 +21,9 @@ namespace DocumentManagementSystemApplication.Controllers
         }
         [HttpGet("view-all-flow")]
         //[AuthorizeResource("[Flow] View All Flow")]
-        public async Task<ResponseDto> ViewAllFlow()
+        public async Task<ResponseDto> ViewAllFlow([FromQuery] Scope scope)
         {
-            return await _flowService.FindAllFlowAsync();
+            return await _flowService.FindAllFlowAsync(scope);
         }
     }
 }
