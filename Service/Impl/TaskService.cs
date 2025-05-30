@@ -273,6 +273,31 @@ public partial class TaskService : ITaskService
                 }
             }
             
+            foreach (var t in existingTasks)
+            {
+                if (t.TaskType == taskDto.TaskType && !t.IsDeleted)
+                {
+                    return ResponseUtil.Error(
+                        "Mỗi loại nhiệm vụ chỉ được phép xuất hiện một lần trong Step.",
+                        ResponseMessages.OperationFailed,
+                        HttpStatusCode.BadRequest);
+                }
+            }
+            
+            if (taskDto.TaskType == TaskType.Browse && existingTasks.Count() > 0)
+            {
+                foreach (var t in existingTasks)
+                {
+                    if (t.TaskNumber < nextTaskNumber && t.TaskType == TaskType.Submit && !t.IsDeleted)
+                    {
+                        return ResponseUtil.Error(
+                            $"Không thể tạo nhiệm vụ Duyệt vì đã có nhiệm vụ Nộp trước đó trong Bước này. Nhiệm vụ Duyệt Phải trước nhiệm vụ Nộp.",
+                            ResponseMessages.OperationFailed,
+                            HttpStatusCode.BadRequest);
+                    }
+                }
+            }
+            
 
 
             var currentStep = await _unitOfWork.StepUOW.FindStepByIdAsync(taskDto.StepId);
@@ -287,6 +312,8 @@ public partial class TaskService : ITaskService
                         HttpStatusCode.BadRequest);
                 }
             }
+            
+            
             var document = await _unitOfWork.DocumentUOW.FindDocumentByIdAsync(taskDto.DocumentId.Value);
 
             var currentFlow = currentStep!.FlowId;
@@ -310,6 +337,101 @@ public partial class TaskService : ITaskService
                 return ResponseUtil.Error(ResponseMessages.CanCreateTaskSubmit, ResponseMessages.OperationFailed,
                     HttpStatusCode.BadRequest);
             }
+            
+            var currentFlowNumber = workflowFlowAll
+                .FirstOrDefault(wf => wf.FlowId == currentFlow)?.FlowNumber ?? 0;
+            
+            //////////////////////////////////////////////
+            
+        //    var currentStep = await _unitOfWork.StepUOW.FindStepByIdAsync(taskDto.StepId);
+        //var currentFlow = currentStep!.FlowId;
+        var stepsInFlow = await _unitOfWork.StepUOW.FindStepByFlowIdAsync(currentFlow);
+        var orderedStepsInFlowNew = new List<Step>();
+        foreach (var s in stepsInFlow)
+        {
+            orderedStepsInFlowNew.Add(s);
+        }
+        for (int i = 0; i < orderedStepsInFlowNew.Count - 1; i++)
+        {
+            for (int j = i + 1; j < orderedStepsInFlowNew.Count; j++)
+            {
+                if (orderedStepsInFlowNew[j].StepNumber < orderedStepsInFlowNew[i].StepNumber)
+                {
+                    var temp = orderedStepsInFlowNew[i];
+                    orderedStepsInFlowNew[i] = orderedStepsInFlowNew[j];
+                    orderedStepsInFlowNew[j] = temp;
+                }
+            }
+        }
+        if (orderedStepsInFlowNew.Count > 0 && taskDto.StepId == orderedStepsInFlowNew[0].StepId)
+        {
+            //var document = await _unitOfWork.DocumentUOW.FindDocumentByIdAsync(taskDto.DocumentId.Value);
+            //var workflowFlow = await _unitOfWork.WorkflowFlowUOW.FindWorkflowFlowByWorkflowIdAndFlowIdAsync(
+            //    document.DocumentWorkflowStatuses.FirstOrDefault()?.WorkflowId, currentFlow);
+            //var workflowId = workflowFlow!.WorkflowId;
+            //var workflowFlowAll = await _unitOfWork.WorkflowFlowUOW.FindWorkflowFlowByWorkflowIdAsync(workflowId);
+            //var currentFlowNumber = 0;
+            foreach (var wf in workflowFlowAll)
+            {
+                if (wf.FlowId == currentFlow)
+                {
+                    currentFlowNumber = wf.FlowNumber;
+                    break;
+                }
+            }
+            if (currentFlowNumber > 1)
+            {
+                WorkflowFlow previousFlow = null;
+                foreach (var wf in workflowFlowAll)
+                {
+                    if (wf.FlowNumber == currentFlowNumber - 1)
+                    {
+                        previousFlow = wf;
+                        break;
+                    }
+                }
+                if (previousFlow != null)
+                {
+                    var stepsInPreviousFlow = await _unitOfWork.StepUOW.FindStepByFlowIdAsync(previousFlow.FlowId);
+                    var orderedStepsInPreviousFlow = new List<Step>();
+                    foreach (var s in stepsInPreviousFlow)
+                    {
+                        orderedStepsInPreviousFlow.Add(s);
+                    }
+                    for (int i = 0; i < orderedStepsInPreviousFlow.Count - 1; i++)
+                    {
+                        for (int j = i + 1; j < orderedStepsInPreviousFlow.Count; j++)
+                        {
+                            if (orderedStepsInPreviousFlow[j].StepNumber < orderedStepsInPreviousFlow[i].StepNumber)
+                            {
+                                var temp = orderedStepsInPreviousFlow[i];
+                                orderedStepsInPreviousFlow[i] = orderedStepsInPreviousFlow[j];
+                                orderedStepsInPreviousFlow[j] = temp;
+                            }
+                        }
+                    }
+                    var lastStepInPreviousFlow = orderedStepsInPreviousFlow.Count > 0 ? orderedStepsInPreviousFlow[orderedStepsInPreviousFlow.Count - 1] : null;
+                    if (lastStepInPreviousFlow != null)
+                    {
+                        var tasksInLastStep = await _unitOfWork.TaskUOW.FindTaskByStepIdDocIdAsync(lastStepInPreviousFlow.StepId, taskDto.DocumentId);
+                        foreach (var t in tasksInLastStep)
+                        {
+                            if (t.TaskType == taskDto.TaskType && !t.IsDeleted)
+                            {
+                                return ResponseUtil.Error(
+                                    $"Step cuối của Flow trước đó đã có task với loại {taskDto.TaskType}. Mỗi loại TaskType chỉ được phép xuất hiện một lần.",
+                                    ResponseMessages.OperationFailed,
+                                    HttpStatusCode.BadRequest);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+            
+            
+            
+            ////////////////////////////////////////////
 
             
             if (taskDto.StartDate < DateTime.Now || taskDto.EndDate < DateTime.Now)
@@ -324,7 +446,7 @@ public partial class TaskService : ITaskService
             ////////////////////////////////////////////////////////////////////////
 
             // Lấy tất cả Step trong Flow này
-            var stepsInFlow = await _unitOfWork.StepUOW.FindStepByFlowIdAsync(currentFlow);
+            //var stepsInFlow = await _unitOfWork.StepUOW.FindStepByFlowIdAsync(currentFlow);
             var orderedStepsInFlow = stepsInFlow.OrderBy(s => s.StepNumber).ToList();
 
             // Lấy các task trong Step hiện tại và sắp xếp theo TaskNumber
@@ -335,8 +457,7 @@ public partial class TaskService : ITaskService
             var currentStepIndex = orderedStepsInFlow.FindIndex(s => s.StepId == taskDto.StepId);
             
             
-            var currentFlowNumber = workflowFlowAll
-                .FirstOrDefault(wf => wf.FlowId == currentFlow)?.FlowNumber ?? 0;
+            
             
                     // Kiểm tra nếu task mới là task đầu tiên của step đầu tiên trong flow và có flow trước đó
         if (!tasksInCurrentStep.Any() && currentStepIndex == 0) // Task đầu tiên của step đầu tiên
