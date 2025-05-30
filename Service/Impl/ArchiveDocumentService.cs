@@ -297,7 +297,16 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
         // var timeZone = TimeZoneInfo.FindSystemTimeZoneById("Asia/Ho_Chi_Minh");
         // var dateNow = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, timeZone);
         var dateNow = DateTime.UtcNow;
-        var isExpire = dateNow > docA.ExpirationDate;
+        bool isExpire;
+        if (docA.ArchivedDocumentStatus == ArchivedDocumentStatus.Withdrawn)
+        {
+            isExpire = true;
+        }
+        else
+        {
+            isExpire = dateNow > docA.ExpirationDate;
+        }
+        
         var createDate = dateNow;
         var issueDate = dateNow;
         var validFrom = dateNow;
@@ -586,6 +595,57 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
         await _unitOfWork.SaveChangesAsync();
         await _loggingService.WriteLogAsync(userId,$"Tạo văn bản thay thế {archiveDoc.SystemNumberOfDoc} thành công.");
         return ResponseUtil.GetObject(newDocId, ResponseMessages.CreatedSuccessfully, HttpStatusCode.OK, 1);
+    }
+    
+    
+    public async Task<ResponseDto> WithdrawArchiveDocument(Guid userId, Guid archiveDocumentId)
+    {
+        try
+        {
+            var archiveDoc = await _unitOfWork.ArchivedDocumentUOW.FindArchivedDocumentByIdAsync(archiveDocumentId);
+            if (archiveDoc == null)
+            {
+                return ResponseUtil.Error("Archive document not found", ResponseMessages.FailedToSaveData, HttpStatusCode.NotFound);
+            }
+            var document = await _unitOfWork.DocumentUOW.FindDocumentByIdAsync(archiveDoc.FinalDocumentId);
+            if (document == null)
+            {
+                return ResponseUtil.Error("Document not found", ResponseMessages.FailedToSaveData, HttpStatusCode.NotFound);
+            }
+            var user = await _unitOfWork.UserUOW.FindUserByIdAsync(userId);
+            if (user == null)
+            {
+                return ResponseUtil.Error("User not found", ResponseMessages.FailedToSaveData, HttpStatusCode.NotFound);
+            }
+            var userDocPermission = await _unitOfWork.UserDocPermissionUOW.FindByUserIdAndArchiveDocAsync(userId, archiveDoc.ArchivedDocumentId);
+            
+            if (userDocPermission == null || userDocPermission.GrantPermission != GrantPermission.Grant)
+            {
+                return ResponseUtil.Error("You do not have permission to withdraw this document", 
+                    ResponseMessages.OperationFailed, HttpStatusCode.Forbidden);
+            }
+            
+            var scope = document.DocumentWorkflowStatuses.FirstOrDefault()?.Workflow.Scope;
+            if (scope != Scope.OutGoing)
+            {
+                archiveDoc.ArchivedDocumentStatus = ArchivedDocumentStatus.Withdrawn;
+                await _unitOfWork.ArchivedDocumentUOW.UpdateAsync(archiveDoc);
+                await _unitOfWork.SaveChangesAsync();
+                await _loggingService.WriteLogAsync(user.UserId, $"Thu hồi tài liệu {archiveDoc.SystemNumberOfDoc} thành công bởi {user.FullName}.");
+                return ResponseUtil.GetObject("Withdraw success", ResponseMessages.UpdateSuccessfully, HttpStatusCode.OK, 1);
+            }
+            else
+            {
+                return ResponseUtil.Error("Cannot use function for withdraw archive document in OutGoing scope", 
+                    ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
+            }
+            
+        }
+        catch (Exception e)
+        {
+            return ResponseUtil.Error(e.Message, ResponseMessages.OperationFailed,
+                HttpStatusCode.BadRequest);
+        }
     }
 
     public async Task<ResponseDto> DeleteArchiveTemplate(Guid templateId, Guid userId)

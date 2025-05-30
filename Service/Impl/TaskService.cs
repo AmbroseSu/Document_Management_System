@@ -273,6 +273,53 @@ public partial class TaskService : ITaskService
                 }
             }
             
+            foreach (var t in existingTasks)
+            {
+                if (t.TaskType == taskDto.TaskType && !t.IsDeleted)
+                {
+                    return ResponseUtil.Error(
+                        "Mỗi loại nhiệm vụ chỉ được phép xuất hiện một lần trong Step.",
+                        ResponseMessages.OperationFailed,
+                        HttpStatusCode.BadRequest);
+                }
+            }
+            
+            if (taskDto.TaskType == TaskType.Browse && existingTasks.Count() > 0)
+            {
+                foreach (var t in existingTasks)
+                {
+                    if (t.TaskNumber < nextTaskNumber && t.TaskType == TaskType.Submit && !t.IsDeleted)
+                    {
+                        return ResponseUtil.Error(
+                            $"Không thể tạo nhiệm vụ Duyệt vì đã có nhiệm vụ Nộp trước đó trong Bước này. Nhiệm vụ Duyệt Phải trước nhiệm vụ Nộp.",
+                            ResponseMessages.OperationFailed,
+                            HttpStatusCode.BadRequest);
+                    }
+                }
+            }
+            
+            
+            // Kiểm tra khi tạo task Sign, phải có Browse trước đó trong cùng Step
+            if (taskDto.TaskType == TaskType.Sign)
+            {
+                var hasBrowseOrSubmitBefore = false;
+                foreach (var t in existingTasks)
+                {
+                    if (t.TaskNumber < nextTaskNumber && t.TaskType == TaskType.Browse && !t.IsDeleted)
+                    {
+                        hasBrowseOrSubmitBefore = true;
+                        break;
+                    }
+                }
+                if (!hasBrowseOrSubmitBefore)
+                {
+                    return ResponseUtil.Error(
+                        $"Không thể tạo task Sign vì không có task Browse trước đó trong Step này.",
+                        ResponseMessages.OperationFailed,
+                        HttpStatusCode.BadRequest);
+                }
+            }
+            
 
 
             var currentStep = await _unitOfWork.StepUOW.FindStepByIdAsync(taskDto.StepId);
@@ -287,6 +334,8 @@ public partial class TaskService : ITaskService
                         HttpStatusCode.BadRequest);
                 }
             }
+            
+            
             var document = await _unitOfWork.DocumentUOW.FindDocumentByIdAsync(taskDto.DocumentId.Value);
 
             var currentFlow = currentStep!.FlowId;
@@ -310,6 +359,121 @@ public partial class TaskService : ITaskService
                 return ResponseUtil.Error(ResponseMessages.CanCreateTaskSubmit, ResponseMessages.OperationFailed,
                     HttpStatusCode.BadRequest);
             }
+            
+            var currentFlowNumber = workflowFlowAll
+                .FirstOrDefault(wf => wf.FlowId == currentFlow)?.FlowNumber ?? 0;
+            
+            //////////////////////////////////////////////
+            
+        //    var currentStep = await _unitOfWork.StepUOW.FindStepByIdAsync(taskDto.StepId);
+        //var currentFlow = currentStep!.FlowId;
+        var stepsInFlow = await _unitOfWork.StepUOW.FindStepByFlowIdAsync(currentFlow);
+        var orderedStepsInFlowNew = new List<Step>();
+        foreach (var s in stepsInFlow)
+        {
+            orderedStepsInFlowNew.Add(s);
+        }
+        for (int i = 0; i < orderedStepsInFlowNew.Count - 1; i++)
+        {
+            for (int j = i + 1; j < orderedStepsInFlowNew.Count; j++)
+            {
+                if (orderedStepsInFlowNew[j].StepNumber < orderedStepsInFlowNew[i].StepNumber)
+                {
+                    var temp = orderedStepsInFlowNew[i];
+                    orderedStepsInFlowNew[i] = orderedStepsInFlowNew[j];
+                    orderedStepsInFlowNew[j] = temp;
+                }
+            }
+        }
+        if (orderedStepsInFlowNew.Count > 0 && taskDto.StepId == orderedStepsInFlowNew[0].StepId)
+        {
+            //var document = await _unitOfWork.DocumentUOW.FindDocumentByIdAsync(taskDto.DocumentId.Value);
+            //var workflowFlow = await _unitOfWork.WorkflowFlowUOW.FindWorkflowFlowByWorkflowIdAndFlowIdAsync(
+            //    document.DocumentWorkflowStatuses.FirstOrDefault()?.WorkflowId, currentFlow);
+            //var workflowId = workflowFlow!.WorkflowId;
+            //var workflowFlowAll = await _unitOfWork.WorkflowFlowUOW.FindWorkflowFlowByWorkflowIdAsync(workflowId);
+            //var currentFlowNumber = 0;
+            foreach (var wf in workflowFlowAll)
+            {
+                if (wf.FlowId == currentFlow)
+                {
+                    currentFlowNumber = wf.FlowNumber;
+                    break;
+                }
+            }
+            if (currentFlowNumber > 1)
+            {
+                WorkflowFlow previousFlow = null;
+                foreach (var wf in workflowFlowAll)
+                {
+                    if (wf.FlowNumber == currentFlowNumber - 1)
+                    {
+                        previousFlow = wf;
+                        break;
+                    }
+                }
+                if (previousFlow != null)
+                {
+                    var stepsInPreviousFlow = await _unitOfWork.StepUOW.FindStepByFlowIdAsync(previousFlow.FlowId);
+                    var orderedStepsInPreviousFlow = new List<Step>();
+                    foreach (var s in stepsInPreviousFlow)
+                    {
+                        orderedStepsInPreviousFlow.Add(s);
+                    }
+                    for (int i = 0; i < orderedStepsInPreviousFlow.Count - 1; i++)
+                    {
+                        for (int j = i + 1; j < orderedStepsInPreviousFlow.Count; j++)
+                        {
+                            if (orderedStepsInPreviousFlow[j].StepNumber < orderedStepsInPreviousFlow[i].StepNumber)
+                            {
+                                var temp = orderedStepsInPreviousFlow[i];
+                                orderedStepsInPreviousFlow[i] = orderedStepsInPreviousFlow[j];
+                                orderedStepsInPreviousFlow[j] = temp;
+                            }
+                        }
+                    }
+                    var lastStepInPreviousFlow = orderedStepsInPreviousFlow.Count > 0 ? orderedStepsInPreviousFlow[orderedStepsInPreviousFlow.Count - 1] : null;
+                    if (lastStepInPreviousFlow != null)
+                    {
+                        var tasksInLastStep = await _unitOfWork.TaskUOW.FindTaskByStepIdDocIdAsync(lastStepInPreviousFlow.StepId, taskDto.DocumentId);
+                        foreach (var t in tasksInLastStep)
+                        {
+                            if (t.TaskType == taskDto.TaskType && !t.IsDeleted)
+                            {
+                                return ResponseUtil.Error(
+                                    $"Step cuối của Flow trước đó đã có task với loại {taskDto.TaskType}. Mỗi loại TaskType chỉ được phép xuất hiện một lần.",
+                                    ResponseMessages.OperationFailed,
+                                    HttpStatusCode.BadRequest);
+                            }
+                        }
+                        // Kiểm tra khi tạo task Sign, Step cuối của Flow trước đó phải có Browse hoặc Submit
+                        if (taskDto.TaskType == TaskType.Sign)
+                        {
+                            var hasBrowseOrSubmit = false;
+                            foreach (var t in tasksInLastStep)
+                            {
+                                if (t.TaskType == TaskType.Browse && !t.IsDeleted)
+                                {
+                                    hasBrowseOrSubmit = true;
+                                    break;
+                                }
+                            }
+                            if (!hasBrowseOrSubmit)
+                            {
+                                return ResponseUtil.Error(
+                                    $"Không thể tạo task Sign vì Step cuối của Flow trước đó không có task Browse",
+                                    ResponseMessages.OperationFailed,
+                                    HttpStatusCode.BadRequest);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+            
+            
+            
+            ////////////////////////////////////////////
 
             
             if (taskDto.StartDate < DateTime.Now || taskDto.EndDate < DateTime.Now)
@@ -324,7 +488,7 @@ public partial class TaskService : ITaskService
             ////////////////////////////////////////////////////////////////////////
 
             // Lấy tất cả Step trong Flow này
-            var stepsInFlow = await _unitOfWork.StepUOW.FindStepByFlowIdAsync(currentFlow);
+            //var stepsInFlow = await _unitOfWork.StepUOW.FindStepByFlowIdAsync(currentFlow);
             var orderedStepsInFlow = stepsInFlow.OrderBy(s => s.StepNumber).ToList();
 
             // Lấy các task trong Step hiện tại và sắp xếp theo TaskNumber
@@ -335,8 +499,7 @@ public partial class TaskService : ITaskService
             var currentStepIndex = orderedStepsInFlow.FindIndex(s => s.StepId == taskDto.StepId);
             
             
-            var currentFlowNumber = workflowFlowAll
-                .FirstOrDefault(wf => wf.FlowId == currentFlow)?.FlowNumber ?? 0;
+            
             
                     // Kiểm tra nếu task mới là task đầu tiên của step đầu tiên trong flow và có flow trước đó
         if (!tasksInCurrentStep.Any() && currentStepIndex == 0) // Task đầu tiên của step đầu tiên
@@ -1970,6 +2133,7 @@ public partial class TaskService : ITaskService
                     // 4. Gửi thông báo
                     // TODO: Gửi thông báo cho người tạo tài liệu + người liên quan: "Tài liệu đã bị từ chối ở bước XYZ bởi User A"
                     await transaction.CommitAsync();
+                    await _loggingService.WriteLogAsync(userId,$"Văn bản bị từ chối bởi: {userTask.FullName}");
                     return ResponseUtil.GetObject(ResponseMessages.DocumentRejected, ResponseMessages.CreatedSuccessfully,
                         HttpStatusCode.OK, 1);
                 }
@@ -2606,9 +2770,10 @@ public partial class TaskService : ITaskService
                 {
                     var att = new AttachmentArchivedDocument()
                     {
-                        AttachmentArchivedDocumentId = archivedDocId,
+                        //AttachmentArchivedDocumentId = archivedDocId,
                         AttachmentName = attachmentDocument.AttachmentDocumentName,
-                        AttachmentUrl = attachmentDocument.AttachmentDocumentUrl
+                        AttachmentUrl = attachmentDocument.AttachmentDocumentUrl,
+                        ArchivedDocumentId = archivedDocId,
                     };
                     await _unitOfWork.AttachmentArchivedUOW.AddAsync(att);
                 }
@@ -2652,9 +2817,10 @@ public partial class TaskService : ITaskService
                 {
                     var att = new AttachmentArchivedDocument()
                     {
-                        AttachmentArchivedDocumentId = archivedDoc.ArchivedDocumentId,
+                        //AttachmentArchivedDocumentId = archivedDoc.ArchivedDocumentId,
                         AttachmentName = attachmentDocument.AttachmentDocumentName,
-                        AttachmentUrl = attachmentDocument.AttachmentDocumentUrl
+                        AttachmentUrl = attachmentDocument.AttachmentDocumentUrl,
+                        ArchivedDocumentId = archivedDoc.ArchivedDocumentId,
                     };
                     await _unitOfWork.AttachmentArchivedUOW.AddAsync(att);
                 }
@@ -3006,9 +3172,10 @@ public partial class TaskService : ITaskService
                         {
                             var att = new AttachmentArchivedDocument()
                             {
-                                AttachmentArchivedDocumentId = archiveId,
+                                //AttachmentArchivedDocumentId = archiveId,
                                 AttachmentName = attachmentDocument.AttachmentDocumentName,
-                                AttachmentUrl = attachmentDocument.AttachmentDocumentUrl
+                                AttachmentUrl = attachmentDocument.AttachmentDocumentUrl,
+                                ArchivedDocumentId = archiveId,
                             };
                             await _unitOfWork.AttachmentArchivedUOW.AddAsync(att);
                         }
@@ -3046,9 +3213,10 @@ public partial class TaskService : ITaskService
                         {
                             var att = new AttachmentArchivedDocument()
                             {
-                                AttachmentArchivedDocumentId = archiveId,
+                                //AttachmentArchivedDocumentId = archiveId,
                                 AttachmentName = attachmentDocument.AttachmentDocumentName,
-                                AttachmentUrl = attachmentDocument.AttachmentDocumentUrl
+                                AttachmentUrl = attachmentDocument.AttachmentDocumentUrl,
+                                ArchivedDocumentId = archiveId,
                             };
                             await _unitOfWork.AttachmentArchivedUOW.AddAsync(att);
                         }
@@ -3231,6 +3399,7 @@ public partial class TaskService : ITaskService
         using var transaction = await _unitOfWork.BeginTransactionAsync();
         try
         {
+            var user = await _unitOfWork.UserUOW.FindUserByIdAsync(rejectDocumentRequest.UserId);
             var task = await _unitOfWork.TaskUOW.FindTaskByIdAsync(rejectDocumentRequest.TaskId);
 
             if (task == null || task.UserId != rejectDocumentRequest.UserId)
@@ -3326,6 +3495,7 @@ public partial class TaskService : ITaskService
             // 4. Gửi thông báo
             // TODO: Gửi thông báo cho người tạo tài liệu + người liên quan: "Tài liệu đã bị từ chối ở bước XYZ bởi User A"
             await transaction.CommitAsync();
+            await _loggingService.WriteLogAsync(user.UserId,$"Văn bản với số hiệu {document.SystemNumberOfDoc} bị từ chối bởi: {user.FullName}");
             return ResponseUtil.GetObject(ResponseMessages.DocumentRejected, ResponseMessages.CreatedSuccessfully,
                 HttpStatusCode.Created, 1);
         }

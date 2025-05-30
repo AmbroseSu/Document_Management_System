@@ -25,6 +25,7 @@ public class EmailService : IEmailService
     private readonly IFileService _fileService;
     private readonly string _host;
     private readonly ILoggingService _loggingService;
+    private readonly string _storagePath = Path.Combine(Directory.GetCurrentDirectory(), "data", "storage");
 
 
     public EmailService(IConfiguration config, IUnitOfWork unitOfWork, IFileService fileService, IOptions<AppsetingOptions> options, ILoggingService loggingService)
@@ -102,6 +103,7 @@ public class EmailService : IEmailService
                 HttpStatusCode.BadRequest);
         }
         
+        var attachmentArchiveDocument = await _unitOfWork.AttachmentArchivedUOW.GetAttachmentArchivedDocumentByDocumentId(document.ArchivedDocumentId);
         var doc = await _unitOfWork.DocumentUOW.FindDocumentByIdAsync(document.FinalDocumentId);
         if (doc == null)
         {
@@ -192,6 +194,38 @@ public class EmailService : IEmailService
         };
 
         multipart.Add(attachment);
+        
+        if(attachmentArchiveDocument.Count() > 0)
+        {
+            foreach (var attachmentDoc in attachmentArchiveDocument)
+            {
+                string lastSegment = attachmentDoc.AttachmentUrl.Split('/').Last();
+                var path = Path.Combine(_storagePath, "tmpA");
+                string searchPattern = $"{lastSegment}.*";
+                var files = Directory.GetFiles(path, searchPattern);
+                var filePath = files.FirstOrDefault();
+                if (filePath == null || !File.Exists(filePath))
+                {
+                    throw new FileNotFoundException("File not found", filePath);
+                }
+                if (!File.Exists(filePath))
+                {
+                    throw new FileNotFoundException("File not found", filePath);
+                }
+                var (attachmentBytes, attachmentFileName, attachmentContentType) = await _fileService.GetFileBytes(filePath);
+                
+                var attachmentPart = new MimePart()
+                {
+                    Content = new MimeContent(new MemoryStream(attachmentBytes)),
+                    ContentDisposition = new ContentDisposition(ContentDisposition.Attachment),
+                    ContentTransferEncoding = ContentEncoding.Base64,
+                    FileName = attachmentFileName
+                };
+                multipart.Add(attachmentPart);
+            }
+        }
+        
+        
         //var memoryStream = new MemoryStream();
         // Nếu có file đính kèm thì thêm vào
         /*if (emailRequest.FilePath != null && emailRequest.FilePath.Length > 0)
