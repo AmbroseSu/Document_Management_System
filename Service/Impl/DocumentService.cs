@@ -1361,8 +1361,8 @@ public partial class DocumentService : IDocumentService
             { "WorkflowId", null },
             { "Deadline", null },
             { "NewSignerName", null },
-            { "validTo", metaData?.MaxBy(x => x.ExpirationDate).ExpirationDate },
-            { "validFrom", metaData?.MinBy(x => x.ValidFrom).ValidFrom },
+            { "validTo", null },
+            { "validFrom", null },
             { "signerName", metaData?.Select(x => ExtractSigners(x.SignerName)).ToList() },
             { "url", _host + "/api/document/view-file-by-name?documentName=" + fileName },
             {"DateIssue", null}
