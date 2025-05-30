@@ -1580,12 +1580,17 @@ public partial class DocumentService : IDocumentService
     public async Task<ResponseDto> UpdateConfirmDocumentBySubmit(DocumentCompareDto documentUpload, Guid userId)
     {
         var doc = await _unitOfWork.DocumentUOW.FindDocumentByIdAsync(documentUpload.DocumentId);
+        
         foreach (var docUp in documentUpload.Attachments)
         {
+            Uri uri = new Uri(docUp.url);
+
+            // Lấy phần cuối của đường dẫn (segment cuối)
+            string guidString = uri.Segments[^1];
             var atUp = new AttachmentDocument()
             {
                 DocumentId = doc.DocumentId,
-                AttachmentDocumentId = Guid.NewGuid(),
+                AttachmentDocumentId = Guid.Parse(guidString),
                 AttachmentDocumentName = docUp.name,
                 AttachmentDocumentUrl = docUp.url
             };

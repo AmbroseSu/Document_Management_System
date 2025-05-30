@@ -2600,6 +2600,18 @@ public partial class TaskService : ITaskService
                 {
                     await _unitOfWork.ArchiveDocumentSignatureUOW.AddAsync(archiveDocumentSignature);
                 }
+                var attachDoc = doc.AttachmentDocuments;
+                // List<AttachmentArchivedDocument> attachmentArchived =[];
+                foreach (var attachmentDocument in attachDoc)
+                {
+                    var att = new AttachmentArchivedDocument()
+                    {
+                        AttachmentArchivedDocumentId = archivedDocId,
+                        AttachmentName = attachmentDocument.AttachmentDocumentName,
+                        AttachmentUrl = attachmentDocument.AttachmentDocumentUrl
+                    };
+                    await _unitOfWork.AttachmentArchivedUOW.AddAsync(att);
+                }
                 archivedDoc = new ArchivedDocument()
                 {
                     ArchivedDocumentId = archivedDocId,
@@ -2634,6 +2646,18 @@ public partial class TaskService : ITaskService
                 if (archivedDoc == null)
                     return ResponseUtil.Error("Final archive not found", ResponseMessages.OperationFailed,
                         HttpStatusCode.NotFound);
+                var attachDoc = doc.AttachmentDocuments;
+                // List<AttachmentArchivedDocument> attachmentArchived =[];
+                foreach (var attachmentDocument in attachDoc)
+                {
+                    var att = new AttachmentArchivedDocument()
+                    {
+                        AttachmentArchivedDocumentId = archivedDoc.ArchivedDocumentId,
+                        AttachmentName = attachmentDocument.AttachmentDocumentName,
+                        AttachmentUrl = attachmentDocument.AttachmentDocumentUrl
+                    };
+                    await _unitOfWork.AttachmentArchivedUOW.AddAsync(att);
+                }
                 archivedDoc.ArchivedDocumentName = doc.DocumentName;
                 archivedDoc.SystemNumberOfDoc = doc.SystemNumberOfDoc;
                 archivedDoc.ArchivedDocumentContent = doc.DocumentContent;
@@ -2976,6 +3000,18 @@ public partial class TaskService : ITaskService
                         await File.WriteAllBytesAsync(Path.Combine(pathArchive, doc.DocumentName + ".pdf"), docFile);
                         var signBys = taskSign.Select(x => x.User.UserName).ToList();
                         var signByString = $"[{string.Join(", ", signBys)}]";
+                        var attachDoc = doc.AttachmentDocuments;
+                        // List<AttachmentArchivedDocument> attachmentArchived =[];
+                        foreach (var attachmentDocument in attachDoc)
+                        {
+                            var att = new AttachmentArchivedDocument()
+                            {
+                                AttachmentArchivedDocumentId = archiveId,
+                                AttachmentName = attachmentDocument.AttachmentDocumentName,
+                                AttachmentUrl = attachmentDocument.AttachmentDocumentUrl
+                            };
+                            await _unitOfWork.AttachmentArchivedUOW.AddAsync(att);
+                        }
                         var archiveDoc = new ArchivedDocument()
                         {
                             ArchivedDocumentId = archiveId,
@@ -3002,7 +3038,20 @@ public partial class TaskService : ITaskService
                     }
                     else
                     {
+                        
                         archiveId = doc.FinalArchiveDocumentId??Guid.NewGuid();
+                        var attachDoc = doc.AttachmentDocuments;
+                        // List<AttachmentArchivedDocument> attachmentArchived =[];
+                        foreach (var attachmentDocument in attachDoc)
+                        {
+                            var att = new AttachmentArchivedDocument()
+                            {
+                                AttachmentArchivedDocumentId = archiveId,
+                                AttachmentName = attachmentDocument.AttachmentDocumentName,
+                                AttachmentUrl = attachmentDocument.AttachmentDocumentUrl
+                            };
+                            await _unitOfWork.AttachmentArchivedUOW.AddAsync(att);
+                        }
                         var pathArchive = Path.Combine(Directory.GetCurrentDirectory(), "data", "storage",
                             "archive_document", archiveId.ToString()!);
                         Directory.CreateDirectory(pathArchive);
@@ -3010,6 +3059,7 @@ public partial class TaskService : ITaskService
                         var signBys = taskSign.Where(x => x.User!=null).Select(x => x.User.UserName).ToList();
                         var signByString = $"[{string.Join(", ", signBys)}]";
                         var archiveDoc = await _unitOfWork.ArchivedDocumentUOW.FindArchivedDocumentByIdAsync(archiveId);
+                        
                         if (archiveDoc == null)
                             return ResponseUtil.Error("Archive doc withdraw not found",
                                 ResponseMessages.FailedToSaveData, HttpStatusCode.BadRequest);
