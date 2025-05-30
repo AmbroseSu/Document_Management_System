@@ -148,5 +148,13 @@ namespace DocumentManagementSystemApplication.Controllers
             var result = await _archiveDocumentService.ReplaceArchiveDocument(archiveDocumentId,documentPreInfo, Guid.Parse(userId));
             return result;
         }
+
+        [HttpPost("update-withdraw-document-by-id")]
+        public async Task<ResponseDto> WithdrawDocumentById([FromQuery] Guid archiveDocumentId)
+        {
+            var userId = User.FindFirst("userid")?.Value;
+            var result = await _archiveDocumentService.WithdrawArchiveDocument(Guid.Parse(userId),archiveDocumentId);
+            return result;
+        }
     }
 }
