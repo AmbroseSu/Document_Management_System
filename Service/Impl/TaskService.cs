@@ -2608,7 +2608,8 @@ public partial class TaskService : ITaskService
                     {
                         AttachmentArchivedDocumentId = archivedDocId,
                         AttachmentName = attachmentDocument.AttachmentDocumentName,
-                        AttachmentUrl = attachmentDocument.AttachmentDocumentUrl
+                        AttachmentUrl = attachmentDocument.AttachmentDocumentUrl,
+                        //ArchivedDocumentId = archivedDocId,
                     };
                     await _unitOfWork.AttachmentArchivedUOW.AddAsync(att);
                 }
@@ -2654,7 +2655,8 @@ public partial class TaskService : ITaskService
                     {
                         AttachmentArchivedDocumentId = archivedDoc.ArchivedDocumentId,
                         AttachmentName = attachmentDocument.AttachmentDocumentName,
-                        AttachmentUrl = attachmentDocument.AttachmentDocumentUrl
+                        AttachmentUrl = attachmentDocument.AttachmentDocumentUrl,
+                        //ArchivedDocumentId = archivedDoc.ArchivedDocumentId,
                     };
                     await _unitOfWork.AttachmentArchivedUOW.AddAsync(att);
                 }
@@ -3008,7 +3010,8 @@ public partial class TaskService : ITaskService
                             {
                                 AttachmentArchivedDocumentId = archiveId,
                                 AttachmentName = attachmentDocument.AttachmentDocumentName,
-                                AttachmentUrl = attachmentDocument.AttachmentDocumentUrl
+                                AttachmentUrl = attachmentDocument.AttachmentDocumentUrl,
+                                ArchivedDocumentId = archiveId,
                             };
                             await _unitOfWork.AttachmentArchivedUOW.AddAsync(att);
                         }
@@ -3048,7 +3051,8 @@ public partial class TaskService : ITaskService
                             {
                                 AttachmentArchivedDocumentId = archiveId,
                                 AttachmentName = attachmentDocument.AttachmentDocumentName,
-                                AttachmentUrl = attachmentDocument.AttachmentDocumentUrl
+                                AttachmentUrl = attachmentDocument.AttachmentDocumentUrl,
+                                ArchivedDocumentId = archiveId,
                             };
                             await _unitOfWork.AttachmentArchivedUOW.AddAsync(att);
                         }
