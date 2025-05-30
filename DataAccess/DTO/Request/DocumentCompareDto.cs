@@ -17,5 +17,5 @@ public class DocumentCompareDto
     public DateTime? ValidTo { get; set; }
     public DateTime? Deadline { get; set; }
     
-    public List<AttachmentDocumentRequest> Attachments { get; set; } = new List<AttachmentDocumentRequest>();
+    public List<AttachmentDocumentRequest>? Attachments { get; set; } = new List<AttachmentDocumentRequest>();
 }
