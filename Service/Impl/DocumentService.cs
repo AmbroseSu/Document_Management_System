@@ -524,7 +524,7 @@ public partial class DocumentService : IDocumentService
             try
             {
                 string fileExtension = ".conf-dms"; // Phần mở rộng tùy chỉnh
-                string filePath = Path.Combine(_storagePath,"document",document.DocumentId.ToString(), $"config{fileExtension}");
+                string filePath = Path.Combine(_storagePath,"document","version",document.DocumentVersions.FirstOrDefault(x => x.IsFinalVersion).DocumentVersionId.ToString(), $"config{fileExtension}");
 
                 // Kiểm tra xem tệp có tồn tại không
                 if (!File.Exists(filePath))
