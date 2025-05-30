@@ -3332,7 +3332,7 @@ public partial class TaskService : ITaskService
             // 4. Gửi thông báo
             // TODO: Gửi thông báo cho người tạo tài liệu + người liên quan: "Tài liệu đã bị từ chối ở bước XYZ bởi User A"
             await transaction.CommitAsync();
-            await _loggingService.WriteLogAsync(user.UserId,$"Văn bản bị từ chối bởi: {user.FullName}");
+            await _loggingService.WriteLogAsync(user.UserId,$"Văn bản với số hiệu {document.SystemNumberOfDoc} bị từ chối bởi: {user.FullName}");
             return ResponseUtil.GetObject(ResponseMessages.DocumentRejected, ResponseMessages.CreatedSuccessfully,
                 HttpStatusCode.Created, 1);
         }
