@@ -3267,34 +3267,35 @@ public partial class TaskService : ITaskService
                     }
 
                     var distinctUserIds = orderedTasks
-                        .Select(t => t.UserId)
-                        .Distinct()
-                        .ToList();
+                    .Select(t => t.UserId)
+                    .Distinct()
+                    .ToList();
 
-                    switch (workflow.Scope)
+                var workFlowO = await _unitOfWork.WorkflowUOW.FindWorkflowByIdAsync(workflowId);
+                
+                
+                List<UserDocumentPermission> userPermissions = new List<UserDocumentPermission>(); 
+                foreach (var userId in distinctUserIds)
+                {
+                    var exists = await _unitOfWork.UserDocPermissionUOW.ExistsAsync(userId, archiveId);
+                    if (!exists)
                     {
-                        case Scope.School:
+                        userPermissions.Add(new UserDocumentPermission
                         {
-                            var liU = await _unitOfWork.UserUOW.FindAllUserAsync();
-                            liU = liU.Where(x => x.IsDeleted == false && !x.Email.Contains("admin")).ToList();
-                            distinctUserIds = liU.Select(x => x.UserId).ToList();
-                            break;
-                        }
-                        case Scope.Division:
-                        {
-                            var listUser = orderedTasks.FirstOrDefault().User.Division.Users;
-                            distinctUserIds = listUser.Select(x => x.UserId).ToList();
-                            break;
-                        }
-                        case Scope.InComing:
-                        case Scope.OutGoing:
-                            break;
-                        default:
-                            throw new ArgumentOutOfRangeException();
+                            UserId = userId,
+                            ArchivedDocumentId = archiveId,
+                            GrantPermission = GrantPermission.Grant,
+                            CreatedDate = DateTime.UtcNow,
+                            IsDeleted = false
+                        });
                     }
-                    var userPermissions = new List<UserDocumentPermission>();
+                }
 
-                    foreach (var userId in distinctUserIds)
+                if (workFlowO.Scope == Scope.School)
+                {
+                    var liU = await _unitOfWork.UserUOW.FindAllUserAsync();
+                    liU = liU.Where(x => x.IsDeleted == false && !x.Email.Contains("admin") && !distinctUserIds.Contains(x.UserId)).ToList();
+                    foreach (var userId in liU.Select(x => x.UserId).ToList())
                     {
                         var exists = await _unitOfWork.UserDocPermissionUOW.ExistsAsync(userId, archiveId);
                         if (!exists)
@@ -3303,12 +3304,33 @@ public partial class TaskService : ITaskService
                             {
                                 UserId = userId,
                                 ArchivedDocumentId = archiveId,
+                                GrantPermission = GrantPermission.View,
                                 CreatedDate = DateTime.UtcNow,
-                                IsDeleted = false,
-                                GrantPermission = GrantPermission.Grant
+                                IsDeleted = false
                             });
                         }
                     }
+                }
+                else if (workFlowO.Scope == Scope.Division)
+                {
+                    var liU = orderedTasks.FirstOrDefault().User.Division.Users;
+                    liU = liU.Where(x => x.IsDeleted == false && !x.Email.Contains("admin") && !distinctUserIds.Contains(x.UserId)).ToList();
+                    foreach (var userId in liU.Select(x => x.UserId).ToList())
+                    {
+                        var exists = await _unitOfWork.UserDocPermissionUOW.ExistsAsync(userId, archiveId);
+                        if (!exists)
+                        {
+                            userPermissions.Add(new UserDocumentPermission
+                            {
+                                UserId = userId,
+                                ArchivedDocumentId = archiveId,
+                                GrantPermission = GrantPermission.Download,
+                                CreatedDate = DateTime.UtcNow,
+                                IsDeleted = false
+                            });
+                        }
+                    }
+                }
                     
                     // Chỉ thêm những cái chưa có
                 
