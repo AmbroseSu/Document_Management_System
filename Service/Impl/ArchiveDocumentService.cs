@@ -630,9 +630,6 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
             {
                 document.ProcessingStatus = ProcessingStatus.Rejected;
                 await _unitOfWork.DocumentUOW.UpdateAsync(document);
-                archiveDoc.ArchivedDocumentStatus = ArchivedDocumentStatus.Withdrawn;
-                await _unitOfWork.ArchivedDocumentUOW.UpdateAsync(archiveDoc);
-                await _unitOfWork.SaveChangesAsync();
                 await _loggingService.WriteLogAsync(user.UserId, $"Thu hồi tài liệu {archiveDoc.SystemNumberOfDoc} thành công bởi {user.FullName}.");
                 return ResponseUtil.GetObject("Withdraw success", ResponseMessages.UpdateSuccessfully, HttpStatusCode.OK, 1);
             }
