@@ -520,7 +520,7 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
             return await _fileService.ConvertDocToPdf(filePath);
         }
         // await _loggingService.WriteLogAsync(userId, $"Tải mẫu tài liệu {templateId} thành công.");
-        return await _fileService.GetPdfFile(filePath);
+        return await _fileService.GetTemplateFile(filePath);
     }
 
     public async Task<ResponseDto> WithdrawArchiveDocument(Guid archiveDocumentId,DocumentPreInfo documentPreInfo, Guid userId)

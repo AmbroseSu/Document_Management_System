@@ -271,6 +271,39 @@ public class FileService : IFileService
             }
             ;
     }
+    public async Task<IActionResult> GetTemplateFile(string filePath)
+    {
+        var path = Path.Combine(_storagePath, filePath);
+        var extension = Path.GetExtension(path);
+        var tmp = extension;
+        switch (extension)
+        {
+            case ".pdf":
+                extension = "pdf";
+          
+                break;
+            case ".docx":
+                extension = "openxmlformats-officedocument.wordprocessingml.document";
+                break;
+            case ".doc":
+                extension = "vnd.ms-word";
+                break;
+        }
+        if (!File.Exists(path))
+        {
+            throw new FileNotFoundException("File not found", path);
+        }
+        
+        var contentType = $"application/{extension}";
+        
+        var bytes = await File.ReadAllBytesAsync(path);
+        
+        return new FileContentResult(bytes, contentType)
+            {
+                FileDownloadName = Guid.NewGuid() + tmp
+            }
+            ;
+    }
     public void AddFooterToPdf(string inputFilePath, string outputFilePath)
     {
         if (!File.Exists(inputFilePath))
