@@ -493,7 +493,8 @@ public partial class DocumentService : IDocumentService
         }
 
         var versions = document.DocumentVersions.ToList();
-        var signature = document.DocumentVersions.FirstOrDefault(x => x.IsFinalVersion)?.DocumentSignatures;
+        var tmp = document.DocumentVersions.FirstOrDefault(x => x.IsFinalVersion);
+        var signature = tmp?.DocumentSignatures;
         var dateExpires = document.ExpirationDate;
         // if (signature != null)
         //     foreach (var sig in signature.Where(sig => sig.SignedAt < dateExpires))
