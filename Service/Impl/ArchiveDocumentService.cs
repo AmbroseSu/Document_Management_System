@@ -519,7 +519,7 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
             await _loggingService.WriteLogAsync(userId, $"Tải mẫu tài liệu {templateId} thành công.");
             return await _fileService.ConvertDocToPdf(filePath);
         }
-        await _loggingService.WriteLogAsync(userId, $"Tải mẫu tài liệu {templateId} thành công.");
+        // await _loggingService.WriteLogAsync(userId, $"Tải mẫu tài liệu {templateId} thành công.");
         return await _fileService.GetPdfFile(filePath);
     }
 
