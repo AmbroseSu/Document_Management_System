@@ -628,6 +628,8 @@ public partial class ArchiveDocumentService : IArchiveDocumentService
             var scope = document.DocumentWorkflowStatuses.FirstOrDefault()?.Workflow.Scope;
             if (scope != Scope.OutGoing)
             {
+                document.ProcessingStatus = ProcessingStatus.Rejected;
+                await _unitOfWork.DocumentUOW.UpdateAsync(document);
                 archiveDoc.ArchivedDocumentStatus = ArchivedDocumentStatus.Withdrawn;
                 await _unitOfWork.ArchivedDocumentUOW.UpdateAsync(archiveDoc);
                 await _unitOfWork.SaveChangesAsync();

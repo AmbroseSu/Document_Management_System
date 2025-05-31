@@ -1,4 +1,5 @@
 using BusinessObject;
+using BusinessObject.Enums;
 using DataAccess;
 using DataAccess.DAO;
 using Microsoft.EntityFrameworkCore;
@@ -59,10 +60,10 @@ public class FlowRepository : IFlowRepository
     //         u => u.Include(d => d.Steps).ThenInclude(r => r.Role));
     // }
     
-    public async Task<IEnumerable<Flow>> FindAllFlowAsync()
+    public async Task<IEnumerable<Flow>> FindAllFlowAsync(Scope scope)
     {
         var flows = await _flowDao.FindAsync(
-            u => true,
+            u => u.ScopeFlow == scope,
             u => u.Include(d => d.Steps).ThenInclude(r => r.Role)
         );
 

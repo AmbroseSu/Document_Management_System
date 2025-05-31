@@ -336,6 +336,7 @@ public class DocumentManagementSystemDbContext : DbContext
                 .HasDefaultValueSql("gen_random_uuid()");
             entity.Property(e => e.RoleStart);
             entity.Property(e => e.RoleEnd);
+            entity.Property(e => e.ScopeFlow);
 
             entity.HasMany(e => e.WorkflowFlows)
                 .WithOne(e => e.Flow)

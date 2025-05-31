@@ -1565,9 +1565,15 @@ public partial class TaskService : ITaskService
                         var rejectedVersions = documentVersions
                             .Where(v => v.IsFinalVersion == false && !v.VersionNumber.Equals("0"))
                             .ToList();
+                        // var rejectedVersionsIncoming = documentVersions
+                        //     .Where(v => v.IsFinalVersion == false && v.VersionNumber.Equals("0"))
+                        //     .ToList();
+                        
 
                         if (!rejectedVersions.Any())
                             continue;
+                        // if (!rejectedVersionsIncoming.Any())
+                        //     continue;
 
                         List<VersionOfDocResponse> versionOfDocResponses = new List<VersionOfDocResponse>();
                         foreach (var documentVersion in rejectedVersions)
@@ -1584,6 +1590,21 @@ public partial class TaskService : ITaskService
                             };
                             versionOfDocResponses.Add(documentVersionRes);
                         }
+                        
+                        // foreach (var documentVersion in rejectedVersionsIncoming)
+                        // {
+                        //     var rejectComment = documentVersion.Comments.FirstOrDefault();
+                        //     if (rejectComment == null) continue;
+                        //     var documentVersionRes = new VersionOfDocResponse
+                        //     {
+                        //         VersionId = documentVersion.DocumentVersionId,
+                        //         VersionNumber = documentVersion.VersionNumber,
+                        //         DateReject = rejectComment.CreateDate,
+                        //         UserIdReject = rejectComment.UserId,
+                        //         UserReject = rejectComment.User.UserName
+                        //     };
+                        //     versionOfDocResponses.Add(documentVersionRes);
+                        // }
 
                         var user = await _unitOfWork.UserUOW.FindUserByIdAsync(allDocument.UserId);
                         if (user == null)
@@ -3434,6 +3455,8 @@ public partial class TaskService : ITaskService
             if (document == null)
                 return ResponseUtil.Error(ResponseMessages.DocumentNotFound, ResponseMessages.OperationFailed,
                     HttpStatusCode.NotFound);
+            var scope = document.DocumentWorkflowStatuses
+                .FirstOrDefault()?.Workflow?.Scope ?? Scope.School;
             var orderedTasks = await GetOrderedTasks(document.Tasks,
                 document.DocumentWorkflowStatuses.FirstOrDefault()?.WorkflowId ?? Guid.Empty);
             var lastDocumentVersion = document.DocumentVersions
@@ -3448,20 +3471,21 @@ public partial class TaskService : ITaskService
                 IsDeleted = false,
             };
             await _unitOfWork.CommentUOW.AddAsync(comment);
+            
             var documentVersion =
                 await _unitOfWork.DocumentVersionUOW.FindDocumentVersionByIdAsync(lastDocumentVersion
                     .DocumentVersionId);
             documentVersion.IsFinalVersion = false;
             await _unitOfWork.DocumentVersionUOW.UpdateAsync(documentVersion);
             await _unitOfWork.SaveChangesAsync();
-
-            var documentVersion0 = document.DocumentVersions
-                .Where(d => d.VersionNumber.Equals("0"))
-                .FirstOrDefault();
-            documentVersion0.IsFinalVersion = true;
-            await _unitOfWork.DocumentVersionUOW.UpdateAsync(documentVersion0);
-            await _unitOfWork.SaveChangesAsync();
-
+            
+                var documentVersion0 = document.DocumentVersions
+                    .Where(d => d.VersionNumber.Equals("0"))
+                    .FirstOrDefault();
+                documentVersion0.IsFinalVersion = true;
+                await _unitOfWork.DocumentVersionUOW.UpdateAsync(documentVersion0);
+                await _unitOfWork.SaveChangesAsync();
+                
             // 1. Cập nhật trạng thái task hiện tại
             task.TaskStatus = TasksStatus.Completed;
             task.UpdatedDate = DateTime.UtcNow;
