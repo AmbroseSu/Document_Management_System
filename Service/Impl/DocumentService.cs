@@ -524,8 +524,15 @@ public partial class DocumentService : IDocumentService
             issueDate = document.DateIssued ?? document.CreatedDate;
             try
             {
+                string m;
+                if (tmp != null)
+                    m = tmp.DocumentVersionId.ToString();
+                else
+                {
+                    m = document.DocumentVersions.FirstOrDefault(x => x.VersionNumber == "0").DocumentVersionId.ToString();
+                }
                 string fileExtension = ".conf-dms"; // Phần mở rộng tùy chỉnh
-                string filePath = Path.Combine(_storagePath,"document",document.DocumentId.ToString(),document.DocumentVersions.FirstOrDefault(x => x.IsFinalVersion).DocumentVersionId.ToString(), $"config{fileExtension}");
+                string filePath = Path.Combine(_storagePath,"document",document.DocumentId.ToString(),m, $"config{fileExtension}");
 
                 // Kiểm tra xem tệp có tồn tại không
                 if (!File.Exists(filePath))
