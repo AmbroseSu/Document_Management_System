@@ -3311,10 +3311,8 @@ public partial class TaskService : ITaskService
                     }
                     
                     // Chỉ thêm những cái chưa có
-                    if (userPermissions.Any())
-                    {
-                        await _unitOfWork.UserDocPermissionUOW.AddRangeAsync(userPermissions);
-                    }
+                
+                    await _unitOfWork.UserDocPermissionUOW.AddRangeAsync(userPermissions);
 
                     await _unitOfWork.SaveChangesAsync();
                     
