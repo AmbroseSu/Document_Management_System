@@ -897,7 +897,7 @@ public partial class DocumentService : IDocumentService
                 UserName = x.UserName
             }).ToList();
             var receiver = string.Empty;
-            string sender = string.Empty;
+            string? sender = string.Empty;
 
             if(document.DocumentWorkflowStatuses.FirstOrDefault().Workflow.Scope == Scope.InComing)
             {
@@ -910,8 +910,8 @@ public partial class DocumentService : IDocumentService
                 sender = null;
             }
             
-            string[] senderO = sender.Split(',');
-            string[] receiverO = receiver.Split(',');
+            string[] senderO = sender?.Split(',') ?? [];
+            string[] receiverO = receiver?.Split(',') ?? [];
             var result = new DocumentDetailResponse()
             {
                 Sizes = sizes,
