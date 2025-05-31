@@ -965,25 +965,25 @@ public partial class DocumentService : IDocumentService
             Avatar = x.Avatar,
             UserName = x.UserName
         }).ToList();
-        string senderA;
-        string receiverA;
-        string[] senderAO = [];
-        string[] receiverAO = [];
+        string? senderA;
+        string? receiverA;
+        string[] senderAo;
+        string[] receiverAo;
         
         if (documentA.Scope == Scope.InComing)
         {
             receiverA = documentA.FinalDocument.User.UserName;
             senderA = documentA.Sender;
-            receiverAO = receiverA.Split(',');
-            senderAO = senderA.Split(',');
+            receiverAo = receiverA?.Split(',') ?? [];
+            senderAo = senderA?.Split(',') ?? [];
         }
         else
         {
             receiverA = documentA.ExternalPartner;
             
             senderA = documentA.Sender;
-            receiverAO = receiverA.Split(',');
-            senderAO = senderA.Split(',');
+            receiverAo = receiverA?.Split(',') ?? [];
+            senderAo = senderA?.Split(',') ?? [];
         }
         DateTime validFrom = DateTime.Now;
         try
@@ -1033,10 +1033,10 @@ public partial class DocumentService : IDocumentService
             CreatedDate = documentA.CreatedDate,
             SystemNumberDocument = documentA.SystemNumberOfDoc,
             DateExpired = documentA.ExpirationDate,
-            Sender = senderAO,
+            Sender = senderAo,
             IsExpire = documentA.ExpirationDate <= DateTime.Now,
             ValidFrom = validFrom,
-            Receiver = receiverAO,
+            Receiver = receiverAo,
             Scope = documentA.Scope.ToString(),
             GranterList = granter.Select(x => new Viewer()
             {
