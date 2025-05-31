@@ -322,6 +322,7 @@ public class WorkflowService : IWorkflowService
                 Scope.OutGoing => JsonConvert.SerializeObject(new List<string> { "Leader", "Chief" }),
                 Scope.InComing => JsonConvert.SerializeObject(new List<string> { "Clerical Assistant", "Chief" }),
                 Scope.School => JsonConvert.SerializeObject(new List<string> { "Leader", "Chief" }),
+                Scope.Division => JsonConvert.SerializeObject(new List<string> {}),
                 _ => workflow.RequiredRolesJson
             };
 
