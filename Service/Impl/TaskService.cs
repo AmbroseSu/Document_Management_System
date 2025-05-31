@@ -1565,9 +1565,9 @@ public partial class TaskService : ITaskService
                         var rejectedVersions = documentVersions
                             .Where(v => v.IsFinalVersion == false && !v.VersionNumber.Equals("0"))
                             .ToList();
-                        // var rejectedVersionsIncoming = documentVersions
-                        //     .Where(v => v.IsFinalVersion == false && v.VersionNumber.Equals("0"))
-                        //     .ToList();
+                         // var rejectedVersionsIncoming = documentVersions
+                         //     .Where(v => v.IsFinalVersion == true && !v.VersionNumber.Equals("0"))
+                         //     .ToList();
                         
 
                         if (!rejectedVersions.Any())
@@ -3478,12 +3478,24 @@ public partial class TaskService : ITaskService
             documentVersion.IsFinalVersion = false;
             await _unitOfWork.DocumentVersionUOW.UpdateAsync(documentVersion);
             await _unitOfWork.SaveChangesAsync();
-            
+            //if (scope == Scope.InComing)
+            //{
+            //    var documentVersionIn = document.DocumentVersions
+            //        .Where(d => d.VersionNumber.Equals("0"))
+            //        .FirstOrDefault();
+            //    documentVersionIn.VersionNumber = "1";
+           //     await _unitOfWork.DocumentVersionUOW.UpdateAsync(documentVersionIn);
+            //}
+            //else
+            //{
                 var documentVersion0 = document.DocumentVersions
                     .Where(d => d.VersionNumber.Equals("0"))
                     .FirstOrDefault();
+                
                 documentVersion0.IsFinalVersion = true;
                 await _unitOfWork.DocumentVersionUOW.UpdateAsync(documentVersion0);
+            //}
+                
                 await _unitOfWork.SaveChangesAsync();
                 
             // 1. Cập nhật trạng thái task hiện tại

@@ -322,6 +322,7 @@ public class WorkflowService : IWorkflowService
                 Scope.OutGoing => JsonConvert.SerializeObject(new List<string> { "Leader", "Chief" }),
                 Scope.InComing => JsonConvert.SerializeObject(new List<string> { "Clerical Assistant", "Chief" }),
                 Scope.School => JsonConvert.SerializeObject(new List<string> { "Leader", "Chief" }),
+                Scope.Division => JsonConvert.SerializeObject(new List<string> {}),
                 _ => workflow.RequiredRolesJson
             };
 
@@ -374,12 +375,16 @@ public class WorkflowService : IWorkflowService
             }
             
             var requiredRoles = JsonConvert.DeserializeObject<List<string>>(workflow.RequiredRolesJson);
-            var hasValidFlow = (from flow in flowEntities let startRole = flow.RoleStart let endRole = flow.RoleEnd where requiredRoles.First().ToLower().Equals(startRole.ToLower()) && requiredRoles.Last().ToLower().Equals(endRole.ToLower()) select startRole).Any();
-
-            if (!hasValidFlow)
+            if (requiredRoles == null || requiredRoles.Count > 0)
             {
-                return ResponseUtil.Error($"Workflow phải có 2 vai trò chính {requiredRoles.First()} và {requiredRoles.Last()}", ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
+                var hasValidFlow = (from flow in flowEntities let startRole = flow.RoleStart let endRole = flow.RoleEnd where requiredRoles.First().ToLower().Equals(startRole.ToLower()) && requiredRoles.Last().ToLower().Equals(endRole.ToLower()) select startRole).Any();
+
+                if (!hasValidFlow)
+                {
+                    return ResponseUtil.Error($"Workflow phải có 2 vai trò chính {requiredRoles.First()} và {requiredRoles.Last()}", ResponseMessages.OperationFailed, HttpStatusCode.BadRequest);
+                }
             }
+            
             
             await _unitOfWork.SaveChangesAsync();
             await transaction.CommitAsync();
