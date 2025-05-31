@@ -6,6 +6,7 @@ public class DocumentTypeDto
     public string? DocumentTypeName { get; set; }
     public string? Acronym { get; set; }
     public bool? IsDeleted { get; set; }
+    public bool? HaveTemplate {get;set;}
 
     //public List<Guid>? WorkflowIds { get; set; }
     //public List<Guid>? DocumentIds { get; set; }
